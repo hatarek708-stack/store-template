@@ -421,6 +421,7 @@
       --gray-200:    #d0d0d0;
     }
     * { margin:0; padding:0; box-sizing:border-box; }
+    html { overflow-x:hidden; }
     body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; line-height:1.6; }
     ::-webkit-scrollbar { width:6px; }
     ::-webkit-scrollbar-track { background:var(--bg); }
@@ -493,7 +494,7 @@
     .no-results-icon { font-size:40px; display:block; margin-bottom:12px; opacity:0.4; }
 
     /* ══════ PRODUCT DETAILS ══════ */
-    #product-details-view { max-width:1280px; margin:0 auto; }
+    #product-details-view { max-width:1280px; margin:0 auto; overflow-x:hidden; position:relative; }
     .details-back-btn { display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); color:var(--text2); padding:8px 20px; cursor:pointer; font-family:var(--font); font-size:13px; border-radius:40px; margin:24px 24px 0; transition:all 0.2s; }
     .details-back-btn:hover { border-color:var(--accent); color:var(--accent); }
     .details-hero { display:grid; grid-template-columns:1fr 1fr; gap:40px; padding:24px 24px 40px; }
@@ -573,7 +574,7 @@
     .submit-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
 
     /* ══════ CHECKOUT ══════ */
-    #checkout-view { max-width:680px; margin:0 auto; padding:24px 24px 60px; }
+    #checkout-view { max-width:680px; margin:0 auto; padding:24px 24px 60px; overflow-x:hidden; position:relative; }
     .back-btn { display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); color:var(--text2); padding:8px 20px; border-radius:40px; cursor:pointer; font-family:var(--font); font-size:13px; margin-bottom:24px; transition:all 0.2s; }
     .back-btn:hover { border-color:var(--accent); color:var(--accent); }
     .checkout-title { font-size:28px; font-weight:700; margin-bottom:4px; }
