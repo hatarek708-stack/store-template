@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Store Templates</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Cairo', sans-serif; background: #111; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .container { text-align: center; padding: 40px; }
+    h1 { font-size: 2rem; margin-bottom: 10px; }
+    p { color: #aaa; margin-bottom: 40px; }
+    .cards { display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; }
+    .card { background: #1a1a1a; border: 1px solid #333; border-radius: 16px; padding: 30px 40px; text-decoration: none; color: #fff; transition: 0.2s; }
+    .card:hover { border-color: #666; transform: translateY(-4px); }
+    .card .label { font-size: 1.2rem; font-weight: 700; }
+    .card .desc { font-size: 0.85rem; color: #888; margin-top: 6px; }
+    .white-card { background: #f5f5f5; color: #111; border-color: #ddd; }
+    .white-card .desc { color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛍️ Store Templates</h1>
+    <p>اختر القالب المناسب لمتجرك</p>
+    <div class="cards">
+      <a href="white.html" class="card white-card">
+        <div class="label">⬜ القالب الأبيض</div>
+        <div class="desc">White Template</div>
+      </a>
+      <a href="black.html" class="card">
+        <div class="label">⬛ القالب الأسود</div>
+        <div class="desc">Black Template</div>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
