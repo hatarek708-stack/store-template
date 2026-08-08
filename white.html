@@ -66,18 +66,23 @@
       const storeId = (window._storeData && window._storeData.id) || window._getStoreId();
 
       // إرسال الطلب إلى Worker — لا نحتاج auth token لأن العميل anon
+      // 🔧 FIX: نرسل product و items كما هما (لا نعيد تسميتهما إلى products)
+      // الـ Worker يتولى تحويل product (مفرد) أو items (مصفوفة) إلى products
       const res = await fetch(`${SHV_WORKER_URL}/order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           store_id: storeId,
-          name: payload.name || payload.customerName || '',
-          phone: payload.phone || '',
+          name: payload.name || payload.customerName || payload.customer?.name || '',
+          phone: payload.phone || payload.customer?.phone || '',
           wilaya: payload.wilaya || payload.customer?.wilaya || null,
           commune: payload.commune || payload.customer?.commune || null,
           neighborhood: payload.neighborhood || payload.customer?.neighborhood || null,
           delivery_type: payload.deliveryType || payload.delivery_type || null,
           note: payload.note || null,
+          // 🔧 FIX: إرسال product و items كما هما — الـ Worker يحولهما إلى products
+          product: payload.product || null,
+          items: payload.items || null,
           products: payload.products || [],
           customer: payload.customer || {},
           pricing: payload.pricing || {},
