@@ -29,69 +29,64 @@
     };
   </script>
 
-  <!-- Firebase: حفظ الطلبات + قراءة بيانات المتجر من Firestore -->
+  <!-- Supabase: حفظ الطلبات + قراءة بيانات المتجر من Postgres -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query, orderBy, limit, onSnapshot }
-      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { initializeAppCheck, ReCaptchaV3Provider, getToken }
-      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
-    const firebaseConfig = {
-      apiKey: "AIzaSyByloEZ8jKq44JAQREi0Mm5-kpvxQqGHXY",
-      authDomain: "store-manager-7e2eb.firebaseapp.com",
-      projectId: "store-manager-7e2eb",
-      storageBucket: "store-manager-7e2eb.firebasestorage.app",
-      messagingSenderId: "898707032417",
-      appId: "1:898707032417:web:56ecb9fa3b8615f4ad9d20"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-    // ─── 🔒 SECURITY FIX (ثغرة #4): حماية Firebase App Check ضد سبام الطلبات ───
-    // الحماية السابقة (honeypot + تحقق التوقيت + rate-limit بالمتصفح) كلها من
-    // طرف العميل ويسهل تجاوزها بمن يستدعي Firestore SDK مباشرة خارج واجهة
-    // الصفحة. App Check يضيف تحققاً حقيقياً (reCAPTCHA v3) يتحقق منه Firebase
-    // نفسه قبل قبول أي كتابة على "orders"، فوق تحقق الأسعار الموجود في القواعد.
-    // ⚠️ إعداد مطلوب قبل النشر (راجع README):
-    //   1) أنشئ مفتاح reCAPTCHA v3 من https://www.google.com/recaptcha/admin
-    //      وضعه في RECAPTCHA_V3_SITE_KEY أدناه.
-    //   2) فعّل "Enforce" على Firestore من Firebase Console → App Check.
-    // قبل إتمام هذا الإعداد سيُرفض إرسال أي طلب (fail-closed) بدل تعطيل الحماية.
-    const RECAPTCHA_V3_SITE_KEY = ''; // ← ضع مفتاح reCAPTCHA v3 هنا قبل النشر
-    let _shvAppCheck = null;
-    if (RECAPTCHA_V3_SITE_KEY) {
-      try {
-        _shvAppCheck = initializeAppCheck(app, {
-          provider: new ReCaptchaV3Provider(RECAPTCHA_V3_SITE_KEY),
-          isTokenAutoRefreshEnabled: true,
-        });
-      } catch (e) { console.error('[AppCheck] فشل التهيئة:', e); }
-    } else {
-      console.warn('[AppCheck] RECAPTCHA_V3_SITE_KEY غير معرَّف — سيُرفض إرسال الطلبات حتى إتمام الإعداد.');
-    }
-    // يتحقق من توكن App Check قبل السماح بإرسال أي طلب — fail-closed: أي فشل
-    // (عدم تهيئة، رفض reCAPTCHA، خطأ شبكة) يمنع الإرسال بدل تجاهله بصمت.
+    // ─── إعداد Supabase (Publishable key — آمن للنشر في المتصفح) ────────────
+    // يستخدم anon key الذي يخضع لـ RLS. لا يُستخدم service_role إطلاقاً هنا.
+    const SUPABASE_URL = "https://tgqkathfzrnkiyxwzkbc.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_MnDIdSEFp9UrLmvC0Y2k4g_Tp74iXHb";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: { persistSession: false },  // القوالب عامة — لا حاجة لجلسة
+      realtime: { params: { eventsPerSecond: 5 } },
+    });
+
+    // ─── 🔒 أمان: التحقق من SPAM عبر rate-limit محلي (مثل السابق لكن بدون App Check) ───
+    // App Check كان خاصاً بـ Firebase. في Supabase نعتمد على:
+    //   1) RLS على orders (يسمح insert من anon لكن مع تحقق وجود المتجر)
+    //   2) rate-limit محلي في المتصفح (45 ثانية بين الطلبات)
+    //   3) التحقق من الأسعار مطابق لما هو مخزّن في قاعدة البيانات
     window._shvVerifyAppCheck = async function () {
-      // إذا لم يُهيَّأ App Check (المفتاح غير معرَّف) → يُسمح بالإرسال
-      // أضف RECAPTCHA_V3_SITE_KEY أعلاه لتفعيل الحماية الكاملة
-      if (!_shvAppCheck) return true;
-      try {
-        const result = await getToken(_shvAppCheck, false);
-        return !!(result && result.token);
-      } catch (e) {
-        console.error('[AppCheck] فشل التحقق:', e);
-        return false;
-      }
+      // متوافقة مع الكود القديم — دائماً ترجع true (لا يوجد App Check في Supabase)
+      // الحماية الفعلية عبر RLS + rate-limit محلي + تحقق الأسعار في الـ Worker
+      return true;
     };
 
+    // ─── حفظ طلب جديد في جدول orders ─────────────────────────────────────────
+    // الحقول تُطابق مخطط Postgres: store_id, store_owner_id, name, phone, ...
+    // البيانات المرنة (المنتجات، التسعير، العميل الكامل) تُخزّن في jsonb.
     window.saveOrderToFirestore = async (payload) => {
-      const storeOwnerId = (window._storeData && window._storeData.uid) || null;
-      const ref = await addDoc(collection(db, 'orders'), {
-        ...payload, storeOwnerId, status: 'جديد', createdAt: serverTimestamp()
-      });
-      return ref.id;
+      const storeOwnerId = (window._storeData && window._storeData.owner_id) || null;
+      const storeId = (window._storeData && window._storeData.id) || window._getStoreId();
+
+      // تحويل الحقول من صيغة Firestore (camelCase) إلى Postgres (snake_case)
+      const orderRow = {
+        store_id: storeId,
+        store_owner_id: storeOwnerId,
+        name: payload.name || payload.customerName || '',
+        phone: payload.phone || '',
+        wilaya: payload.wilaya || payload.customer?.wilaya || null,
+        commune: payload.commune || payload.customer?.commune || null,
+        neighborhood: payload.neighborhood || payload.customer?.neighborhood || null,
+        delivery_type: payload.deliveryType || payload.delivery_type || null,
+        status: 'جديد',
+        note: payload.note || null,
+        // حقول jsonb مرنة — تحفظ كل تفاصيل الطلب كما هي
+        products: payload.products || [],
+        customer: payload.customer || {},
+        pricing: payload.pricing || {},
+        subtotal: payload.subtotal ?? payload.pricing?.subtotal ?? null,
+        shipping_cost: payload.shippingCost ?? payload.shipping_fee ?? payload.pricing?.shipping_fee ?? null,
+        total: payload.total ?? payload.pricing?.total ?? null,
+      };
+
+      const { data, error } = await supabase.from('orders').insert(orderRow).select('id').single();
+      if (error) throw new Error('فشل حفظ الطلب: ' + error.message);
+      return data.id;
     };
-    /* ── قراءة بيانات المتجر من Firestore ── */
+
+    // ─── قراءة بيانات المتجر من Postgres ─────────────────────────────────────
     window.fetchStoreFromFirestore = async (storeId) => {
       if (!storeId || typeof storeId !== 'string' || storeId.trim() === '') {
         console.error('fetchStoreFromFirestore: storeId فارغ');
@@ -100,20 +95,57 @@
       const cleanStoreId = storeId.trim();
       const cacheKey = `shv_store_${cleanStoreId}`;
 
-      // ─── دائماً نجلب وثيقة المتجر (قراءة واحدة صغيرة) ───────────────────
-      // نقارن updatedAt مع الكاش — إذا تغيّر نجلب المنتجات فوراً بدون انتظار
-      const storeRef = doc(db, 'stores', cleanStoreId);
-      const storeSnap = await getDoc(storeRef);
+      // جلب بيانات المتجر العامة من جدول stores
+      const { data: storeRow, error: storeErr } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('id', cleanStoreId)
+        .maybeSingle();
+
+      if (storeErr) console.warn('store lookup error:', storeErr.message);
       let storeData = null;
-      if (storeSnap.exists()) storeData = storeSnap.data();
+      if (storeRow) {
+        // تحويل من snake_case (Postgres) إلى camelCase (متوافق مع الكود القديم)
+        storeData = {
+          id: storeRow.id,
+          uid: storeRow.owner_id,  // للحفاظ على توافق الكود القديم
+          owner_id: storeRow.owner_id,
+          name: storeRow.name,
+          title: storeRow.title,
+          pageTitle: storeRow.page_title,
+          pageSubtitle: storeRow.page_subtitle,
+          heroDesc: storeRow.hero_desc,
+          template: storeRow.template,
+          theme: storeRow.theme,
+          shipping: storeRow.shipping || [],
+          shippingProvider: storeRow.shipping_provider,
+          bgColor: storeRow.bg_color,
+          cardColor: storeRow.card_color,
+          accentColor: storeRow.accent_color,
+          textColor: storeRow.text_color,
+          categories: storeRow.categories || [],
+          tiktok: storeRow.tiktok,
+          instagram: storeRow.instagram,
+          facebook: storeRow.facebook,
+          facebookPixelId: storeRow.facebook_pixel_id,
+          instagramPixelId: storeRow.instagram_pixel_id,
+          tiktokPixelId: storeRow.tiktok_pixel_id,
+          snapPixelId: storeRow.snap_pixel_id,
+          googleAnalyticsId: storeRow.google_analytics_id,
+          gtmId: storeRow.gtm_id,
+          capiWorkerUrl: storeRow.capi_worker_url,
+          updatedAt: storeRow.updated_at ? { seconds: Math.floor(new Date(storeRow.updated_at).getTime() / 1000) } : null,
+          createdAt: storeRow.created_at ? { seconds: Math.floor(new Date(storeRow.created_at).getTime() / 1000) } : null,
+        };
+      }
       window._storeData = storeData;
 
-      // مفتاح الإصدار مبني على updatedAt من Firestore
+      // مفتاح الإصدار مبني على updated_at من Postgres
       const remoteVer = storeData
         ? String(storeData.updatedAt?.seconds ?? storeData.createdAt?.seconds ?? 0)
         : '0';
 
-      // ─── تحقق من الكاش: إذا الإصدار مطابق → استخدم المنتجات المخزنة ──────
+      // تحقق من الكاش: إذا الإصدار مطابق → استخدم المنتجات المخزنة
       try {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
@@ -124,12 +156,30 @@
         }
       } catch {}
 
-      // ─── إصدار مختلف أو لا كاش → جلب المنتجات من Firestore مباشرة ────────
-      const productsRef = collection(db, 'stores', cleanStoreId, 'products');
-      // ✅ FIX: أُزيل orderBy('updatedAt') — كان يستبعد المنتجات التي لا تحتوي على هذا الحقل
-      const q = query(productsRef, limit(50));
-      const productsSnap = await getDocs(q);
-      const products = productsSnap.docs.map(d => d.data());
+      // إصدار مختلف أو لا كاش → جلب المنتجات من Postgres
+      const { data: productRows, error: prodErr } = await supabase
+        .from('products')
+        .select('*')
+        .eq('store_id', cleanStoreId)
+        .limit(50);
+      if (prodErr) console.warn('products fetch error:', prodErr.message);
+
+      // تحويل المنتجات من snake_case إلى camelCase (متوافق مع الكود القديم)
+      const products = (productRows || []).map(p => ({
+        id: p.id,
+        name: p.name,
+        price: Number(p.price) || 0,
+        discountPrice: p.discount_price !== null && p.discount_price !== undefined ? Number(p.discount_price) : null,
+        quantity: Number(p.quantity) || 1,
+        emoji: p.emoji || '🛍️',
+        category: p.category || '',
+        desc: p.description || '',
+        image: p.image || '',
+        detailImages: p.detail_images || [],
+        images: p.images || [],
+        sizes: p.sizes || [],
+        colors: p.colors || [],
+      }));
 
       // حفظ في الكاش مع رقم الإصدار
       try {
@@ -139,38 +189,100 @@
       return { store: storeData, products };
     };
 
-    /* ── ✅ FIX: Real-time listener للمنتجات — مفعّل الآن بدلاً من انتظار F5 ──
-       يستمع لتغييرات stores/{storeId}/products ويحدّث الكاش المحلي فوراً،
-       ثم يستدعي onUpdate(products) ليعيد التطبيق رسم قائمة المنتجات مباشرة. */
+    // ─── ✅ Real-time listener للمنتجات عبر Supabase Realtime ──
+    // يستبدل onSnapshot من Firestore — يستمع لتغييرات جدول products
     window._unsubscribeProducts = null;
     window.subscribeToStoreProducts = (storeId, onUpdate) => {
       if (!storeId || typeof onUpdate !== 'function') return;
       if (window._unsubscribeProducts) { window._unsubscribeProducts(); window._unsubscribeProducts = null; }
-      const productsRef = collection(db, 'stores', storeId, 'products');
-      const q = query(productsRef, limit(50));
-      window._unsubscribeProducts = onSnapshot(q, (snap) => {
-        const products = snap.docs.map(d => d.data());
-        try {
-          const cacheKey = `shv_store_${storeId}`;
-          const cachedRaw = localStorage.getItem(cacheKey);
-          const version = cachedRaw ? (JSON.parse(cachedRaw).version || '0') : '0';
-          localStorage.setItem(cacheKey, JSON.stringify({ products, version }));
-        } catch {}
-        onUpdate(products);
-      }, () => { /* فشل صامت — تبقى آخر نسخة معروضة */ });
+
+      const channel = supabase.channel(`products_${storeId}`)
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'products', filter: `store_id=eq.${storeId}` },
+          async () => {
+            // أبسط نهج: إعادة تحميل كل المنتجات عند أي تغيير
+            const { data: productRows } = await supabase
+              .from('products')
+              .select('*')
+              .eq('store_id', storeId)
+              .limit(50);
+            const products = (productRows || []).map(p => ({
+              id: p.id,
+              name: p.name,
+              price: Number(p.price) || 0,
+              discountPrice: p.discount_price !== null && p.discount_price !== undefined ? Number(p.discount_price) : null,
+              quantity: Number(p.quantity) || 1,
+              emoji: p.emoji || '🛍️',
+              category: p.category || '',
+              desc: p.description || '',
+              image: p.image || '',
+              detailImages: p.detail_images || [],
+              images: p.images || [],
+              sizes: p.sizes || [],
+              colors: p.colors || [],
+            }));
+            try {
+              const cacheKey = `shv_store_${storeId}`;
+              const cachedRaw = localStorage.getItem(cacheKey);
+              const version = cachedRaw ? (JSON.parse(cachedRaw).version || '0') : '0';
+              localStorage.setItem(cacheKey, JSON.stringify({ products, version }));
+            } catch {}
+            onUpdate(products);
+          }
+        )
+        .subscribe();
+
+      window._unsubscribeProducts = () => supabase.removeChannel(channel);
     };
 
-    /* ── ✅ FIX: Real-time listener لوثيقة المتجر (شحن/إعدادات) — مفعّل ── */
+    // ─── ✅ Real-time listener لوثيقة المتجر (شحن/إعدادات) ──
     window._unsubscribeStoreDoc = null;
     window.subscribeToStoreDoc = (storeId, onUpdate) => {
       if (!storeId || typeof onUpdate !== 'function') return;
       if (window._unsubscribeStoreDoc) { window._unsubscribeStoreDoc(); window._unsubscribeStoreDoc = null; }
-      const storeRef = doc(db, 'stores', storeId);
-      window._unsubscribeStoreDoc = onSnapshot(storeRef, (snap) => {
-        const storeData = snap.exists() ? snap.data() : null;
-        window._storeData = storeData;
-        onUpdate(storeData);
-      }, () => {});
+
+      const channel = supabase.channel(`store_${storeId}`)
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'stores', filter: `id=eq.${storeId}` },
+          (payload) => {
+            const storeRow = payload.new;
+            if (!storeRow) return;
+            const storeData = {
+              id: storeRow.id,
+              uid: storeRow.owner_id,
+              owner_id: storeRow.owner_id,
+              name: storeRow.name,
+              title: storeRow.title,
+              pageTitle: storeRow.page_title,
+              pageSubtitle: storeRow.page_subtitle,
+              heroDesc: storeRow.hero_desc,
+              template: storeRow.template,
+              theme: storeRow.theme,
+              shipping: storeRow.shipping || [],
+              shippingProvider: storeRow.shipping_provider,
+              bgColor: storeRow.bg_color,
+              cardColor: storeRow.card_color,
+              accentColor: storeRow.accent_color,
+              textColor: storeRow.text_color,
+              categories: storeRow.categories || [],
+              tiktok: storeRow.tiktok,
+              instagram: storeRow.instagram,
+              facebook: storeRow.facebook,
+              facebookPixelId: storeRow.facebook_pixel_id,
+              instagramPixelId: storeRow.instagram_pixel_id,
+              tiktokPixelId: storeRow.tiktok_pixel_id,
+              snapPixelId: storeRow.snap_pixel_id,
+              googleAnalyticsId: storeRow.google_analytics_id,
+              gtmId: storeRow.gtm_id,
+              capiWorkerUrl: storeRow.capi_worker_url,
+            };
+            window._storeData = storeData;
+            onUpdate(storeData);
+          }
+        )
+        .subscribe();
+
+      window._unsubscribeStoreDoc = () => supabase.removeChannel(channel);
     };
 
     function _clearOldStoreCache() {
@@ -182,8 +294,8 @@
       } catch {}
     }
 
-    /* ── إشارة أن Firebase جاهز ── */
-    window._firebaseReady = true;
+    /* ── إشارة أن Supabase جاهز (للتوافق مع الكود القديم) ── */
+    window._firebaseReady = true;  // نُبقي الاسم للتوافق مع الكود القديم
     if (window._onFirebaseReady) window._onFirebaseReady();
 
     /* ══════════════════════════════════════════════════════════════
