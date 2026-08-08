@@ -191,6 +191,8 @@
       images: p.images || [],
       sizes: p.sizes || [],
       colors: p.colors || [],
+      // 🔧 FIX: إضافة slug من قاعدة البيانات
+      slug: p.slug || '',
     }));
 
     // حفظ في الكاش مع رقم الإصدار
@@ -2502,7 +2504,8 @@ async function init() {
         image: p.image || '',
         images: p.images || [p.image || '', '', '', ''],
         sizes: p.sizes || [],
-        colors: p.colors || []
+        colors: p.colors || [],
+        slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 60) || 'product-' + (p.id || i+1)
       }));
       storeLoaded = true;
     } else if (store && store.name) {
@@ -2580,7 +2583,8 @@ async function init() {
         image: p.image || '',
         images: p.images || [p.image || '', '', '', ''],
         sizes: p.sizes || [],
-        colors: p.colors || []
+        colors: p.colors || [],
+        slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 60) || 'product-' + (p.id || i+1)
       }));
       renderCategories();
       renderProducts();
@@ -2609,7 +2613,19 @@ async function init() {
     }
   });
 
-  // Handle direct URL on page load (e.g. yoursite.com/#product-3)
+  // 🔧 FIX: دعم رابط /product/{slug} بدلاً من #product-{id}
+  const path = window.location.pathname;
+  const slugMatch = path.match(/^\/product\/(.+)$/);
+  if (slugMatch) {
+    const slug = decodeURIComponent(slugMatch[1]);
+    const product = PRODUCTS.find(p => p.slug === slug || String(p.id) === slug);
+    if (product) {
+      openProductDetails(product.id, false);
+      history.replaceState({ view: 'product-details-view', productId: product.id, slug: product.slug }, '', path);
+      return;
+    }
+  }
+  // دعم الروابط القديمة #product-{id} للتوافق
   const hash = window.location.hash;
   const productMatch = hash.match(/^#product-(\d+)$/);
   if (productMatch) {
@@ -2622,7 +2638,7 @@ async function init() {
     }
   }
   // Default: store
-  history.replaceState({ view: 'store-view', productId: null }, '', '#store');
+  history.replaceState({ view: 'store-view', productId: null }, '', '/');
 }
 
 // ========== POLICY PAGES ==========
@@ -3549,16 +3565,18 @@ function showView(id, pushState = true) {
   if (footer) footer.style.display = (id === 'store-view') ? '' : 'none';
   // Push to browser history with product-specific URL
   if (pushState) {
-    let hash = '#store';
+    let path = '/';
     if (id === 'product-details-view' && currentProduct) {
-      hash = '#product-' + currentProduct.id;
+      // 🔧 FIX: استخدام slug بدلاً من id — رابط: /product/{slug}
+      const slug = currentProduct.slug || currentProduct.name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 60) || 'product-' + currentProduct.id;
+      path = '/product/' + slug;
     } else if (id === 'checkout-view') {
-      hash = '#checkout';
+      path = '/checkout';
     } else if (id === 'policy-view') {
-      hash = '#policy';
+      path = '/policy';
     }
-    const state = { view: id, productId: currentProduct ? currentProduct.id : null };
-    history.pushState(state, '', hash);
+    const state = { view: id, productId: currentProduct ? currentProduct.id : null, slug: currentProduct ? currentProduct.slug : null };
+    history.pushState(state, '', path);
   }
 }
 

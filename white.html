@@ -192,6 +192,8 @@
         images: p.images || [],
         sizes: p.sizes || [],
         colors: p.colors || [],
+        // 🔧 FIX: إضافة slug من قاعدة البيانات
+        slug: p.slug || '',
       }));
 
       // حفظ في الكاش مع رقم الإصدار
@@ -2119,11 +2121,15 @@
     const footer = document.getElementById('site-footer');
     if(footer) footer.style.display = (id==='store-view') ? '' : 'none';
     if(pushState){
-      let hash = '#store';
-      if(id==='product-details-view'&&currentProduct) hash='#product-'+currentProduct.id;
-      else if(id==='checkout-view') hash='#checkout';
-      else if(id==='policy-view') hash='#policy';
-      history.pushState({view:id,productId:currentProduct?currentProduct.id:null},'',hash);
+      let path = '/';
+      if(id==='product-details-view'&&currentProduct) {
+        // 🔧 FIX: استخدام slug بدلاً من id — رابط: /product/{slug}
+        const slug = currentProduct.slug || currentProduct.name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 60) || 'product-' + currentProduct.id;
+        path = '/product/' + slug;
+      }
+      else if(id==='checkout-view') path='/checkout';
+      else if(id==='policy-view') path='/policy';
+      history.pushState({view:id,productId:currentProduct?currentProduct.id:null,slug:currentProduct?currentProduct.slug:null},'',path);
     }
   }
 
@@ -2156,7 +2162,9 @@
           image: p.image || '',
           images: p.images || [p.image || '', '', '', ''],
           sizes: p.sizes || [],
-          colors: p.colors || []
+          colors: p.colors || [],
+          // 🔧 FIX: إضافة slug لرابط المنتج المخصص
+          slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 60) || 'product-' + (p.id || i+1)
         }));
         storeLoaded = true;
       } else if (store && store.name) {
@@ -2231,7 +2239,9 @@
           image: p.image || '',
           images: p.images || [p.image || '', '', '', ''],
           sizes: p.sizes || [],
-          colors: p.colors || []
+          colors: p.colors || [],
+          // 🔧 FIX: إضافة slug لرابط المنتج المخصص
+          slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 60) || 'product-' + (p.id || i+1)
         }));
         allProducts = [...PRODUCTS];
         renderCategories();
@@ -2245,10 +2255,19 @@
       else if(s.view==='checkout') { showView('checkout-view',false); updateOrderSummary(); }
       else showView('store-view', false);
     });
-    const h=window.location.hash;
-    const m=h.match(/^#product-(\d+)$/);
+    // 🔧 FIX: دعم رابط /product/{slug} بدلاً من #product-{id}
+    const path = window.location.pathname;
+    const slugMatch = path.match(/^\/product\/(.+)$/);
+    if (slugMatch) {
+      const slug = decodeURIComponent(slugMatch[1]);
+      const p = allProducts.find(x => x.slug === slug || x.id === slug);
+      if (p) { openProductDetails(p.id, false); history.replaceState({view:'product',id:p.id,slug:p.slug},'',path); return; }
+    }
+    // دعم الروابط القديمة #product-{id} للتوافق
+    const h = window.location.hash;
+    const m = h.match(/^#product-(\d+)$/);
     if(m){ const pid=parseInt(m[1]); const p=allProducts.find(x=>String(x.id)===String(pid)); if(p){ openProductDetails(pid,false); history.replaceState({view:'product',id:pid},'',h); return; }}
-    history.replaceState({view:'store'},'','#store');
+    history.replaceState({view:'store'},'','/');
   }
   
 
