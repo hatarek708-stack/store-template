@@ -53,36 +53,44 @@
       return true;
     };
 
-    // ─── حفظ طلب جديد في جدول orders ─────────────────────────────────────────
-    // الحقول تُطابق مخطط Postgres: store_id, store_owner_id, name, phone, ...
-    // البيانات المرنة (المنتجات، التسعير، العميل الكامل) تُخزّن في jsonb.
+    // ─── حفظ طلب جديد عبر Cloudflare Worker (يتجاوز RLS بقوة service_role) ────
+    // بدلاً من الإدراج المباشر في Supabase (الذي يفشل بسبب RLS recursion على
+    // anon role)، نرسل الطلب إلى Worker الذي يستخدم SUPABASE_SECRET_KEY.
+    // هذا أكثر أماناً لأن:
+    //   1) المفتاح السري لا يظهر في المتصفح
+    //   2) Worker يتحقق من وجود المتجر قبل الإدراج
+    //   3) Worker يضيف rate-limiting على مستوى الخادم
+    const SHV_WORKER_URL = 'https://ai-proxy-worker.hatarek708.workers.dev';
+
     window.saveOrderToFirestore = async (payload) => {
-      const storeOwnerId = (window._storeData && window._storeData.owner_id) || null;
       const storeId = (window._storeData && window._storeData.id) || window._getStoreId();
 
-      // تحويل الحقول من صيغة Firestore (camelCase) إلى Postgres (snake_case)
-      const orderRow = {
-        store_id: storeId,
-        store_owner_id: storeOwnerId,
-        name: payload.name || payload.customerName || '',
-        phone: payload.phone || '',
-        wilaya: payload.wilaya || payload.customer?.wilaya || null,
-        commune: payload.commune || payload.customer?.commune || null,
-        neighborhood: payload.neighborhood || payload.customer?.neighborhood || null,
-        delivery_type: payload.deliveryType || payload.delivery_type || null,
-        status: 'جديد',
-        note: payload.note || null,
-        // حقول jsonb مرنة — تحفظ كل تفاصيل الطلب كما هي
-        products: payload.products || [],
-        customer: payload.customer || {},
-        pricing: payload.pricing || {},
-        subtotal: payload.subtotal ?? payload.pricing?.subtotal ?? null,
-        shipping_cost: payload.shippingCost ?? payload.shipping_fee ?? payload.pricing?.shipping_fee ?? null,
-        total: payload.total ?? payload.pricing?.total ?? null,
-      };
+      // إرسال الطلب إلى Worker — لا نحتاج auth token لأن العميل anon
+      const res = await fetch(`${SHV_WORKER_URL}/order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          store_id: storeId,
+          name: payload.name || payload.customerName || '',
+          phone: payload.phone || '',
+          wilaya: payload.wilaya || payload.customer?.wilaya || null,
+          commune: payload.commune || payload.customer?.commune || null,
+          neighborhood: payload.neighborhood || payload.customer?.neighborhood || null,
+          delivery_type: payload.deliveryType || payload.delivery_type || null,
+          note: payload.note || null,
+          products: payload.products || [],
+          customer: payload.customer || {},
+          pricing: payload.pricing || {},
+          subtotal: payload.subtotal ?? payload.pricing?.subtotal ?? null,
+          shipping_cost: payload.shippingCost ?? payload.shipping_fee ?? payload.pricing?.shipping_fee ?? null,
+          total: payload.total ?? payload.pricing?.total ?? null,
+        }),
+      });
 
-      const { data, error } = await supabase.from('orders').insert(orderRow).select('id').single();
-      if (error) throw new Error('فشل حفظ الطلب: ' + error.message);
+      const data = await res.json();
+      if (!res.ok || !data.id) {
+        throw new Error(data.error || `فشل حفظ الطلب (${res.status})`);
+      }
       return data.id;
     };
 
