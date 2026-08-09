@@ -1214,7 +1214,7 @@
         <p>أزياء فاخرة بتصاميم فريدة، نوصلها لك أينما كنت في الجزائر.</p>
         <div class="search-wrap">
           <span class="search-icon"><i class="fas fa-search"></i></span>
-          <input class="search-input" id="search-input" type="text" placeholder="ابحث عن منتج..." oninput="handleSearch(this.value)">
+          <input class="search-input" id="search-input" type="text" placeholder="ابحث عن منتج..." oninput="handleSearch(this.value)" maxlength="60" autocomplete="off" inputmode="search">
           <button class="search-clear" id="search-clear" onclick="clearSearch()">×</button>
         </div>
         <button class="hero-cta" onclick="document.getElementById('products-grid').scrollIntoView({behavior:'smooth'})">
@@ -1264,8 +1264,8 @@
         <div class="form-group">
           <!-- Honeypot: مخفي عن البشر، يكشف البوتات -->
           <input type="text" id="shv_hp_qo" name="website_url" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" tabindex="-1" autocomplete="off">
-          <label class="form-label">الاسم الكامل *</label><input class="form-input" id="qo-name" type="text" placeholder="مثال: أحمد بن علي"></div>
-        <div class="form-group"><label class="form-label">رقم الهاتف *</label><input class="form-input" id="qo-phone" type="tel" placeholder="0XXXXXXXXX"></div>
+          <label class="form-label">الاسم الكامل *</label><input class="form-input" id="qo-name" type="text" placeholder="مثال: أحمد بن علي" maxlength="80" pattern="[\u0600-\u06FFa-zA-Z\s.'-]{2,80}" autocomplete="name" inputmode="text"></div>
+        <div class="form-group"><label class="form-label">رقم الهاتف *</label><input class="form-input" id="qo-phone" type="tel" placeholder="0XXXXXXXXX" maxlength="10" pattern="0[5-7][0-9]{8}" autocomplete="tel" inputmode="numeric"></div>
         <div class="form-group">
           <label class="form-label">الولاية *</label>
           <div class="select-wrapper"><select class="form-select" id="qo-wilaya" onchange="populateCommunes('qo-wilaya','qo-commune','qo-commune-group'); updateQOShipping()"><option value="">— اختر الولاية —</option></select></div>
@@ -1281,7 +1281,7 @@
             <label class="delivery-option" id="qo-opt-desk" onclick="selectQODelivery('desk')"><input type="radio" name="qo-delivery" value="desk"><div class="delivery-icon">📦</div><span class="delivery-label">مكتب البريد</span><span class="delivery-sub">Stop Desk</span></label>
           </div>
         </div>
-        <div class="form-group"><label class="form-label">العنوان الدقيق *</label><input class="form-input" id="qo-address" type="text" placeholder="مثال: حي النصر، شارع العقبة"></div>
+        <div class="form-group"><label class="form-label">العنوان الدقيق *</label><input class="form-input" id="qo-address" type="text" placeholder="مثال: حي النصر، شارع العقبة" maxlength="200" autocomplete="street-address" inputmode="text"></div>
         <div class="shipping-info" id="qo-shipping-info"></div>
       </div>
       <div class="qo-summary-bottom">
@@ -1311,8 +1311,8 @@
       <div class="form-group">
         <!-- Honeypot -->
         <input type="text" id="shv_hp_co" name="url" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" tabindex="-1" autocomplete="off">
-        <label class="form-label">الاسم الكامل *</label><input class="form-input" id="full-name" type="text" placeholder="مثال: أحمد بن علي"></div>
-      <div class="form-group"><label class="form-label">رقم الهاتف *</label><input class="form-input" id="phone" type="tel" placeholder="0XXXXXXXXX"></div>
+        <label class="form-label">الاسم الكامل *</label><input class="form-input" id="full-name" type="text" placeholder="مثال: أحمد بن علي" maxlength="80" pattern="[\u0600-\u06FFa-zA-Z\s.'-]{2,80}" autocomplete="name" inputmode="text"></div>
+      <div class="form-group"><label class="form-label">رقم الهاتف *</label><input class="form-input" id="phone" type="tel" placeholder="0XXXXXXXXX" maxlength="10" pattern="0[5-7][0-9]{8}" autocomplete="tel" inputmode="numeric"></div>
       <div class="form-group">
         <label class="form-label">الولاية *</label>
         <div class="select-wrapper"><select class="form-select" id="wilaya" onchange="populateCommunes('wilaya','commune','commune-group'); updateShipping()"><option value="">— اختر الولاية —</option></select></div>
@@ -1328,7 +1328,7 @@
           <label class="delivery-option" id="opt-desk" onclick="selectDelivery('desk')"><input type="radio" name="delivery" value="desk"><div class="delivery-icon">📦</div><span class="delivery-label">مكتب البريد</span><span class="delivery-sub">Stop Desk</span></label>
         </div>
       </div>
-      <div class="form-group"><label class="form-label">العنوان الدقيق *</label><input class="form-input" id="address" type="text" placeholder="مثال: حي النصر، شارع العقبة"></div>
+      <div class="form-group"><label class="form-label">العنوان الدقيق *</label><input class="form-input" id="address" type="text" placeholder="مثال: حي النصر، شارع العقبة" maxlength="200" autocomplete="street-address" inputmode="text"></div>
       <div class="shipping-info" id="shipping-info"></div>
     </div>
     <button class="submit-btn" onclick="submitOrder()">تأكيد الطلب ✓</button>
@@ -1972,7 +1972,8 @@
       showSuccessView(id,payload);
     }catch(e){
       console.error('[QO Error]',e);
-      showToast('❌ فشل إرسال الطلب، حاول مرة أخرى','error');
+      const _errMsg = (e && e.message) ? e.message : 'فشل إرسال الطلب';
+    showToast('❌ ' + _errMsg, 6000);
     }
   }
 
@@ -2038,7 +2039,8 @@
       resetStore(); showSuccessView(id,payload);
     }catch(e){
       console.error('[Order Error]',e);
-      showToast('❌ فشل إرسال الطلب، حاول مرة أخرى','error');
+      const _errMsg = (e && e.message) ? e.message : 'فشل إرسال الطلب';
+    showToast('❌ ' + _errMsg, 6000);
     }
   }
 

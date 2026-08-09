@@ -1777,7 +1777,7 @@ header {
       <p>أزياء فاخرة تُوصَّل إلى باب منزلك في جميع ولايات الجزائر.</p>
       <div class="search-wrap">
         <span class="search-icon"><i class="fas fa-search"></i></span>
-        <input class="search-input" id="search-input" type="text" placeholder="ابحث عن منتج..." oninput="handleSearch(this.value)">
+        <input class="search-input" id="search-input" type="text" placeholder="ابحث عن منتج..." oninput="handleSearch(this.value)" maxlength="60" autocomplete="off" inputmode="search">
         <button class="search-clear" id="search-clear" onclick="clearSearch()">×</button>
       </div>
       <button class="hero-cta" onclick="document.getElementById('products-grid').scrollIntoView({behavior:'smooth'})">
@@ -1841,13 +1841,13 @@ header {
       <div class="form-group">
         <label class="form-label">الاسم الكامل *</label>
         <input type="text" id="shv_hp_qo" name="website_url" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" tabindex="-1" autocomplete="off">
-              <input class="form-input" id="qo-name" type="text" placeholder="مثال: أحمد بن علي">
+              <input class="form-input" id="qo-name" type="text" placeholder="مثال: أحمد بن علي" maxlength="80" pattern="[\u0600-\u06FFa-zA-Z\s.'-]{2,80}" autocomplete="name" inputmode="text">
       </div>
 
       <!-- 2. رقم الهاتف -->
       <div class="form-group">
         <label class="form-label">رقم الهاتف *</label>
-        <input class="form-input" id="qo-phone" type="tel" placeholder="0XXXXXXXXX">
+        <input class="form-input" id="qo-phone" type="tel" placeholder="0XXXXXXXXX" maxlength="10" pattern="0[5-7][0-9]{8}" autocomplete="tel" inputmode="numeric">
       </div>
 
       <!-- 3. الولاية -->
@@ -1892,7 +1892,7 @@ header {
       <!-- 6. العنوان الدقيق -->
       <div class="form-group">
         <label class="form-label">العنوان الدقيق *</label>
-        <input class="form-input" id="qo-address" type="text" placeholder="مثال: حي النصر، شارع العقبة">
+        <input class="form-input" id="qo-address" type="text" placeholder="مثال: حي النصر، شارع العقبة" maxlength="200" autocomplete="street-address" inputmode="text">
       </div>
 
       <div class="shipping-info" id="qo-shipping-info"></div>
@@ -1941,11 +1941,11 @@ header {
     <div class="form-group">
       <label class="form-label">الاسم الكامل *</label>
       <input type="text" id="shv_hp_co" name="url" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" tabindex="-1" autocomplete="off">
-              <input class="form-input" id="full-name" type="text" placeholder="مثال: أحمد بن علي">
+              <input class="form-input" id="full-name" type="text" placeholder="مثال: أحمد بن علي" maxlength="80" pattern="[\u0600-\u06FFa-zA-Z\s.'-]{2,80}" autocomplete="name" inputmode="text">
     </div>
     <div class="form-group">
       <label class="form-label">رقم الهاتف *</label>
-      <input class="form-input" id="phone" type="tel" placeholder="0XXXXXXXXX">
+      <input class="form-input" id="phone" type="tel" placeholder="0XXXXXXXXX" maxlength="10" pattern="0[5-7][0-9]{8}" autocomplete="tel" inputmode="numeric">
     </div>
     <div class="form-group">
       <label class="form-label">الولاية *</label>
@@ -1982,7 +1982,7 @@ header {
     </div>
     <div class="form-group">
       <label class="form-label">العنوان الدقيق *</label>
-      <input class="form-input" id="address" type="text" placeholder="مثال: حي النصر، شارع العقبة">
+      <input class="form-input" id="address" type="text" placeholder="مثال: حي النصر، شارع العقبة" maxlength="200" autocomplete="street-address" inputmode="text">
     </div>
     <div class="shipping-info" id="shipping-info"></div>
   </div>
@@ -3463,7 +3463,8 @@ async function submitQuickOrder() {
     showSuccessView(orderId, savedPayload);
   } catch(e) {
     console.error('[QO Error]', e);
-    showToast('❌ فشل إرسال الطلب، حاول مرة أخرى');
+    const _errMsg = (e && e.message) ? e.message : 'فشل إرسال الطلب';
+    showToast('❌ ' + _errMsg, 6000);
     btn.disabled    = false;
     btn.textContent = 'تأكيد الطلب المباشر ✓';
   }
@@ -3697,7 +3698,8 @@ async function submitOrder() {
     showSuccessView(orderId, savedPayload);
   } catch(e) {
     console.error('[Order Error]', e);
-    showToast('❌ فشل إرسال الطلب، حاول مرة أخرى');
+    const _errMsg = (e && e.message) ? e.message : 'فشل إرسال الطلب';
+    showToast('❌ ' + _errMsg, 6000);
     btn.disabled    = false;
     btn.textContent = 'تأكيد الطلب ✓';
   }
