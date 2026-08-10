@@ -241,6 +241,9 @@
             images: p.images || [],
             sizes: p.sizes || [],
             colors: p.colors || [],
+            // 🆕 ميزة "جرّب المقاسين": تفعيل فردي + رسم خاص بالمنتج
+            tts_enabled: p.tts_enabled === true,
+            tts_fee: Number(p.tts_fee) || 0,
           }));
           try {
             const cacheKey = `shv_store_${storeId}`;
@@ -2531,7 +2534,10 @@ async function init() {
         images: p.images || [p.image || '', '', '', ''],
         sizes: p.sizes || [],
         colors: p.colors || [],
-        slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 60) || 'product-' + (p.id || i+1)
+        slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 60) || 'product-' + (p.id || i+1),
+        // 🆕 ميزة "جرّب المقاسين": تفعيل فردي + رسم خاص بالمنتج
+        tts_enabled: p.tts_enabled === true,
+        tts_fee: Number(p.tts_fee) || 0,
       }));
       storeLoaded = true;
     } else if (store && store.name) {
@@ -2610,7 +2616,10 @@ async function init() {
         images: p.images || [p.image || '', '', '', ''],
         sizes: p.sizes || [],
         colors: p.colors || [],
-        slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 60) || 'product-' + (p.id || i+1)
+        slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 60) || 'product-' + (p.id || i+1),
+        // 🆕 ميزة "جرّب المقاسين": تفعيل فردي + رسم خاص بالمنتج
+        tts_enabled: p.tts_enabled === true,
+        tts_fee: Number(p.tts_fee) || 0,
       }));
       renderCategories();
       renderProducts();
