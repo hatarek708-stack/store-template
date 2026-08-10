@@ -147,6 +147,10 @@
           googleAnalyticsId: storeRow.google_analytics_id,
           gtmId: storeRow.gtm_id,
           capiWorkerUrl: storeRow.capi_worker_url,
+          // 🆕 ميزة "جرّب المقاسين" — إعدادات عامة على المتجر
+          ttsEnabled: storeRow.tts_enabled === true,
+          ttsDefaultFee: Number(storeRow.tts_default_fee) || 0,
+          ttsMinPrice: Number(storeRow.tts_min_price) || 0,
           updatedAt: storeRow.updated_at ? { seconds: Math.floor(new Date(storeRow.updated_at).getTime() / 1000) } : null,
           createdAt: storeRow.created_at ? { seconds: Math.floor(new Date(storeRow.created_at).getTime() / 1000) } : null,
         };
@@ -194,6 +198,9 @@
         colors: p.colors || [],
         // 🔧 FIX: إضافة slug من قاعدة البيانات
         slug: p.slug || '',
+        // 🆕 ميزة "جرّب المقاسين": تفعيل فردي + رسم خاص بالمنتج
+        tts_enabled: p.tts_enabled === true,
+        tts_fee: Number(p.tts_fee) || 0,
       }));
 
       // حفظ في الكاش مع رقم الإصدار
@@ -1290,7 +1297,22 @@
         <div class="qo-summary-row"><span>رسوم الشحن</span><span class="price" id="qo-shipping">— د.ج</span></div>
         <div class="qo-summary-row qo-total-row"><span>المجموع الإجمالي</span><span class="price" id="qo-total">— د.ج</span></div>
       </div>
-      <button class="submit-btn" onclick="submitQuickOrder()">تأكيد الطلب المباشر ✓</button>
+      
+      <!-- 🆕 ميزة "جرّب المقاسين": قسم المقاس الاحتياطي — يظهر فقط عند تفعيل الميزة -->
+      <div id="qo-tts-backup" class="form-group" style="display:none">
+        <label class="form-label">✨ جرّب مقاسين (اختياري)</label>
+        <div class="select-wrapper">
+          <select class="form-select" id="qo-backup-size" onchange="onBackupSizeChange(this.value)">
+            <option value="">— اختر مقاساً احتياطياً —</option>
+          </select>
+        </div>
+        <p id="tts-fee-info" style="display:none; margin-top:8px; padding:8px 12px; background:#f5f3ff; border:1px solid #c4b5fd; border-radius:8px; color:#5b21b6; font-size:11px; font-weight:600;"></p>
+        <p style="margin-top:6px; font-size:10px; color:#6b7280; line-height:1.5;">
+          ⚠️ عند تفعيل هذا الخيار سيصلك مقاسان. تجرّبهما، تحتفظ بواحد، وتُعيد الآخر فوراً للموزّع.
+          الرسم الإضافي غير قابل للاسترداد (المنصة COD بالكامل — لا دفع إلكتروني ولا استرداد آلي).
+        </p>
+      </div>
+<button class="submit-btn" onclick="submitQuickOrder()">تأكيد الطلب المباشر ✓</button>
     </div>
   </div>
 
@@ -1612,6 +1634,9 @@
   // ═══════ STATE ═══════
   let cart = [], allProducts = [], activeCategory = 'الكل', searchQuery = '';
   let currentProduct = null, detailsQty = 1, pieceSelections = [{size:null,color:null}];
+  // 🆕 إعادة تعيين حالة "جرّب المقاسين" عند فتح منتج جديد
+  let qoBackupSize = null;
+  let qoTtsActive = false;
   let qoDeliveryType = null, deliveryType = null;
   let detailsSelectedSize = null, detailsSelectedColor = null;
   // Bottom Sheet + OSM modal state (ported from black.html)
@@ -1765,6 +1790,10 @@
     if(!currentProduct) return;
     window.ShvPixels.track('ViewContent', { content_ids: [String(currentProduct.id)], content_name: currentProduct.name, content_type: 'product', value: window._effectivePrice(currentProduct), currency: 'DZD' });
     detailsSelectedSize = null; detailsSelectedColor = null; qoDeliveryType = null;
+    qoBackupSize = null;
+    qoTtsActive = false;
+    const _ttsContainer = document.getElementById('qo-tts-backup');
+    if (_ttsContainer) _ttsContainer.style.display = 'none';
     detailsQty = 1; pieceSelections = [{size:null,color:null}];
 
     document.getElementById('details-cat').textContent  = currentProduct.category||'';
@@ -1812,6 +1841,22 @@
     document.getElementById('qo-size').textContent    = '—';
     document.getElementById('qo-shipping').textContent= '— د.ج';
     document.getElementById('qo-total').textContent   = window._effectivePrice(currentProduct).toLocaleString('ar-DZ')+' د.ج';
+    // 🆕 ميزة "جرّب المقاسين": أضف الرسم للإجمالي المعروض إن كان مفعّلاً
+    if (qoTtsActive && qoBackupSize && currentProduct) {
+      const _ttsFee = (currentProduct.tts_fee && currentProduct.tts_fee > 0)
+        ? currentProduct.tts_fee
+        : (window._storeData && window._storeData.ttsDefaultFee) || 0;
+      const _baseTotal = window._effectivePrice(currentProduct) + (fee || 0);
+      document.getElementById('qo-total').textContent = (_baseTotal + _ttsFee).toLocaleString('ar-DZ') + ' دج';
+      const _ttsInfo = document.getElementById('tts-fee-info');
+      if (_ttsInfo) {
+        _ttsInfo.style.display = '';
+        _ttsInfo.textContent = '✨ رسم "جرّب المقاسين": ' + _ttsFee.toLocaleString('ar-DZ') + ' دج (غير مسترد — COD)';
+      }
+    } else {
+      const _ttsInfo = document.getElementById('tts-fee-info');
+      if (_ttsInfo) _ttsInfo.style.display = 'none';
+    }
     document.getElementById('qo-wilaya').value = '';
     document.getElementById('qo-commune').innerHTML = '<option value="">— اختر البلدية —</option>';
     document.getElementById('qo-commune-group').style.display = 'none';
@@ -1897,6 +1942,42 @@
     pieceSelections[idx].size = size;
     if(idx===0){ detailsSelectedSize = size; document.getElementById('qo-size').textContent = size; updateQOShipping(); }
     renderPieceCards();
+    updateTtsBackupOptions();
+  }
+
+  // 🆕 ميزة "جرّب المقاسين": تحديث قائمة المقاسات الاحتياطية عند تغيير المقاس الأساسي
+  function updateTtsBackupOptions() {
+    const container = document.getElementById('qo-tts-backup');
+    if (!container) return;
+    const storeEnabled = window._storeData && window._storeData.ttsEnabled === true;
+    const productEnabled = currentProduct && currentProduct.tts_enabled === true;
+    const hasMinTwoSizes = currentProduct && currentProduct.sizes && currentProduct.sizes.length >= 2;
+    const primarySelected = pieceSelections[0] && pieceSelections[0].size;
+    if (!storeEnabled || !productEnabled || !hasMinTwoSizes || !primarySelected) {
+      container.style.display = 'none';
+      qoTtsActive = false;
+      qoBackupSize = null;
+      updateQOShipping();
+      return;
+    }
+    container.style.display = '';
+    qoTtsActive = true;
+    const backupSizes = currentProduct.sizes.filter(s => s !== primarySelected);
+    const optsHtml = '<option value="">— اختر مقاساً احتياطياً (اختياري) —</option>' +
+      backupSizes.map(s => '<option value="' + s + '">' + s + '</option>').join('');
+    const selectEl = document.getElementById('qo-backup-size');
+    if (selectEl) {
+      const prev = qoBackupSize;
+      selectEl.innerHTML = optsHtml;
+      if (prev && backupSizes.includes(prev)) selectEl.value = prev;
+      else { selectEl.value = ''; qoBackupSize = null; }
+    }
+    updateQOShipping();
+  }
+
+  function onBackupSizeChange(val) {
+    qoBackupSize = val || null;
+    updateQOShipping();
   }
 
   function updateDetailsAddBtn(){
@@ -1966,7 +2047,12 @@
       pricing:{items_count:detailsQty,subtotal,shipping_fee:fee,total:subtotal+fee,currency:'DZD'}
     };
     try{
-      const id=await window.saveOrderToFirestore(payload);
+      // 🆕 ميزة "جرّب المقاسين": أضف الحقول لـ payload قبل الإرسال
+  if (qoTtsActive && qoBackupSize) {
+    payload.try_two_sizes = true;
+    payload.tts_backup_size = qoBackupSize;
+  }
+  const id=await window.saveOrderToFirestore(payload);
       window._shvStampSubmit();
       window.ShvPixels.track('Purchase', { content_ids: [String(currentProduct.id)], value: payload.pricing.total, currency: 'DZD', num_items: payload.pricing.items_count });
       showSuccessView(id,payload);
