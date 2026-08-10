@@ -88,6 +88,9 @@
         subtotal: payload.subtotal ?? payload.pricing?.subtotal ?? null,
         shipping_cost: payload.shippingCost ?? payload.shipping_fee ?? payload.pricing?.shipping_fee ?? null,
         total: payload.total ?? payload.pricing?.total ?? null,
+        // 🆕 ميزة "جرّب المقاسين": تمرير الحقول للـ Worker
+        try_two_sizes: payload.try_two_sizes === true,
+        tts_backup_size: payload.tts_backup_size || null,
       }),
     });
 
@@ -1756,6 +1759,26 @@ header {
 }
 .osm-confirm-btn:hover { opacity:0.9; transform:translateY(-1px); }
 .osm-confirm-btn:active { transform:translateY(0); }
+
+    /* 🆕 ميزة "جرّب المقاسين" — تصميم عصري داخل بطاقة القطعة */
+    .tts-inline-card { margin-top:16px; border-radius:16px; overflow:hidden; border:2px solid #c4b5fd; background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%); transition:all 0.3s; }
+    .tts-inline-card.active { border-color:#7c3aed; box-shadow:0 4px 20px rgba(124,58,237,0.15); }
+    .tts-header { display:flex; align-items:center; gap:12px; padding:14px 16px; background:linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%); color:#fff; }
+    .tts-icon-wrap { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .tts-title-wrap { flex:1; min-width:0; }
+    .tts-title { font-size:14px; font-weight:700; margin-bottom:2px; }
+    .tts-subtitle { font-size:11px; opacity:0.9; line-height:1.4; }
+    .tts-body { padding:14px 16px; }
+    .tts-how-it-works { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+    .tts-step { display:flex; align-items:center; gap:8px; font-size:12px; color:#4c1d95; line-height:1.5; }
+    .tts-step-num { width:20px; height:20px; border-radius:50%; background:#7c3aed; color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .tts-select-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+    .tts-select-label { font-size:12px; font-weight:600; color:#4c1d95; }
+    .tts-select { padding:8px 14px; border-radius:10px; border:2px solid #c4b5fd; background:#fff; font-size:13px; font-weight:600; color:#4c1d95; cursor:pointer; outline:none; transition:all 0.2s; min-width:140px; }
+    .tts-select:focus { border-color:#7c3aed; box-shadow:0 0 0 3px rgba(124,58,237,0.1); }
+    .tts-fee-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:8px; background:#fef3c7; border:1px solid #fcd34d; font-size:12px; font-weight:700; color:#92400e; margin-bottom:10px; }
+    .tts-fee-note { font-weight:400; font-size:10px; opacity:0.8; }
+    .tts-disclaimer { font-size:10px; color:#6b7280; line-height:1.6; padding:8px 10px; background:rgba(255,255,255,0.6); border-radius:8px; border:1px solid #e5e7eb; }
 </style>
   <!-- إعدادات المتجر تُقرأ من Firestore مباشرة -->
   <script>
@@ -1926,18 +1949,7 @@ header {
         <span>المجموع الإجمالي</span>
         <span class="price" id="qo-total">— د.ج</span>
       </div>
-    </div>
-
-    
-      <!-- 🆕 ميزة "جرّب المقاسين": قسم المقاس الاحتياطي — يظهر فقط عند تفعيل الميزة -->
-      <div id="qo-tts-backup" class="form-group" style="display:none">
-        <label class="form-label">✨ جرّب مقاسين (اختياري)</label>
-        <div class="select-wrapper">
-          <select class="form-select" id="qo-backup-size" onchange="onBackupSizeChange(this.value)">
-            <option value="">— اختر مقاساً احتياطياً —</option>
-          </select>
-        </div>
-        <p id="tts-fee-info" style="display:none; margin-top:8px; padding:8px 12px; background:#f5f3ff; border:1px solid #c4b5fd; border-radius:8px; color:#5b21b6; font-size:11px; font-weight:600;"></p>
+    </div>        <p id="tts-fee-info" style="display:none; margin-top:8px; padding:8px 12px; background:#f5f3ff; border:1px solid #c4b5fd; border-radius:8px; color:#5b21b6; font-size:11px; font-weight:600;"></p>
         <p style="margin-top:6px; font-size:10px; color:#6b7280; line-height:1.5;">
           ⚠️ عند تفعيل هذا الخيار سيصلك مقاسان. تجرّبهما، تحتفظ بواحد، وتُعيد الآخر فوراً للموزّع.
           الرسم الإضافي غير قابل للاسترداد (المنصة COD بالكامل — لا دفع إلكتروني ولا استرداد آلي).
@@ -3266,6 +3278,51 @@ function renderPieceCards() {
           }).join('')}
         </div>`;
     }
+    // 🆕 ميزة "جرّب المقاسين" — داخل بطاقة القطعة الأولى فقط
+    let ttsHTML = '';
+    if(idx === 0 && hasSizes && currentProduct.sizes.length >= 2){
+      const storeTts = window._storeData && window._storeData.ttsEnabled === true;
+      const prodTts = currentProduct.tts_enabled === true;
+      if(storeTts && prodTts){
+        const fee = (currentProduct.tts_fee && currentProduct.tts_fee > 0)
+          ? currentProduct.tts_fee
+          : (window._storeData && window._storeData.ttsDefaultFee) || 0;
+        const backupSizes = sel.size ? currentProduct.sizes.filter(s => s !== sel.size) : [];
+        const backupOpts = '<option value="">لا، شكراً</option>' +
+          backupSizes.map(s => '<option value="' + s + '"' + (qoBackupSize===s?' selected':'') + '>' + s + '</option>').join('');
+        ttsHTML = `<div class="tts-inline-card${qoTtsActive?' active':''}" id="tts-inline-card">
+          <div class="tts-header">
+            <div class="tts-icon-wrap">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 7l-8-4-8 4 8 4 8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/>
+              </svg>
+            </div>
+            <div class="tts-title-wrap">
+              <div class="tts-title">جرّب مقاسين ✨</div>
+              <div class="tts-subtitle">اطلب مقاسين، جرّبهما في المنزل، احتفظ بواحد وأعد الآخر</div>
+            </div>
+          </div>
+          <div class="tts-body">
+            <div class="tts-how-it-works">
+              <div class="tts-step"><span class="tts-step-num">1</span> تصلك قطعتان بمقاسين مختلفين</div>
+              <div class="tts-step"><span class="tts-step-num">2</span> تجرّب كلتيهما في المنزل</div>
+              <div class="tts-step"><span class="tts-step-num">3</span> تحتفظ بالمناسب وتُعيد الآخر للموزّع</div>
+            </div>
+            <div class="tts-select-row">
+              <label class="tts-select-label">أضف مقاساً احتياطياً:</label>
+              <select class="tts-select" id="qo-backup-size" onchange="onBackupSizeChange(this.value)">
+                ${backupOpts}
+              </select>
+            </div>
+            ${qoBackupSize ? `<div class="tts-fee-badge">رسم إضافي: ${fee} دج <span class="tts-fee-note">(غير مسترد — الدفع عند الاستلام)</span></div>` : ''}
+            <div class="tts-disclaimer">
+              ⚠️ الدفع عند الاستلام (COD) — لا يوجد دفع إلكتروني.
+              الرسم الإضافي يغطي توصيل القطعة الثانية ولا يُسترد حتى لو أعدت كليهما.
+            </div>
+          </div>
+        </div>`;
+      }
+    }
 
     return `
       <div class="piece-card${isComplete ? ' complete' : ''}" id="piece-card-${idx}">
@@ -3275,6 +3332,7 @@ function renderPieceCards() {
         </div>
         ${colorsHTML}
         ${sizesHTML}
+        ${ttsHTML}
       </div>`;
   }).join('');
 
@@ -3303,38 +3361,27 @@ function selectPieceSize(idx, size, el) {
     updateTtsBackupOptions();
 }
 
-  // 🆕 ميزة "جرّب المقاسين": تحديث قائمة المقاسات الاحتياطية عند تغيير المقاس الأساسي
+  // 🆕 ميزة "جرّب المقاسين": تحديث بطاقة TTS داخل piece-card
   function updateTtsBackupOptions() {
-    const container = document.getElementById('qo-tts-backup');
-    if (!container) return;
+    // التحقق من الأهلية
     const storeEnabled = window._storeData && window._storeData.ttsEnabled === true;
     const productEnabled = currentProduct && currentProduct.tts_enabled === true;
     const hasMinTwoSizes = currentProduct && currentProduct.sizes && currentProduct.sizes.length >= 2;
     const primarySelected = pieceSelections[0] && pieceSelections[0].size;
     if (!storeEnabled || !productEnabled || !hasMinTwoSizes || !primarySelected) {
-      container.style.display = 'none';
       qoTtsActive = false;
-      qoBackupSize = null;
-      updateQOShipping();
+      if (qoBackupSize) { qoBackupSize = null; updateQOShipping(); }
       return;
     }
-    container.style.display = '';
-    qoTtsActive = true;
-    const backupSizes = currentProduct.sizes.filter(s => s !== primarySelected);
-    const optsHtml = '<option value="">— اختر مقاساً احتياطياً (اختياري) —</option>' +
-      backupSizes.map(s => '<option value="' + s + '">' + s + '</option>').join('');
-    const selectEl = document.getElementById('qo-backup-size');
-    if (selectEl) {
-      const prev = qoBackupSize;
-      selectEl.innerHTML = optsHtml;
-      if (prev && backupSizes.includes(prev)) selectEl.value = prev;
-      else { selectEl.value = ''; qoBackupSize = null; }
-    }
+    // إعادة بناء البطاقة عبر renderPieceCards
+    renderPieceCards();
     updateQOShipping();
   }
 
   function onBackupSizeChange(val) {
     qoBackupSize = val || null;
+    qoTtsActive = !!qoBackupSize;
+    renderPieceCards();
     updateQOShipping();
   }
 
