@@ -84,23 +84,26 @@
     .mobile-nav.active{left:0;}
     .mobile-nav-link{display:block;padding:0.875rem 0;font-size:0.875rem;font-weight:500;color:var(--text2);border-bottom:1px solid var(--border-light);}
 
-    /* HERO */
-    .hero{position:relative;min-height:100vh;display:flex;align-items:center;background:var(--hero-blue);overflow:hidden;}
-    .hero-inner{max-width:1400px;margin:0 auto;padding:0 1rem;width:100%;display:grid;grid-template-columns:1fr;gap:2rem;align-items:center;position:relative;z-index:2;}
-    @media(min-width:768px){.hero-inner{padding:0 2rem;grid-template-columns:1fr 1fr;gap:3rem;}}
-    .hero-content{color:var(--white);}
+    /* HERO — full-bleed image, 40/60 split, matching reference image */
+    .hero{position:relative;min-height:90vh;display:flex;align-items:stretch;background:var(--hero-blue);overflow:hidden;}
+    .hero-inner{max-width:100%;margin:0 auto;padding:0;width:100%;display:grid;grid-template-columns:1fr;position:relative;z-index:2;}
+    @media(min-width:768px){.hero-inner{grid-template-columns:2fr 3fr;}}
+    .hero-content{color:var(--white);display:flex;flex-direction:column;justify-content:center;padding:2rem 1rem;}
+    @media(min-width:768px){.hero-content{padding:2rem 4rem;}}
+    @media(min-width:1024px){.hero-content{padding:2rem 5rem;}}
     .hero-kicker{font-size:0.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.15em;color:rgba(255,255,255,0.8);margin-bottom:1rem;}
     .hero-title{font-family:var(--font-serif);font-size:2.5rem;font-weight:600;line-height:1.15;letter-spacing:-0.02em;margin-bottom:1.5rem;color:var(--white);}
     @media(min-width:768px){.hero-title{font-size:3.5rem;}}
-    .hero-btn{display:inline-block;background:var(--white);color:var(--text);padding:0.75rem 2rem;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;border-radius:4px;cursor:pointer;transition:var(--transition);}
+    .hero-btn{display:inline-block;background:var(--white);color:var(--text);padding:0.75rem 2rem;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;border-radius:4px;cursor:pointer;transition:var(--transition);width:fit-content;}
     .hero-btn:hover{background:var(--surface);transform:translateY(-2px);}
-    .hero-image-wrap{position:relative;display:flex;justify-content:center;align-items:center;}
-    .hero-image-wrap img{max-width:100%;max-height:80vh;object-fit:cover;}
+    .hero-image-wrap{position:relative;overflow:hidden;height:100%;min-height:400px;}
+    @media(min-width:768px){.hero-image-wrap{min-height:90vh;}}
+    .hero-image-wrap img{width:100%;height:100%;object-fit:cover;object-position:center top;}
     .hero-carousel-btn{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.9);display:flex;align-items:center;justify-content:center;z-index:3;cursor:pointer;transition:var(--transition);}
     .hero-carousel-btn:hover{background:var(--white);}
     .hero-carousel-btn svg{width:20px;height:20px;color:var(--text);}
-    .hero-prev{left:0;}
-    .hero-next{right:0;}
+    .hero-prev{left:1rem;}
+    .hero-next{right:1rem;}
 
     /* SECTION TITLE */
     .section-title{font-family:var(--font-serif);font-size:1.75rem;font-weight:500;text-align:center;color:var(--text);margin-bottom:2rem;}
@@ -437,7 +440,7 @@
             <button class="hero-btn" data-nav="categories">Discovery Now</button>
           </div>
           <div class="hero-image-wrap">
-            <img id="heroImg" src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&h=900&fit=crop" alt="Fashion models" style="border-radius:8px;">
+            <img id="heroImg" src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1200&h=1400&fit=crop" alt="Fashion models">
           </div>
         </div>
       </div>
