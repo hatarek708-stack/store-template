@@ -3144,7 +3144,7 @@
         function parseURL() {
             var params = new URLSearchParams(window.location.search);
             var page = params.get('page') || 'home';
-            var validPages = { home: true, product: true, categories: true, search: true, checkout: true };
+            var validPages = { home: true, product: true, categories: true, search: true, checkout: true, 'order-success': true };
             if (!validPages[page]) page = 'home';
             state.page = page;
             state.params = {};
@@ -3198,6 +3198,7 @@
             else if (state.page === 'categories') renderCategoriesPage();
             else if (state.page === 'search') renderSearchPage();
             else if (state.page === 'checkout') renderCheckoutPage();
+            else if (state.page === 'order-success') renderOrderSuccessPage();
 
             // Re-init icons after every render
             if (window.lucide) lucide.createIcons();
@@ -3593,7 +3594,7 @@
 
             // Submit button
             var submitBtn = document.getElementById('osSubmitBtn');
-            if (submitBtn) submitBtn.addEventListener('click', function () {
+            if (submitBtn) submitBtn.addEventListener('click', async function () {
                 saveFormFields();
                 var d = state.checkoutData;
                 if (!d.fullName || !d.phone || !d.wilaya || !d.baladiya || !d.address) {
@@ -3604,12 +3605,37 @@
                     showToast(t('toast_select_size'));
                     return;
                 }
-                // Add to cart and show success
-                addToCart(p, state.selectedSize, p.colors[state.selectedColor || 0].name, state.quantity);
-                showToast(t('of_order_success'));
-                // Reset form
-                state.checkoutData = { fullName: '', phone: '', wilaya: '', baladiya: '', address: '', notes: '' };
-                renderOrderSummary(p);
+                // Honeypot + rate limit + timestamp security
+                if (typeof window._shvCheckRateLimit === 'function') {
+                    var _rl = window._shvCheckRateLimit();
+                    if (_rl > 0) { showToast('⏳ ' + _rl + 's'); return; }
+                }
+                if (Date.now() - window._SHV_PAGE_LOAD_TS < 3000) { showToast('⚠️'); return; }
+                try {
+                    var qty = state.quantity || 1;
+                    var unitPrice = window._effectivePrice ? window._effectivePrice(p) : (p.discountPrice || p.price);
+                    var subtotal = unitPrice * qty;
+                    var shipping = subtotal >= 5000 ? 0 : 350;
+                    var total = subtotal + shipping;
+                    var payload = {
+                        customer: { name: d.fullName, phone: d.phone, wilaya: d.wilaya, commune: d.baladiya, address: d.address, delivery_type: 'COD' },
+                        items: [{ id: p.id, name: p.name, qty: qty, unit_price: unitPrice, line_total: subtotal, size: state.selectedSize, color: (p.colors[state.selectedColor||0]||{}).name || null }],
+                        pricing: { subtotal: subtotal, shipping_fee: shipping, total: total, currency: 'DZD' },
+                        note: d.notes || null,
+                    };
+                    submitBtn.disabled = true; submitBtn.textContent = '...';
+                    var orderId = await window.saveOrderToFirestore(payload);
+                    if (typeof window._shvStampSubmit === 'function') window._shvStampSubmit();
+                    if (typeof window.ShvPixels === 'object') window.ShvPixels.track('Purchase', { content_ids: [String(p.id)], value: total, currency: 'DZD', num_items: qty });
+                    state.checkoutData = { fullName: '', phone: '', wilaya: '', baladiya: '', address: '', notes: '' };
+                    // Show order success page
+                    state.orderSuccess = { orderId: orderId, items: payload.items, customer: payload.customer, total: total, shipping: shipping, subtotal: subtotal };
+                    navigate('order-success', {});
+                } catch (e) {
+                    showToast('❌ ' + (e.message || 'error'));
+                } finally {
+                    submitBtn.disabled = false; submitBtn.textContent = t('of_submit');
+                }
             });
         }
 
@@ -4062,28 +4088,85 @@
                     try {
                         var cart = getCart();
                         var subtotal = cart.reduce(function(s, i) { return s + (i.price * i.qty); }, 0);
-                        var total = subtotal + 350; // default shipping
+                        var shipping = subtotal >= 5000 ? 0 : 350;
+                        var total = subtotal + shipping;
                         var payload = {
                             customer: { name: cd.fullName, phone: cd.phone, wilaya: cd.wilaya, commune: cd.baladiya, address: cd.address, delivery_type: 'COD' },
                             items: cart.map(function(i) { return { id: i.id, name: i.name, qty: i.qty, unit_price: i.price, line_total: i.price * i.qty, size: i.size, color: i.color }; }),
-                            pricing: { subtotal: subtotal, shipping_fee: 350, total: total, currency: 'DZD' },
+                            pricing: { subtotal: subtotal, shipping_fee: shipping, total: total, currency: 'DZD' },
                         };
+                        placeBtn.disabled = true; placeBtn.textContent = '...';
+                        var orderId = null;
                         if (typeof window.saveOrderToFirestore === 'function') {
-                            var orderId = await window.saveOrderToFirestore(payload);
+                            orderId = await window.saveOrderToFirestore(payload);
                             if (typeof window._shvStampSubmit === 'function') window._shvStampSubmit();
-                            // Pixel: Purchase
                             if (typeof window.ShvPixels === 'object') window.ShvPixels.track('Purchase', { content_ids: cart.map(function(i) { return String(i.id); }), value: total, currency: 'DZD', num_items: cart.reduce(function(s,i){return s+i.qty;},0) });
                         }
+                        // Only clear cart and show success if order was actually placed
+                        setCart([]);
+                        state.orderSuccess = { orderId: orderId, items: payload.items, customer: payload.customer, total: total, shipping: shipping, subtotal: subtotal };
+                        navigate('order-success', {});
                     } catch (e) {
-                        console.warn('Order submission error:', e);
+                        showToast('❌ ' + (e.message || 'Order failed'));
+                        console.error('Order submission error:', e);
+                    } finally {
+                        placeBtn.disabled = false; placeBtn.textContent = t('checkout_place_order');
                     }
-                    // Clear cart and show success
-                    setCart([]);
-                    showToast(t('checkout_order_placed'));
-                    // Redirect to home after 2 seconds
-                    setTimeout(function () { navigate('home', {}); }, 2000);
                 });
             }
+        }
+
+        /* ===================== ORDER SUCCESS PAGE ===================== */
+        function renderOrderSuccessPage() {
+            var d = state.orderSuccess || {};
+            var esc = escapeHTML;
+            var orderId = (d.orderId || '—').toString().substring(0, 12).toUpperCase();
+            var itemsHTML = (d.items || []).map(function(item) {
+                var meta = [];
+                if (item.size) meta.push(esc(item.size));
+                if (item.color) meta.push(esc(item.color));
+                meta.push('× ' + item.qty);
+                return '<div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid var(--border-light);">' +
+                    '<div style="flex:1;"><div style="font-size:0.8125rem;font-weight:600;">' + esc(item.name) + '</div>' +
+                    '<div style="font-size:0.6875rem;color:var(--text3);">' + meta.join(' · ') + '</div></div>' +
+                    '<span style="font-size:0.8125rem;font-weight:700;">' + formatPrice(item.line_total) + '</span></div>';
+            }).join('');
+            var c = d.customer || {};
+            var html =
+                '<div style="max-width:600px;margin:0 auto;padding:7rem 1rem 3rem;text-align:center;">' +
+                    '<div style="width:72px;height:72px;margin:0 auto 1.5rem;border-radius:50%;background:var(--hero-blue,#000);display:flex;align-items:center;justify-content:center;">' +
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" style="width:36px;height:36px;"><polyline points="20 6 9 17 4 12"/></svg>' +
+                    '</div>' +
+                    '<h2 style="font-family:var(--font-serif,Inter);font-size:1.5rem;font-weight:600;margin-bottom:0.5rem;">Order Confirmed!</h2>' +
+                    '<div style="display:inline-block;padding:0.375rem 1rem;background:var(--surface,#f5f5f5);border-radius:20px;font-size:0.75rem;font-weight:700;color:var(--hero-blue,#2563eb);margin-bottom:1.5rem;">Order: ' + orderId + '</div>' +
+                    '<div style="background:var(--surface,#f5f5f5);border:1px solid var(--border-light,#eee);border-radius:8px;padding:1.25rem;margin-bottom:1rem;text-align:left;">' +
+                        itemsHTML +
+                        '<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border-light,#eee);font-size:0.8125rem;">' +
+                            '<div style="margin-bottom:0.25rem;"><strong>Name:</strong> ' + esc(c.name || '—') + '</div>' +
+                            '<div style="margin-bottom:0.25rem;"><strong>Phone:</strong> ' + esc(c.phone || '—') + '</div>' +
+                            '<div style="margin-bottom:0.25rem;"><strong>Address:</strong> ' + esc((c.wilaya||'') + ' ' + (c.commune||'') + ' ' + (c.address||'')) + '</div>' +
+                        '</div>' +
+                        '<div style="text-align:center;font-size:1.25rem;font-weight:700;margin-top:0.75rem;color:var(--hero-blue,#2563eb);">' + formatPrice(d.total || 0) + '</div>' +
+                    '</div>' +
+                    '<p style="font-size:0.8125rem;color:var(--text3,#888);margin-bottom:1.5rem;">We will call you within 24 hours to confirm your order.</p>' +
+                    '<button class="btn-continue" data-nav="home" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.75rem 1.5rem;background:var(--hero-blue,#000);color:#fff;font-size:0.8125rem;font-weight:600;border-radius:4px;cursor:pointer;">Continue Shopping</button>' +
+                '</div>';
+            var pageEl = document.getElementById('page-checkout') || document.querySelector('.page.active');
+            if (pageEl) {
+                pageEl.classList.remove('active');
+            }
+            // Create or reuse order-success page
+            var osPage = document.getElementById('page-order-success');
+            if (!osPage) {
+                osPage = document.createElement('section');
+                osPage.id = 'page-order-success';
+                osPage.className = 'page active';
+                document.querySelector('main').appendChild(osPage);
+            } else {
+                osPage.classList.add('active');
+            }
+            osPage.innerHTML = html;
+            document.title = 'Order Confirmed | NEON';
         }
 
         /* ===================== BIND PRODUCT CARD ACTIONS ===================== */
