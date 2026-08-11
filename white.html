@@ -86,7 +86,7 @@
     /* ===== HERO ===== */
     .hero{position:relative;min-height:90vh;display:flex;align-items:center;background:var(--hero-blue);overflow:hidden;}
     .hero-bg{position:absolute;inset:0;background-image:url('hero-cover.png');background-size:cover;background-position:right center;z-index:1;}
-    @media(max-width:767px){.hero-bg{background-position:center top;}}
+    @media(max-width:767px){.hero-bg{background-size:cover;background-position:center 20%;}}
     .hero-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(68,114,164,0.85) 0%,rgba(68,114,164,0.5) 35%,rgba(68,114,164,0.15) 60%,transparent 100%);z-index:2;}
     @media(max-width:767px){.hero-overlay{background:linear-gradient(180deg,rgba(68,114,164,0.7) 0%,rgba(68,114,164,0.3) 50%,rgba(68,114,164,0.6) 100%);}}
     .hero-inner{position:relative;z-index:3;max-width:1400px;margin:0 auto;padding:0 1rem;width:100%;}
@@ -491,9 +491,6 @@
         <button class="header-icon" id="cartBtn" aria-label="Cart">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
           <span class="cart-count" id="cartCount">0</span>
-        </button>
-        <button class="header-icon mobile-menu-btn" id="mobileMenuBtn2">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
       </div>
     </div>
@@ -1381,7 +1378,6 @@
 
       // Mobile nav
       document.getElementById('mobileMenuBtn').addEventListener('click', function() { document.getElementById('mobileNav').classList.add('active'); document.getElementById('mobileNavOverlay').classList.add('active'); document.body.style.overflow = 'hidden'; });
-      document.getElementById('mobileMenuBtn2').addEventListener('click', function() { document.getElementById('mobileNav').classList.add('active'); document.getElementById('mobileNavOverlay').classList.add('active'); document.body.style.overflow = 'hidden'; });
       document.getElementById('mobileNavClose').addEventListener('click', function() { document.getElementById('mobileNav').classList.remove('active'); document.getElementById('mobileNavOverlay').classList.remove('active'); document.body.style.overflow = ''; });
       document.getElementById('mobileNavOverlay').addEventListener('click', function() { document.getElementById('mobileNav').classList.remove('active'); document.getElementById('mobileNavOverlay').classList.remove('active'); document.body.style.overflow = ''; });
 
