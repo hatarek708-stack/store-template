@@ -437,6 +437,570 @@
 
     .hp-field{position:absolute;left:-9999px;opacity:0;height:0;width:0;overflow:hidden;}
 
+    /* ===== DIRECT ORDER CARD (Zephyr design — Playfair serif + blue accent) ===== */
+    .direct-order-wrap {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-light);
+    }
+    .direct-order-card {
+        background: var(--white);
+        border: 1px solid var(--border-light);
+        border-radius: 6px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 16px rgba(68, 114, 164, 0.06);
+        position: relative;
+        overflow: hidden;
+    }
+    @media(max-width:639px){ .direct-order-card { padding: 1.125rem; border-radius: 4px; } }
+    .direct-order-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--hero-blue) 0%, #6B9BD1 100%);
+    }
+    .direct-order-header {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 0.75rem; flex-wrap: wrap;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-light);
+    }
+    .direct-order-header-left {
+        display: flex; align-items: center; gap: 0.75rem;
+    }
+    .direct-order-icon-circle {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: var(--hero-blue);
+        color: var(--white);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .direct-order-icon-circle svg { width: 20px; height: 20px; }
+    .direct-order-title {
+        font-family: var(--font-serif);
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+    }
+    .direct-order-subtitle {
+        font-size: 0.6875rem;
+        font-weight: 500;
+        color: var(--text3);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-top: 0.125rem;
+    }
+    .direct-order-badge {
+        display: inline-flex; align-items: center; gap: 0.375rem;
+        padding: 0.3125rem 0.75rem;
+        background: var(--surface);
+        border-radius: 2px;
+        font-size: 0.625rem;
+        font-weight: 700;
+        color: var(--hero-blue);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .direct-order-badge svg { width: 12px; height: 12px; }
+
+    .direct-order-product {
+        display: flex; gap: 0.875rem;
+        padding: 0.875rem;
+        background: var(--surface);
+        border-radius: 4px;
+        margin-bottom: 1.25rem;
+        border-left: 3px solid var(--hero-blue);
+    }
+    .direct-order-product-img {
+        width: 64px; height: 80px;
+        border-radius: 2px; overflow: hidden;
+        background: var(--white); flex-shrink: 0;
+    }
+    .direct-order-product-img img { width: 100%; height: 100%; object-fit: cover; }
+    .direct-order-product-info { flex: 1; min-width: 0; }
+    .direct-order-product-name {
+        font-family: var(--font-serif);
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1.3;
+        margin-bottom: 0.25rem;
+    }
+    .direct-order-product-meta {
+        font-size: 0.6875rem;
+        color: var(--text3);
+        margin-bottom: 0.375rem;
+    }
+    .direct-order-product-meta strong { color: var(--text2); font-weight: 600; }
+    .direct-order-qty-control {
+        display: inline-flex; align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        overflow: hidden;
+        background: var(--white);
+    }
+    .direct-order-qty-control button {
+        width: 28px; height: 28px;
+        display: flex; align-items: center; justify-content: center;
+        color: var(--text2);
+        background: var(--white);
+    }
+    .direct-order-qty-control button:hover { background: var(--surface); color: var(--text); }
+    .direct-order-qty-control button svg { width: 12px; height: 12px; }
+    .direct-order-qty-control span {
+        min-width: 32px; height: 28px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem; font-weight: 600; color: var(--text);
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+    }
+    .direct-order-product-price {
+        display: flex; flex-direction: column;
+        align-items: flex-end; gap: 0.125rem;
+        flex-shrink: 0;
+    }
+    .direct-order-product-price .current {
+        font-size: 1rem; font-weight: 700;
+        color: var(--hero-blue);
+        direction: ltr;
+    }
+    .direct-order-product-price .unit {
+        font-size: 0.625rem; color: var(--text4);
+    }
+
+    .direct-order-section {
+        margin-bottom: 1.25rem;
+    }
+    .direct-order-section:last-of-type { margin-bottom: 0; }
+    .direct-order-section-title {
+        display: flex; align-items: center; gap: 0.5rem;
+        margin-bottom: 0.875rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text);
+        font-family: var(--font-serif);
+    }
+    .direct-order-section-title svg {
+        width: 16px; height: 16px;
+        color: var(--hero-blue);
+    }
+    .direct-order-field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-bottom: 0.625rem;
+    }
+    .direct-order-field-row.single { grid-template-columns: 1fr; }
+    @media (max-width: 480px) { .direct-order-field-row { grid-template-columns: 1fr; } }
+    .direct-order-field label {
+        display: block;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        color: var(--text2);
+        margin-bottom: 0.3125rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .direct-order-field label .req { color: var(--red); margin-left: 2px; }
+    .direct-order-field input,
+    .direct-order-field select,
+    .direct-order-field textarea {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        border: 1px solid var(--border);
+        font-size: 0.8125rem;
+        outline: none;
+        transition: var(--transition);
+        border-radius: 2px;
+        background: var(--white);
+        font-family: inherit;
+        color: var(--text);
+    }
+    .direct-order-field input:focus,
+    .direct-order-field select:focus,
+    .direct-order-field textarea:focus {
+        border-color: var(--hero-blue);
+        box-shadow: 0 0 0 2px rgba(68, 114, 164, 0.1);
+    }
+    .direct-order-field textarea {
+        min-height: 70px;
+        resize: vertical;
+    }
+    .direct-order-cod {
+        display: flex; align-items: center; gap: 0.75rem;
+        padding: 0.875rem 1rem;
+        background: var(--surface);
+        border-left: 3px solid var(--hero-blue);
+        border-radius: 2px;
+    }
+    .direct-order-cod svg {
+        width: 28px; height: 28px;
+        color: var(--hero-blue);
+        flex-shrink: 0;
+    }
+    .direct-order-cod-title {
+        font-size: 0.8125rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.125rem;
+    }
+    .direct-order-cod-sub {
+        font-size: 0.6875rem;
+        color: var(--text3);
+    }
+    .direct-order-totals {
+        padding-top: 1rem;
+        margin-top: 0.5rem;
+        border-top: 1px solid var(--border-light);
+    }
+    .direct-order-totals-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0.375rem 0;
+        font-size: 0.8125rem;
+    }
+    .direct-order-totals-row .label { color: var(--text2); }
+    .direct-order-totals-row .value { color: var(--text); font-weight: 600; direction: ltr; }
+    .direct-order-totals-row.grand {
+        margin-top: 0.5rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--border-light);
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    .direct-order-totals-row.grand .label { color: var(--text); font-weight: 700; font-family: var(--font-serif); }
+    .direct-order-totals-row.grand .value { color: var(--hero-blue); font-size: 1.125rem; }
+    .btn-direct-order {
+        display: flex; align-items: center; justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        background: var(--hero-blue);
+        color: var(--white);
+        padding: 1rem 1.5rem;
+        border-radius: 3px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-top: 1.25rem;
+        transition: var(--transition);
+        cursor: pointer;
+    }
+    .btn-direct-order:hover {
+        background: var(--hero-blue-dark, #3a6489);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(68, 114, 164, 0.3);
+    }
+    .btn-direct-order:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    .btn-direct-order svg { width: 16px; height: 16px; }
+    .direct-order-terms {
+        font-size: 0.6875rem;
+        color: var(--text4);
+        text-align: center;
+        margin-top: 0.75rem;
+        line-height: 1.5;
+    }
+    .direct-order-trust {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        background: var(--surface);
+        border-radius: 2px;
+        display: flex; align-items: center; gap: 0.625rem;
+    }
+    .direct-order-trust svg {
+        width: 22px; height: 22px;
+        color: var(--hero-blue);
+        flex-shrink: 0;
+    }
+    .direct-order-trust-text {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text);
+    }
+    .direct-order-trust-sub {
+        font-size: 0.6875rem;
+        color: var(--text3);
+        margin-top: 0.125rem;
+    }
+
+    /* ===== IMPROVED SUCCESS PAGE (Zephyr design) ===== */
+    .success-page-wrap {
+        padding: 6rem 0 4rem;
+        background: var(--surface);
+        min-height: 60vh;
+    }
+    @media(max-width:639px){ .success-page-wrap { padding: 5rem 0 3rem; } }
+    .success-container {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+    .success-hero-block {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .success-check-large {
+        width: 80px; height: 80px;
+        margin: 0 auto 1.25rem;
+        border-radius: 50%;
+        background: var(--hero-blue);
+        display: flex; align-items: center; justify-content: center;
+        animation: zephyr-pop 0.6s cubic-bezier(0.5, 1.6, 0.4, 1) both;
+        box-shadow: 0 8px 32px rgba(68, 114, 164, 0.3);
+    }
+    @keyframes zephyr-pop {
+        0% { transform: scale(0); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .success-check-large svg {
+        width: 40px; height: 40px;
+        color: var(--white);
+    }
+    .success-title-large {
+        font-family: var(--font-serif);
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.01em;
+    }
+    @media(max-width:639px){ .success-title-large { font-size: 1.5rem; } }
+    .success-desc {
+        font-size: 0.9375rem;
+        color: var(--text2);
+        max-width: 32rem;
+        margin: 0 auto;
+    }
+    .success-order-id-block {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        margin-top: 1.25rem;
+        padding: 0.5rem 1rem;
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text);
+    }
+    .success-order-id-block svg { width: 14px; height: 14px; color: var(--hero-blue); }
+    .success-status-pill {
+        display: inline-flex; align-items: center; gap: 0.375rem;
+        margin-inline-start: 0.5rem;
+        padding: 0.3125rem 0.75rem;
+        background: #ecfdf5;
+        color: #047857;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        border-radius: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .success-status-pill::before {
+        content: '';
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: #047857;
+        animation: zephyr-blink 1.5s ease-in-out infinite;
+    }
+    @keyframes zephyr-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .success-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+    @media(min-width:768px){
+        .success-grid { grid-template-columns: 1.4fr 1fr; gap: 1.5rem; align-items: start; }
+    }
+    .success-block-card {
+        background: var(--white);
+        border: 1px solid var(--border-light);
+        border-radius: 4px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    }
+    @media(max-width:639px){ .success-block-card { padding: 1.125rem; } }
+    .success-block-title {
+        display: flex; align-items: center; gap: 0.5rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.875rem;
+        border-bottom: 1px solid var(--border-light);
+        font-family: var(--font-serif);
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+    }
+    .success-block-title svg { width: 18px; height: 18px; color: var(--hero-blue); }
+
+    .success-product-card {
+        display: flex; gap: 0.875rem;
+        padding: 0.875rem;
+        background: var(--surface);
+        border: 1px solid var(--border-light);
+        border-left: 3px solid var(--hero-blue);
+        border-radius: 2px;
+        margin-bottom: 0.625rem;
+    }
+    .success-product-card-img {
+        width: 64px; height: 80px;
+        border-radius: 2px; overflow: hidden;
+        background: var(--white); flex-shrink: 0;
+    }
+    .success-product-card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .success-product-card-info { flex: 1; min-width: 0; }
+    .success-product-card-name {
+        font-family: var(--font-serif);
+        font-size: 0.9375rem; font-weight: 600;
+        color: var(--text); line-height: 1.3;
+        margin-bottom: 0.375rem;
+    }
+    .success-product-card-meta {
+        display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem;
+        font-size: 0.6875rem; color: var(--text3);
+        margin-bottom: 0.375rem;
+    }
+    .success-product-card-meta .pill {
+        display: inline-block;
+        padding: 0.125rem 0.5rem;
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        font-weight: 600;
+        color: var(--text2);
+    }
+    .success-product-card-price {
+        display: flex; flex-direction: column;
+        align-items: flex-end; gap: 0.125rem;
+        flex-shrink: 0;
+    }
+    .success-product-card-price .current {
+        font-size: 1rem; font-weight: 700;
+        color: var(--hero-blue);
+        direction: ltr;
+    }
+    .success-product-card-price .unit {
+        font-size: 0.625rem; color: var(--text4);
+    }
+    .success-info-row {
+        display: flex; align-items: flex-start; gap: 0.75rem;
+        padding: 0.625rem 0;
+        border-bottom: 1px dashed var(--border-light);
+    }
+    .success-info-row:last-child { border-bottom: none; }
+    .success-info-row svg {
+        width: 18px; height: 18px;
+        color: var(--hero-blue);
+        flex-shrink: 0;
+        margin-top: 0.125rem;
+    }
+    .success-info-row .lbl {
+        font-size: 0.6875rem; font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text4);
+        margin-bottom: 0.125rem;
+    }
+    .success-info-row .val {
+        font-size: 0.875rem;
+        color: var(--text);
+        font-weight: 500;
+        word-break: break-word;
+    }
+    .success-totals {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-light);
+    }
+    .success-totals-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0.375rem 0;
+        font-size: 0.8125rem;
+    }
+    .success-totals-row .label { color: var(--text2); }
+    .success-totals-row .value { color: var(--text); font-weight: 600; direction: ltr; }
+    .success-totals-row.grand {
+        margin-top: 0.5rem; padding-top: 0.75rem;
+        border-top: 1px solid var(--border-light);
+        font-size: 1rem; font-weight: 700;
+    }
+    .success-totals-row.grand .label { color: var(--text); font-weight: 700; font-family: var(--font-serif); }
+    .success-totals-row.grand .value { color: var(--hero-blue); font-size: 1.125rem; }
+
+    .success-timeline { display: flex; flex-direction: column; gap: 0.875rem; }
+    .success-tl-step { display: flex; align-items: flex-start; gap: 0.75rem; }
+    .success-tl-dot {
+        width: 28px; height: 28px; border-radius: 50%;
+        background: var(--surface);
+        color: var(--text4);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        border: 1.5px solid var(--border);
+        transition: var(--transition);
+    }
+    .success-tl-dot svg { width: 14px; height: 14px; }
+    .success-tl-step.active .success-tl-dot {
+        background: var(--hero-blue);
+        color: var(--white);
+        border-color: var(--hero-blue);
+    }
+    .success-tl-step .success-tl-title {
+        font-family: var(--font-serif);
+        font-size: 0.875rem; font-weight: 600;
+        color: var(--text);
+    }
+    .success-tl-step:not(.active) .success-tl-title { color: var(--text3); }
+    .success-tl-step .success-tl-desc {
+        font-size: 0.75rem;
+        color: var(--text3);
+        margin-top: 0.125rem;
+    }
+    .success-actions {
+        display: flex; gap: 0.75rem;
+        justify-content: center;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+    .success-action-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.75rem;
+        border-radius: 2px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        transition: var(--transition);
+        cursor: pointer;
+    }
+    .success-action-btn svg { width: 16px; height: 16px; }
+    .success-action-btn-primary {
+        background: var(--hero-blue);
+        color: var(--white);
+    }
+    .success-action-btn-primary:hover {
+        background: var(--hero-blue-dark, #3a6489);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(68, 114, 164, 0.3);
+    }
+    .success-action-btn-ghost {
+        background: var(--white);
+        color: var(--text);
+        border: 1px solid var(--border);
+    }
+    .success-action-btn-ghost:hover {
+        border-color: var(--hero-blue);
+        color: var(--hero-blue);
+    }
+
     /* ===== COMPREHENSIVE RESPONSIVE ===== */
     /* Mobile (320-639px) */
     @media(max-width:639px){
@@ -778,12 +1342,10 @@
 
     <!-- SUCCESS PAGE -->
     <section class="page" id="page-success">
-      <div class="container" style="max-width:600px;padding:7rem 1rem 3rem;text-align:center;">
-        <div class="success-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-        <h2 class="success-title">Order Confirmed!</h2>
-        <div class="success-order-id">Order: <span id="successOrderId">—</span></div>
-        <div class="success-card" id="successCard"></div>
-        <button class="btn-continue" data-nav="home">Continue Shopping</button>
+      <div class="success-page-wrap">
+        <div class="success-container" id="successContainer">
+          <!-- Filled by JS -->
+        </div>
       </div>
     </section>
 
@@ -1221,6 +1783,9 @@
             '<div class="trust-item"><div class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg></div><div><div class="trust-title">30-Day Returns</div><div class="trust-desc">Easy returns</div></div></div>' +
             '<div class="trust-item"><div class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div><div><div class="trust-title">Secure Payment</div><div class="trust-desc">100% secure checkout</div></div></div>' +
           '</div>' +
+          '<div class="direct-order-wrap">' +
+            '<div class="direct-order-card" id="directOrderCard"></div>' +
+          '</div>' +
         '</div>';
 
       // Tabs content
@@ -1261,6 +1826,232 @@
       var firstPanel = document.getElementById('panel-details');
       if (firstTab) firstTab.classList.add('active');
       if (firstPanel) firstPanel.classList.add('active');
+
+      // Render the direct order card (Zephyr design)
+      renderDirectOrderCard(p);
+    }
+
+    /* ===== DIRECT ORDER CARD (Zephyr design) ===== */
+    function renderDirectOrderCard(p) {
+      var card = document.getElementById('directOrderCard');
+      if (!card || !p) return;
+      var esc = escapeHTML;
+      var eff = effectivePrice(p);
+      var hasDiscount = p.discountPrice > 0 && p.discountPrice < p.price;
+      var qty = state.quantity || 1;
+      var subtotal = eff * qty;
+      var shipping = subtotal >= 5000 ? 0 : 350;
+      var total = subtotal + shipping;
+      var d = state.checkoutData || {};
+      var colorName = (p.colors && p.colors[state.selectedColor]) ? (p.colors[state.selectedColor].name || p.colors[state.selectedColor]) : null;
+      var sizeName = state.selectedSize || (p.sizes && p.sizes[0]) || null;
+      var firstImg = p.image || (p.images && p.images[0]) || '';
+
+      // Populate wilayas select
+      var wilayaOptions = '<option value="">Select wilaya</option>' +
+        ALGERIAN_WILAYAS.map(function(w) {
+          return '<option value="' + esc(w) + '"' + (d.wilaya === w ? ' selected' : '') + '>' + esc(w) + '</option>';
+        }).join('');
+
+      card.innerHTML =
+        '<div class="direct-order-header">' +
+          '<div class="direct-order-header-left">' +
+            '<div class="direct-order-icon-circle">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>' +
+            '</div>' +
+            '<div>' +
+              '<div class="direct-order-title">Direct Order</div>' +
+              '<div class="direct-order-subtitle">Quick Checkout</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="direct-order-badge">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>' +
+            '<span>Fast & Easy</span>' +
+          '</div>' +
+        '</div>' +
+
+        /* Product summary */
+        '<div class="direct-order-product">' +
+          '<div class="direct-order-product-img">' + (firstImg ? '<img src="' + esc(firstImg) + '" alt="' + esc(p.name) + '">' : '') + '</div>' +
+          '<div class="direct-order-product-info">' +
+            '<div class="direct-order-product-name">' + esc(p.name) + '</div>' +
+            '<div class="direct-order-product-meta">' +
+              (colorName ? '<strong>Color:</strong> ' + esc(colorName) : '') +
+              (sizeName ? ' &nbsp;<strong>Size:</strong> ' + esc(sizeName) : '') +
+            '</div>' +
+            '<div class="direct-order-qty-control" id="directOrderQtyControl">' +
+              '<button type="button" id="doQtyMinus" aria-label="Decrease"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>' +
+              '<span id="doQtyVal">' + qty + '</span>' +
+              '<button type="button" id="doQtyPlus" aria-label="Increase"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="direct-order-product-price">' +
+            '<span class="current">' + formatPrice(eff) + '</span>' +
+            '<span class="unit">' + (hasDiscount ? '<s>' + formatPrice(p.price) + '</s>' : 'per unit') + '</span>' +
+          '</div>' +
+        '</div>' +
+
+        /* Personal Information */
+        '<div class="direct-order-section">' +
+          '<div class="direct-order-section-title">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+            '<span>Personal Information</span>' +
+          '</div>' +
+          '<div class="direct-order-field-row">' +
+            '<div class="direct-order-field"><label>Full Name <span class="req">*</span></label><input type="text" id="doName" placeholder="Your full name" value="' + esc(d.fullName || '') + '"></div>' +
+            '<div class="direct-order-field"><label>Phone <span class="req">*</span></label><input type="tel" id="doPhone" placeholder="0555123456" value="' + esc(d.phone || '') + '"></div>' +
+          '</div>' +
+        '</div>' +
+
+        /* Delivery Address */
+        '<div class="direct-order-section">' +
+          '<div class="direct-order-section-title">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>' +
+            '<span>Delivery Address</span>' +
+          '</div>' +
+          '<div class="direct-order-field-row">' +
+            '<div class="direct-order-field"><label>Wilaya <span class="req">*</span></label><select id="doWilaya">' + wilayaOptions + '</select></div>' +
+            '<div class="direct-order-field"><label>Commune <span class="req">*</span></label><input type="text" id="doBaladiya" placeholder="Your commune" value="' + esc(d.baladiya || '') + '"></div>' +
+          '</div>' +
+          '<div class="direct-order-field-row single">' +
+            '<div class="direct-order-field"><label>Detailed Address <span class="req">*</span></label><textarea id="doAddress" placeholder="Neighborhood, street, building number...">' + esc(d.address || '') + '</textarea></div>' +
+          '</div>' +
+        '</div>' +
+
+        /* Payment Method */
+        '<div class="direct-order-section">' +
+          '<div class="direct-order-section-title">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>' +
+            '<span>Payment Method</span>' +
+          '</div>' +
+          '<div class="direct-order-cod">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>' +
+            '<div>' +
+              '<div class="direct-order-cod-title">Cash on Delivery</div>' +
+              '<div class="direct-order-cod-sub">Pay cash when you receive your order</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+        /* Honeypot field (security) */
+        '<div class="hp-field"><input type="text" id="shv_hp_do" name="url" tabindex="-1" autocomplete="off"></div>' +
+
+        /* Order totals */
+        '<div class="direct-order-totals">' +
+          '<div class="direct-order-totals-row"><span class="label">Subtotal</span><span class="value">' + formatPrice(subtotal) + '</span></div>' +
+          '<div class="direct-order-totals-row"><span class="label">Shipping</span><span class="value">' + (shipping === 0 ? 'FREE' : formatPrice(shipping)) + '</span></div>' +
+          (hasDiscount ? '<div class="direct-order-totals-row"><span class="label">Discount</span><span class="value" style="color:#15803d;">-' + formatPrice((p.price - eff) * qty) + '</span></div>' : '') +
+          '<div class="direct-order-totals-row grand"><span class="label">Total</span><span class="value">' + formatPrice(total) + '</span></div>' +
+        '</div>' +
+
+        /* Submit button */
+        '<button class="btn-direct-order" id="doSubmitBtn" type="button">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' +
+          '<span>Confirm Order</span>' +
+        '</button>' +
+        '<p class="direct-order-terms">By confirming your order, you agree to our Terms & Conditions and Privacy Policy.</p>' +
+
+        /* Trust badge */
+        '<div class="direct-order-trust">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>' +
+          '<div>' +
+            '<div class="direct-order-trust-text">100% Secure Guarantee</div>' +
+            '<div class="direct-order-trust-sub">Safe delivery guaranteed</div>' +
+          '</div>' +
+        '</div>';
+
+      // Bind qty controls
+      var doMinus = document.getElementById('doQtyMinus');
+      var doPlus = document.getElementById('doQtyPlus');
+      if (doMinus) doMinus.addEventListener('click', function() {
+        if (state.quantity > 1) {
+          state.quantity--;
+          var mainVal = document.getElementById('qtyVal');
+          if (mainVal) mainVal.textContent = state.quantity;
+          saveDirectOrderFields();
+          renderDirectOrderCard(p);
+        }
+      });
+      if (doPlus) doPlus.addEventListener('click', function() {
+        if (state.quantity < 10) {
+          state.quantity++;
+          var mainVal = document.getElementById('qtyVal');
+          if (mainVal) mainVal.textContent = state.quantity;
+          saveDirectOrderFields();
+          renderDirectOrderCard(p);
+        }
+      });
+
+      // Bind submit button
+      var submitBtn = document.getElementById('doSubmitBtn');
+      if (submitBtn) submitBtn.addEventListener('click', async function() {
+        // Honeypot
+        var hp = document.getElementById('shv_hp_do');
+        if (hp && hp.value) { showToast('Fake order detected'); return; }
+        // Rate limit + timestamp
+        if (typeof window._shvCheckRateLimit === 'function') {
+          var rl = window._shvCheckRateLimit(); if (rl > 0) { showToast('Wait ' + rl + 's before ordering again'); return; }
+        }
+        if (typeof window._SHV_PAGE_LOAD_TS !== 'undefined' && Date.now() - window._SHV_PAGE_LOAD_TS < 3000) {
+          showToast('Please wait a moment before submitting'); return;
+        }
+        saveDirectOrderFields();
+        var d = state.checkoutData;
+        if (!d.fullName || !d.phone || !d.wilaya || !d.baladiya || !d.address) {
+          showToast('Please fill all required fields'); return;
+        }
+        if (!/^0[5-7]\d{8}$/.test(d.phone)) { showToast('Invalid phone number'); return; }
+        if (!state.selectedSize) {
+          // Auto-select first size if available
+          if (p.sizes && p.sizes.length) {
+            state.selectedSize = p.sizes[0];
+          } else {
+            showToast('Please select a size'); return;
+          }
+        }
+        try {
+          var qty = state.quantity || 1;
+          var unitPrice = effectivePrice(p);
+          var subtotal = unitPrice * qty;
+          var shipping = subtotal >= 5000 ? 0 : 350;
+          var total = subtotal + shipping;
+          var payload = {
+            customer: { name: d.fullName, phone: d.phone, wilaya: d.wilaya, commune: d.baladiya, address: d.address, delivery_type: 'COD' },
+            items: [{ id: p.id, name: p.name, qty: qty, unit_price: unitPrice, line_total: subtotal, size: state.selectedSize, color: colorName, image: firstImg }],
+            pricing: { subtotal: subtotal, shipping_fee: shipping, total: total, currency: 'DZD' },
+          };
+          submitBtn.disabled = true; submitBtn.innerHTML = '<span>Placing Order...</span>';
+          var orderId = 'ORDER-' + Date.now().toString(36).toUpperCase();
+          if (typeof window.saveOrderToFirestore === 'function') {
+            orderId = await window.saveOrderToFirestore(payload);
+          }
+          if (typeof window._shvStampSubmit === 'function') window._shvStampSubmit();
+          if (typeof window.ShvPixels === 'object') window.ShvPixels.track('Purchase', { content_ids: [String(p.id)], value: total, currency: 'DZD', num_items: qty });
+          state.checkoutData = { fullName: '', phone: '', wilaya: '', baladiya: '', address: '', notes: '' };
+          state.orderSuccess = { orderId: orderId, items: payload.items, customer: payload.customer, total: total, shipping: shipping, subtotal: subtotal };
+          navigate('success', {});
+        } catch (e) {
+          showToast('Order failed: ' + (e.message || 'error'));
+          console.error('Direct order error:', e);
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg><span>Confirm Order</span>';
+        }
+      });
+    }
+
+    function saveDirectOrderFields() {
+      if (!state.checkoutData) state.checkoutData = {};
+      var name = document.getElementById('doName');
+      var phone = document.getElementById('doPhone');
+      var wilaya = document.getElementById('doWilaya');
+      var baladiya = document.getElementById('doBaladiya');
+      var address = document.getElementById('doAddress');
+      if (name) state.checkoutData.fullName = name.value;
+      if (phone) state.checkoutData.phone = phone.value;
+      if (wilaya) state.checkoutData.wilaya = wilaya.value;
+      if (baladiya) state.checkoutData.baladiya = baladiya.value;
+      if (address) state.checkoutData.address = address.value;
     }
 
     function toggleWishlist() {
@@ -1285,6 +2076,8 @@
       state.selectedSize = btn.dataset.size;
       var sv = document.getElementById('sizeVal');
       if (sv) sv.textContent = state.selectedSize;
+      // Update direct order card if visible
+      if (state.product && document.getElementById('directOrderCard')) renderDirectOrderCard(state.product);
     }
 
     function selectColor(el, idx) {
@@ -1296,11 +2089,15 @@
         var cn = document.getElementById('colorName');
         if (cn) cn.textContent = p.colors[idx].name || p.colors[idx];
       }
+      // Update direct order card if visible
+      if (state.product && document.getElementById('directOrderCard')) renderDirectOrderCard(state.product);
     }
 
     function qtyChange(delta) {
       state.quantity = Math.max(1, Math.min(10, state.quantity + delta));
       document.getElementById('qtyVal').textContent = state.quantity;
+      // Update direct order card if visible
+      if (state.product && document.getElementById('directOrderCard')) renderDirectOrderCard(state.product);
     }
 
     function addFromDetails() {
@@ -1429,27 +2226,153 @@
           window._shvStampSubmit();
           if (typeof window.ShvPixels === 'object') window.ShvPixels.track('Purchase', { content_ids: cart.map(function(i){return String(i.id);}), value: total, currency: 'DZD' });
           setCart([]);
-          state.checkoutData = { orderId: orderId, total: total, items: payload.items, customer: payload.customer };
+          state.orderSuccess = { orderId: orderId, total: total, shipping: shipping, subtotal: subtotal, items: payload.items, customer: payload.customer };
           navigate('success', {});
         } catch (e) { showToast('Order failed: ' + (e.message || 'error')); }
       });
     }
 
-    /* ===== SUCCESS ===== */
+    /* ===== SUCCESS (Zephyr design — rich order details page) ===== */
     function renderSuccessPage() {
-      var d = state.checkoutData || {};
-      document.getElementById('successOrderId').textContent = (d.orderId || '—').toString().substring(0, 12).toUpperCase();
+      var d = state.orderSuccess || state.checkoutData || {};
       var esc = escapeHTML;
-      var itemsHTML = (d.items || []).map(function(i) {
-        return '<div class="success-item-row"><div class="success-item-thumb">' + (i.image ? '<img src="' + esc(i.image) + '" alt="">' : '📦') + '</div><div style="flex:1;"><div class="success-item-name">' + esc(i.name) + '</div><div class="success-item-meta">' + (i.size ? 'Size: ' + esc(i.size) + ' · ' : '') + '×' + i.qty + '</div></div><div class="success-item-price">' + formatPrice(i.line_total) + '</div></div>';
-      }).join('');
+      var container = document.getElementById('successContainer');
+      if (!container) return;
+      var orderId = (d.orderId || '—').toString().substring(0, 12).toUpperCase();
       var c = d.customer || {};
-      document.getElementById('successCard').innerHTML = itemsHTML +
-        '<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border-light);font-size:0.8125rem;"><div style="margin-bottom:0.25rem;"><strong>Name:</strong> ' + esc(c.name || '—') + '</div><div style="margin-bottom:0.25rem;"><strong>Phone:</strong> ' + esc(c.phone || '—') + '</div><div style="margin-bottom:0.25rem;"><strong>Address:</strong> ' + esc((c.wilaya || '') + ' ' + (c.commune || '') + ' ' + (c.address || '')) + '</div></div>' +
-        '<div style="text-align:center;font-size:1.25rem;font-weight:700;margin-top:0.75rem;color:var(--hero-blue);">' + formatPrice(d.total || 0) + '</div>';
+
+      // Build product cards
+      var itemsHTML = (d.items || []).map(function(i) {
+        var unit = Number(i.unit_price || i.price || 0);
+        var lineTotal = Number(i.line_total || (unit * (i.qty || 1)));
+        var img = i.image || (i.img || '');
+        if (!img && state.product && String(state.product.id) === String(i.id)) {
+          img = state.product.image || (state.product.images && state.product.images[0]) || '';
+        }
+        if (!img) {
+          // Try to find in STORE_DATA
+          var prod = STORE_DATA.products.find(function(x) { return String(x.id) === String(i.id); });
+          if (prod) img = prod.image || (prod.images && prod.images[0]) || '';
+        }
+        var meta = '';
+        if (i.color) meta += '<span>Color: ' + esc(i.color) + '</span>';
+        if (i.size) meta += '<span class="pill">Size: ' + esc(i.size) + '</span>';
+        return '<div class="success-product-card">' +
+          '<div class="success-product-card-img">' + (img ? '<img src="' + esc(img) + '" alt="' + esc(i.name || '') + '">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">📦</div>') + '</div>' +
+          '<div class="success-product-card-info">' +
+            '<div class="success-product-card-name">' + esc(i.name || 'Product') + '</div>' +
+            '<div class="success-product-card-meta">' + meta + '<span>Qty: × ' + (i.qty || 1) + '</span></div>' +
+          '</div>' +
+          '<div class="success-product-card-price">' +
+            '<span class="current">' + formatPrice(lineTotal) + '</span>' +
+            '<span class="unit">' + (i.qty > 1 ? formatPrice(unit) + ' / ea' : '') + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      // Build customer info rows
+      var fullAddress = [c.wilaya, c.commune, c.address].filter(Boolean).join(', ');
+      var customerHTML =
+        '<div class="success-info-row">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+          '<div style="flex:1;"><div class="lbl">Customer Name</div><div class="val">' + esc(c.name || '—') + '</div></div>' +
+        '</div>' +
+        '<div class="success-info-row">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>' +
+          '<div style="flex:1;"><div class="lbl">Phone Number</div><div class="val" style="direction:ltr;display:inline-block;">' + esc(c.phone || '—') + '</div></div>' +
+        '</div>' +
+        '<div class="success-info-row">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>' +
+          '<div style="flex:1;"><div class="lbl">Delivery Address</div><div class="val">' + esc(fullAddress || '—') + '</div></div>' +
+        '</div>' +
+        '<div class="success-info-row">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>' +
+          '<div style="flex:1;"><div class="lbl">Payment Method</div><div class="val">Cash on Delivery</div></div>' +
+        '</div>';
+
+      // Build totals
+      var subtotal = Number(d.subtotal || (d.total ? d.total - (d.shipping || 0) : 0));
+      var shipping = Number(d.shipping || 0);
+      var total = Number(d.total || 0);
+      var totalsHTML =
+        '<div class="success-totals">' +
+          '<div class="success-totals-row"><span class="label">Subtotal</span><span class="value">' + formatPrice(subtotal) + '</span></div>' +
+          '<div class="success-totals-row"><span class="label">Shipping</span><span class="value">' + (shipping === 0 ? 'FREE' : formatPrice(shipping)) + '</span></div>' +
+          '<div class="success-totals-row grand"><span class="label">Total</span><span class="value">' + formatPrice(total) + '</span></div>' +
+        '</div>';
+
+      // Build timeline
+      var timelineHTML =
+        '<div class="success-timeline">' +
+          '<div class="success-tl-step active">' +
+            '<div class="success-tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>' +
+            '<div><div class="success-tl-title">Order Received</div><div class="success-tl-desc">We have received your order and are preparing it.</div></div>' +
+          '</div>' +
+          '<div class="success-tl-step">' +
+            '<div class="success-tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>' +
+            '<div><div class="success-tl-title">Confirmation Call</div><div class="success-tl-desc">Our team will call you within 24 hours to confirm.</div></div>' +
+          '</div>' +
+          '<div class="success-tl-step">' +
+            '<div class="success-tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>' +
+            '<div><div class="success-tl-title">Out for Delivery</div><div class="success-tl-desc">Your order will be delivered within 2-5 days.</div></div>' +
+          '</div>' +
+        '</div>';
+
+      container.innerHTML =
+        '<div class="success-hero-block">' +
+          '<div class="success-check-large">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '</div>' +
+          '<h2 class="success-title-large">Order Confirmed!</h2>' +
+          '<p class="success-desc">Thank you for your order. We will call you within 24 hours to confirm delivery.</p>' +
+          '<div class="success-order-id-block">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5"/></svg>' +
+            '<span>Order #' + esc(orderId) + '</span>' +
+            '<span class="success-status-pill">Pending Confirmation</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="success-grid">' +
+          '<div>' +
+            '<div class="success-block-card" style="margin-bottom:1.25rem;">' +
+              '<div class="success-block-title">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>' +
+                '<span>Order Items</span>' +
+              '</div>' +
+              itemsHTML +
+              totalsHTML +
+            '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div class="success-block-card" style="margin-bottom:1.25rem;">' +
+              '<div class="success-block-title">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+                '<span>Customer Information</span>' +
+              '</div>' +
+              customerHTML +
+            '</div>' +
+            '<div class="success-block-card">' +
+              '<div class="success-block-title">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+                '<span>What Happens Next?</span>' +
+              '</div>' +
+              timelineHTML +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="success-actions">' +
+          '<button class="success-action-btn success-action-btn-primary" data-nav="home">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17"/></svg>' +
+            '<span>Continue Shopping</span>' +
+          '</button>' +
+          '<button class="success-action-btn success-action-btn-ghost" data-nav="categories">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>' +
+            '<span>Back to Shop</span>' +
+          '</button>' +
+        '</div>';
+      document.title = 'Order Confirmed | ZEPHYR';
     }
 
-    function showSuccess(orderId) { state.checkoutData = { orderId: orderId, items: [], customer: {}, total: 0 }; navigate('success', {}); }
+    function showSuccess(orderId) { state.orderSuccess = { orderId: orderId, items: [], customer: {}, total: 0, shipping: 0, subtotal: 0 }; navigate('success', {}); }
 
     /* ===== POLICY ===== */
     var POLICIES = {
