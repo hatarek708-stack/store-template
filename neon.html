@@ -289,7 +289,7 @@
             background-color: var(--color-black); color: var(--color-white);
             padding: 0.25rem 0.5rem; border-radius: 9999px;
             font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.18); z-index: 3;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18); z-index: 5;
         }
         .free-ship-badge svg { width: 12px; height: 12px; flex-shrink: 0; }
         .free-ship-badge-inline {
@@ -2764,7 +2764,7 @@
           var name = c.name || hex;
           return { name: name, hex: hex };
         }),
-        slug: p.slug || '', rating: 4.5 + Math.random() * 0.5, reviews: Math.floor(Math.random() * 100) + 10,
+        slug: p.slug || '', rating: window._shvProductRating(p), reviews: window._shvProductReviewCount(p),
         badge: p.discount_price != null && Number(p.discount_price) > 0 ? 'Sale' : '', isNew: false,
         details: Array.isArray(p.details) ? p.details : [],
         materials: '', sizeFit: '',
@@ -2803,6 +2803,8 @@
               reviewsText: p.reviews_text || '',
               reviewsData: Array.isArray(p.reviews_data) ? p.reviews_data : [],
               freeShipping: p.free_shipping === true,
+              rating: window._shvProductRating(p),
+              reviews: window._shvProductReviewCount(p),
             }));
             onUpdate(products);
           })
@@ -2826,6 +2828,55 @@
       var first = tail.charAt(0);
       for (var i = 1; i < tail.length; i++) { if (tail.charAt(i) !== first) return false; }
       return true;
+    };
+
+    // ===== Default reviews / rating helpers (Bug 5) =====
+    // Generate realistic deterministic default reviews when product has no reviews_data.
+    // Uses product id as seed so the same product always shows the same reviews across reloads.
+    window._shvDefaultReviews = function (productId) {
+      var raw = String(productId || '1').replace(/[^0-9]/g, '');
+      var seed = parseInt(raw || '1', 10) || 1;
+      var names = ['أحمد بن علي', 'سارة محمد', 'يوسف العايب', 'فاطمة الزهراء', 'محمد الأمين', 'خديجة بن سعد', 'عبد الرحمن', 'نور الهدى'];
+      var comments = [
+        'منتج رائع، جودة ممتازة ووصل بسرعة.',
+        'سعر مناسب جداً مقابل الجودة. أنصح به.',
+        'المقاس مضبوط واللون كما في الصورة تماماً.',
+        'خدمة عملاء ممتازة وتوصيل سريع. شكراً!',
+        'المنتج فاق توقعاتي، سأطلب مرة أخرى بالتأكيد.',
+        'جودة عالية وتغليف أنيق. تجربة تسوق ممتازة.',
+        'منتج أصلي ومطابق للوصف. ممتاز!',
+        'وصل في الوقت المحدد والحالة ممتازة. أنصح به.'
+      ];
+      var reviews = [];
+      var count = 3 + (seed % 3); // 3-5 reviews
+      for (var i = 0; i < count; i++) {
+        var idx = (seed + i * 7) % names.length;
+        var cmtIdx = (seed + i * 5) % comments.length;
+        var rating = 4 + ((seed + i) % 2); // 4 or 5 stars
+        var monthOffset = (seed + i * 2) % 6;
+        var d = new Date();
+        d.setMonth(d.getMonth() - monthOffset);
+        reviews.push({ name: names[idx], rating: rating, comment: comments[cmtIdx], date: d.toISOString().split('T')[0] });
+      }
+      return reviews;
+    };
+    window._shvProductRating = function (p) {
+      if (!p) return 4.5;
+      var rd = Array.isArray(p.reviews_data) ? p.reviews_data : (Array.isArray(p.reviewsData) ? p.reviewsData : []);
+      if (rd.length > 0) {
+        var sum = 0, n = 0;
+        for (var i = 0; i < rd.length; i++) { var v = Number(rd[i].rating); if (v > 0 && v <= 5) { sum += v; n++; } }
+        if (n > 0) return Math.round((sum / n) * 10) / 10;
+      }
+      var seed = parseInt(String(p.id || '1').replace(/[^0-9]/g, '') || '1', 10) || 1;
+      return 4.5 + (seed % 5) * 0.1;
+    };
+    window._shvProductReviewCount = function (p) {
+      if (!p) return 0;
+      var rd = Array.isArray(p.reviews_data) ? p.reviews_data : (Array.isArray(p.reviewsData) ? p.reviewsData : []);
+      if (rd.length > 0) return rd.length;
+      var seed = parseInt(String(p.id || '1').replace(/[^0-9]/g, '') || '1', 10) || 1;
+      return 15 + (seed % 36);
     };
     window._firebaseReady = true;
     if (window._onFirebaseReady) window._onFirebaseReady();
@@ -2922,6 +2973,33 @@
             return price;
         }
         window.calcShipping = calcShipping;
+
+        /* ===================== SHIPPING INFO LINE (Bug 4: visible per-wilaya shipping cost) =====================
+           Returns a small inline HTML message that explains the current shipping cost.
+           Called from the direct order card and checkout summary to give the user
+           immediate feedback when they select a wilaya. */
+        function _hasShippingConfig(storeData) {
+            return !!(storeData && storeData.shipping && Array.isArray(storeData.shipping) && storeData.shipping.length > 0);
+        }
+        function formatShippingInfoHTML(wilaya, shipping, isFreeShip, storeData) {
+            var truckSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;flex-shrink:0;"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+            var baseStyle = 'display:inline-flex;align-items:center;gap:0.375rem;font-size:0.75rem;padding:0.375rem 0.625rem;border-radius:9999px;font-weight:500;';
+            if (isFreeShip) {
+                return '<span style="' + baseStyle + 'background:var(--color-gray-100);color:var(--color-black);">' + truckSVG + (currentLang === 'ar' ? 'شحن مجاني لهذا المنتج' : 'Free shipping for this product') + '</span>';
+            }
+            if (!wilaya) {
+                if (!_hasShippingConfig(storeData)) {
+                    return '<span style="' + baseStyle + 'background:var(--color-gray-100);color:var(--color-gray-500);">' + truckSVG + (currentLang === 'ar' ? 'سعر افتراضي: 350 دج (مجاني فوق 5,000 دج)' : 'Default rate: 350 DA (free above 5,000 DA)') + '</span>';
+                }
+                return '<span style="' + baseStyle + 'background:var(--color-gray-100);color:var(--color-gray-500);">' + truckSVG + (currentLang === 'ar' ? 'اختر الولاية لعرض سعر الشحن' : 'Select wilaya for shipping cost') + '</span>';
+            }
+            if (shipping === 0) {
+                return '<span style="' + baseStyle + 'background:rgba(22,163,74,0.08);color:#15803d;">' + truckSVG + (currentLang === 'ar' ? 'الشحن إلى ' + wilaya + ': مجاني (فوق 5,000 دج)' : 'Shipping to ' + wilaya + ': FREE (above 5,000 DA)') + '</span>';
+            }
+            var source = _hasShippingConfig(storeData) ? '' : (currentLang === 'ar' ? ' (سعر افتراضي)' : ' (default rate)');
+            return '<span style="' + baseStyle + 'background:var(--color-gray-100);color:var(--color-black);">' + truckSVG + (currentLang === 'ar' ? 'الشحن إلى ' + wilaya + ': ' + formatPrice(shipping) + source : 'Shipping to ' + wilaya + ': ' + formatPrice(shipping) + source) + '</span>';
+        }
+        window.formatShippingInfoHTML = formatShippingInfoHTML;
 
         /* ===================== DATA (will be overridden by Supabase) ===================== */
         var NEON_DATA = {
@@ -3793,17 +3871,24 @@
             var panel = document.getElementById('panel-reviews');
             if (!panel || !p) return;
             var esc = escapeHTML;
-            var revData = (Array.isArray(p.reviewsData) ? p.reviewsData : []);
+            var rawRevData = (Array.isArray(p.reviewsData) ? p.reviewsData : []);
+            // Bug 5: when reviews_data is empty, fall back to deterministic default reviews (so the tab always looks alive)
+            var revData = (rawRevData.length > 0) ? rawRevData :
+                (typeof window._shvDefaultReviews === 'function' ? window._shvDefaultReviews(p.id) : []);
             var revText = p.reviewsText || '';
+            var rating = (typeof avgRating === 'number' && avgRating > 0) ? avgRating :
+                (typeof window._shvProductRating === 'function' ? window._shvProductRating(p) : 4.5);
+            var rCount = (typeof reviewCount === 'number' && reviewCount > 0) ? reviewCount :
+                (typeof window._shvProductReviewCount === 'function' ? window._shvProductReviewCount(p) : revData.length);
             var html = '';
 
             // Summary block
             html += '<div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.75rem;padding:1.25rem;background:var(--color-gray-50);border-radius:0.75rem;">';
-            html += '<div style="font-size:2.5rem;font-weight:800;color:var(--color-black);line-height:1;">' + (avgRating || 0).toFixed(1) + '</div>';
+            html += '<div style="font-size:2.5rem;font-weight:800;color:var(--color-black);line-height:1;">' + (rating || 0).toFixed(1) + '</div>';
             html += '<div>';
             html += '<div style="display:inline-flex;gap:2px;color:var(--color-black);">';
-            var full = Math.floor(avgRating || 0);
-            var half = (avgRating || 0) - full >= 0.25 && (avgRating || 0) - full < 0.75;
+            var full = Math.floor(rating || 0);
+            var half = (rating || 0) - full >= 0.25 && (rating || 0) - full < 0.75;
             var starPath = '<svg fill="currentColor" viewBox="0 0 24 24" style="width:18px;height:18px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
             for (var i = 0; i < full; i++) html += starPath;
             if (half) {
@@ -3813,7 +3898,7 @@
                 html += '<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:18px;height:18px;color:var(--color-gray-300);"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
             }
             html += '</div>';
-            html += '<div style="font-size:0.8125rem;color:var(--color-gray-500);margin-top:0.25rem;">Based on ' + Number(reviewCount || revData.length || 0).toString() + ' ' + esc(t('reviews')) + '</div>';
+            html += '<div style="font-size:0.8125rem;color:var(--color-gray-500);margin-top:0.25rem;">Based on ' + Number(rCount || revData.length || 0).toString() + ' ' + esc(t('reviews')) + '</div>';
             html += '</div>';
             html += '</div>';
 
@@ -3827,7 +3912,7 @@
                 html += '<div style="display:flex;flex-direction:column;gap:1rem;">';
                 revData.forEach(function (r) {
                     var name = (r.name || 'Anonymous').toString();
-                    var rating = Math.max(0, Math.min(5, Math.floor(Number(r.rating) || 0)));
+                    var rStars = Math.max(0, Math.min(5, Math.floor(Number(r.rating) || 0)));
                     var comment = (r.comment || '').toString();
                     var date = (r.date || '').toString();
                     var initials = (name.charAt(0) || 'A').toUpperCase();
@@ -3840,8 +3925,8 @@
                     if (date) html += '<div style="font-size:0.6875rem;color:var(--color-gray-400);">' + esc(date) + '</div>';
                     html += '</div>';
                     html += '<div style="display:inline-flex;gap:1px;margin-top:0.375rem;color:var(--color-black);">';
-                    for (var s = 0; s < rating; s++) html += '<svg fill="currentColor" viewBox="0 0 24 24" style="width:13px;height:13px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
-                    for (var s2 = rating; s2 < 5; s2++) html += '<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:13px;height:13px;color:var(--color-gray-300);"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+                    for (var s = 0; s < rStars; s++) html += '<svg fill="currentColor" viewBox="0 0 24 24" style="width:13px;height:13px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+                    for (var s2 = rStars; s2 < 5; s2++) html += '<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:13px;height:13px;color:var(--color-gray-300);"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
                     html += '</div>';
                     if (comment) html += '<p style="font-size:0.8125rem;color:var(--color-gray-700);line-height:1.625;margin-top:0.5rem;">' + esc(comment) + '</p>';
                     html += '</div>';
@@ -3974,7 +4059,12 @@
             var nameHTML = opts.highlightQuery ? highlight(p.name, opts.highlightQuery) : escapeHTML(p.name);
             var catHTML = opts.highlightQuery ? highlight(p.categoryLabel, opts.highlightQuery) : escapeHTML(p.categoryLabel);
             // rating count uses Western digits via toFixed and toString (always Latin)
-            var reviewsStr = Number(p.reviews).toString();
+            // Bug 5: use helper-based safe values so Supabase products (which have no rating/reviews columns) still render
+            var pRating = (typeof p.rating === 'number' && p.rating > 0) ? p.rating :
+                (typeof window._shvProductRating === 'function' ? window._shvProductRating(p) : 4.5);
+            var pReviews = (typeof p.reviews === 'number' && p.reviews > 0) ? p.reviews :
+                (typeof window._shvProductReviewCount === 'function' ? window._shvProductReviewCount(p) : 0);
+            var reviewsStr = Number(pReviews).toString();
             var prodRef = p.slug ? { slug: p.slug } : { id: p.id };
             var paramsAttr = JSON.stringify(prodRef);
             var href = buildHref('product', prodRef);
@@ -3989,7 +4079,7 @@
                     '<div class="product-info">' +
                         '<p class="product-cat">' + catHTML + '</p>' +
                         '<h3 class="product-name"><a data-nav="product" data-params=\'' + paramsAttr + '\' href="' + href + '">' + nameHTML + '</a></h3>' +
-                        '<div class="product-rating"><i data-lucide="star" style="fill:currentColor;"></i><span>' + p.rating.toFixed(1) + ' (' + reviewsStr + ')</span></div>' +
+                        '<div class="product-rating"><i data-lucide="star" style="fill:currentColor;"></i><span>' + pRating.toFixed(1) + ' (' + reviewsStr + ')</span></div>' +
                         '<div class="product-price-row">' +
                             '<span class="product-price">' + formatPrice(eff) + '</span>' +
                             (hasDiscount ? '<span class="product-price-orig">' + formatPrice(p.originalPrice) + '</span>' : '') +
@@ -4097,7 +4187,7 @@
                     '<h1 class="product-title">' + escapeHTML(p.name) + '</h1>' +
                     '<div class="rating-row">' +
                         '<span class="stars">' + renderStars(p.rating) + '</span>' +
-                        '<span class="rating-text"><strong>' + p.rating.toFixed(1) + '</strong> (' + Number(p.reviews).toString() + ' ' + escapeHTML(t('reviews')) + ')</span>' +
+                        '<span class="rating-text"><strong>' + (typeof p.rating === 'number' && p.rating > 0 ? p.rating : (typeof window._shvProductRating === 'function' ? window._shvProductRating(p) : 4.5)).toFixed(1) + '</strong> (' + Number((typeof p.reviews === 'number' && p.reviews > 0 ? p.reviews : (typeof window._shvProductReviewCount === 'function' ? window._shvProductReviewCount(p) : 0))).toString() + ' ' + escapeHTML(t('reviews')) + ')</span>' +
                     '</div>' +
                     '<div class="price-row">' +
                         '<span class="price-current">' + formatPrice(window._effectivePrice ? window._effectivePrice(p) : p.price) + '</span>' +
@@ -4159,7 +4249,10 @@
             document.getElementById('textShipping').textContent = shipText;
 
             // Reviews tab — summary + custom text + individual review cards
-            renderReviewsPanel(p, p.rating, p.reviews);
+            // Bug 5: pass safe rating/reviews (helper falls back to defaults when product has no rating column)
+            renderReviewsPanel(p,
+                (typeof p.rating === 'number' && p.rating > 0) ? p.rating : (typeof window._shvProductRating === 'function' ? window._shvProductRating(p) : 4.5),
+                (typeof p.reviews === 'number' && p.reviews > 0) ? p.reviews : (typeof window._shvProductReviewCount === 'function' ? window._shvProductReviewCount(p) : 0));
 
             // Reset tabs to first
             var tabBtns = document.querySelectorAll('.tab-btn');
@@ -4283,6 +4376,8 @@
                             '</div>' +
                         '</div>' +
                     '</div>' +
+                    /* Bug 4: visible per-wilaya shipping cost message, updates live when wilaya changes */
+                    '<div class="form-row single" style="margin-top:-0.5rem;"><div class="form-field" style="display:flex;align-items:center;justify-content:flex-start;"><div id="coShippingInfo">' + formatShippingInfoHTML(d.wilaya || '', shipping, isFreeShipping, window._storeData) + '</div></div></div>' +
                     '<div class="form-row single">' +
                         '<div class="form-field">' +
                             '<label>' + escapeHTML(t('of_address')) + ' <span class="req">*</span></label>' +
@@ -4781,7 +4876,7 @@
                 return '' +
                     '<a class="recent-card" data-nav="product" data-params=\'' + paramsAttr + '\' href="' + href + '">' +
                         '<div class="recent-card-img"><img src="' + p.images[0] + '" alt="' + escapeHTML(p.name) + '"></div>' +
-                        '<div class="recent-card-info"><div class="recent-card-name">' + escapeHTML(p.name) + '</div><div class="recent-card-price">' + formatPrice(eff) + ' • ' + p.rating.toFixed(1) + ' ★</div></div>' +
+                        '<div class="recent-card-info"><div class="recent-card-name">' + escapeHTML(p.name) + '</div><div class="recent-card-price">' + formatPrice(eff) + ' • ' + (typeof p.rating === 'number' && p.rating > 0 ? p.rating : (typeof window._shvProductRating === 'function' ? window._shvProductRating(p) : 4.5)).toFixed(1) + ' ★</div></div>' +
                     '</a>';
             }).join('');
         }
@@ -4903,7 +4998,7 @@
                     return false;
                 });
             }
-            function _renderSummaryCard(sub, ship, isFreeShip) {
+            function _renderSummaryCard(sub, ship, isFreeShip, wilaya) {
                 var tot = sub + ship;
                 var shippingVal = ship === 0
                     ? (isFreeShip
@@ -4911,6 +5006,8 @@
                         : escapeHTML(t('cart_free')))
                     : formatPrice(ship);
                 return '<h3>' + escapeHTML(t('checkout_summary')) + '</h3>' +
+                    /* Bug 4: visible per-wilaya shipping cost message (updates live when wilaya changes) */
+                    '<div style="margin-bottom:0.75rem;">' + formatShippingInfoHTML(wilaya || '', ship, isFreeShip, window._storeData) + '</div>' +
                     '<div class="order-totals" style="border-top:none;padding-top:0;margin-top:0;">' +
                         '<div class="order-total-row"><span class="label">' + escapeHTML(t('cart_subtotal')) + '</span><span class="value">' + formatPrice(sub) + '</span></div>' +
                         '<div class="order-total-row"><span class="label">' + escapeHTML(t('cart_shipping')) + '</span><span class="value">' + shippingVal + '</span></div>' +
@@ -4935,7 +5032,7 @@
             var shipping = isAllFreeShip ? 0 : calcShipping(ckWilayaVal || (state.checkoutData && state.checkoutData.wilaya) || '', subtotal, window._storeData);
             var total = subtotal + shipping;
             if (summaryCard) {
-                summaryCard.innerHTML = _renderSummaryCard(subtotal, shipping, isAllFreeShip);
+                summaryCard.innerHTML = _renderSummaryCard(subtotal, shipping, isAllFreeShip, ckWilayaVal);
 
                 var placeBtn = document.getElementById('ckPlaceOrderBtn');
                 if (placeBtn) placeBtn.addEventListener('click', async function () {
@@ -5706,8 +5803,8 @@
                                 price: p.price || 0,
                                 discountPrice: p.discountPrice || null,
                                 originalPrice: p.originalPrice || null,
-                                rating: p.rating || 4.8,
-                                reviews: p.reviews || 100,
+                                rating: (typeof window._shvProductRating === 'function') ? window._shvProductRating(p) : (p.rating || 4.8),
+                                reviews: (typeof window._shvProductReviewCount === 'function') ? window._shvProductReviewCount(p) : (p.reviews || 100),
                                 badge: p.badge || (p.discountPrice > 0 ? 'Sale' : ''),
                                 isNew: p.isNew || false,
                                 images: p.images && p.images.length > 0 ? p.images : [p.image || ''],
@@ -5744,7 +5841,7 @@
                                     id: p.id || (i + 1), name: p.name || '', category: p.category || 'general',
                                     categoryLabel: p.category || 'General', price: p.price || 0,
                                     discountPrice: p.discountPrice || null,
-                                    originalPrice: p.originalPrice || null, rating: p.rating || 4.8, reviews: p.reviews || 100,
+                                    originalPrice: p.originalPrice || null, rating: (typeof window._shvProductRating === 'function') ? window._shvProductRating(p) : (p.rating || 4.8), reviews: (typeof window._shvProductReviewCount === 'function') ? window._shvProductReviewCount(p) : (p.reviews || 100),
                                     badge: p.badge || '', isNew: false,
                                     images: p.images && p.images.length > 0 ? p.images : [p.image || ''],
                                     shortDesc: p.desc || '', desc: p.desc || '',
