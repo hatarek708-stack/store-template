@@ -3881,7 +3881,7 @@
                 var id = params.slug || params.id;
                 var cleanUrl = new URL(window.location.href);
                 cleanUrl.search = '';
-                cleanUrl.searchParams.set('page', 'product'); cleanUrl.searchParams.set('slug', slug || id);
+                cleanUrl.searchParams.set('page', 'product'); cleanUrl.searchParams.set('slug', id);
                 return cleanUrl.toString();
             }
             var url = new URL(window.location.href);
