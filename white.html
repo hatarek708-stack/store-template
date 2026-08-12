@@ -2675,6 +2675,13 @@
         state.params.id = p.get('id');
         state.params.slug = p.get('slug');
       }
+      // Support clean URLs: /product/:slug (from template-router-worker)
+      var pathMatch = window.location.pathname.match(/^\/product\/(.+)$/);
+      if (pathMatch && !state.params.slug && !state.params.id) {
+        state.page = 'product';
+        state.params = {};
+        state.params.slug = decodeURIComponent(pathMatch[1]);
+      }
       if (page === 'categories') state.params.cat = p.get('cat') || 'all';
       if (page === 'search') { state.params.q = p.get('q') || ''; state.params.cat = p.get('cat') || 'all'; }
       if (page === 'policy') state.params.type = p.get('type') || 'privacy';
@@ -2686,7 +2693,7 @@
         var id = params.slug || params.id;
         var cleanUrl = new URL(window.location.href);
         cleanUrl.search = '';
-        cleanUrl.pathname = '/product/' + encodeURIComponent(id);
+        cleanUrl.searchParams.set('page', 'product'); cleanUrl.searchParams.set('slug', id);
         return cleanUrl.toString();
       }
       var url = new URL(window.location.href);

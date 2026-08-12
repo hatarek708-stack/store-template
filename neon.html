@@ -4028,11 +4028,7 @@
 
         /* ===================== HELPERS ===================== */
         function buildHref(page, params) {
-            // Clean URLs for product pages: /product/:slug (or /product/:id when no slug)
-            if (page === 'product') {
-                if (params && params.slug) return '/product/' + encodeURIComponent(params.slug);
-                if (params && params.id)   return '/product/' + encodeURIComponent(params.id);
-            }
+            // Use query string URLs for SPA navigation (clean URLs handled by worker for SEO)
             var href = 'index.html';
             if (page && page !== 'home') {
                 href += '?page=' + page;
@@ -4422,6 +4418,13 @@
                 state.params.id = params.get('id');
                 state.params.slug = params.get('slug');
             }
+            // Support clean URLs: /product/:slug (from template-router-worker)
+            var pathMatch = window.location.pathname.match(/^\/product\/(.+)$/);
+            if (pathMatch && !state.params.slug && !state.params.id) {
+                state.page = 'product';
+                state.params = {};
+                state.params.slug = decodeURIComponent(pathMatch[1]);
+            }
             if (page === 'categories') state.params.cat = params.get('cat') || 'all';
             if (page === 'search') {
                 state.params.q = params.get('q') || '';
@@ -4435,7 +4438,7 @@
                 var id = params.slug || params.id;
                 var cleanUrl = new URL(window.location.href);
                 cleanUrl.search = '';
-                cleanUrl.pathname = '/product/' + encodeURIComponent(id);
+                cleanUrl.searchParams.set('page', 'product'); cleanUrl.searchParams.set('slug', slug || id);
                 return cleanUrl.toString();
             }
             var url = new URL(window.location.href);
