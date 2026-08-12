@@ -612,6 +612,8 @@
             border-bottom: 1px solid var(--color-gray-100);
         }
         @media (max-width: 480px) { .trust-badges { grid-template-columns: 1fr; gap: 1rem; } }
+        .trust-badges.trust-badges-two { grid-template-columns: repeat(2, 1fr); }
+        .trust-badges.trust-badges-one { grid-template-columns: 1fr; }
         .trust-item { display: flex; gap: 0.75rem; align-items: flex-start; }
         .trust-icon {
             flex-shrink: 0; width: 36px; height: 36px; border-radius: 0.5rem;
@@ -1629,6 +1631,125 @@
         [dir="rtl"] .cart-item { flex-direction: row; }
         [dir="rtl"] .cart-total-row { flex-direction: row; }
         [dir="rtl"] .cart-header h3 { flex-direction: row; }
+
+        /* ===== POLICY / PRIVACY / SUPPORT PAGES (NOIR) ===== */
+        .policy-card {
+            background-color: #1a1a1a;
+            border: 1px solid var(--color-gray-200);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        @media (max-width: 640px) { .policy-card { padding: 1.25rem; } }
+        .policy-badge {
+            display: inline-block; padding: 0.25rem 0.875rem; border-radius: 9999px;
+            background-color: rgba(201,169,110,0.12); color: var(--color-black);
+            font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+            margin-bottom: 0.875rem;
+        }
+        .policy-title {
+            font-size: 1.75rem; font-weight: 800; color: var(--color-gray-900);
+            margin-bottom: 0.375rem; letter-spacing: -0.02em;
+        }
+        @media (min-width: 768px) { .policy-title { font-size: 2.25rem; } }
+        .policy-date {
+            font-size: 0.8125rem; color: var(--color-gray-500); margin-bottom: 1.5rem;
+            letter-spacing: 0.025em;
+        }
+        .policy-section { margin-bottom: 1.75rem; }
+        .policy-section:last-child { margin-bottom: 0; }
+        .policy-section-title {
+            font-size: 1rem; font-weight: 700; color: var(--color-gray-900);
+            margin-bottom: 0.5rem; letter-spacing: 0.025em;
+            padding-left: 0.75rem; border-left: 2px solid var(--color-black);
+        }
+        [dir="rtl"] .policy-section-title { padding-left: 0; padding-right: 0.75rem; border-left: none; border-right: 2px solid var(--color-black); }
+        .policy-text {
+            font-size: 0.9375rem; color: var(--color-gray-700); line-height: 1.75;
+            margin-bottom: 0.75rem;
+        }
+        .policy-list {
+            list-style: none; padding: 0; margin: 0;
+            display: flex; flex-direction: column; gap: 0.5rem;
+        }
+        .policy-list li {
+            font-size: 0.9375rem; color: var(--color-gray-700);
+            padding-left: 1.25rem; position: relative; line-height: 1.6;
+        }
+        [dir="rtl"] .policy-list li { padding-left: 0; padding-right: 1.25rem; }
+        .policy-list li::before {
+            content: ''; position: absolute; left: 0; top: 0.6rem;
+            width: 6px; height: 6px; border-radius: 9999px;
+            background-color: var(--color-black);
+        }
+        [dir="rtl"] .policy-list li::before { left: auto; right: 0; }
+
+        /* Support page cards */
+        .support-card {
+            background-color: #1a1a1a;
+            border: 1px solid var(--color-gray-200);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .support-card-title {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 1.125rem; font-weight: 700; color: var(--color-gray-900);
+            margin-bottom: 1rem;
+        }
+        .support-card-title svg { color: var(--color-black); }
+        .support-contact-link {
+            display: flex; align-items: center; gap: 0.875rem;
+            padding: 1rem; border: 1px solid var(--color-gray-200);
+            border-radius: 0.5rem; transition: var(--transition);
+            background-color: rgba(255,255,255,0.02);
+        }
+        .support-contact-link:hover {
+            border-color: var(--color-black);
+            background-color: rgba(201,169,110,0.06);
+        }
+        .support-contact-icon {
+            width: 40px; height: 40px; border-radius: 9999px;
+            background-color: rgba(201,169,110,0.12); color: var(--color-black);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .support-contact-label {
+            font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--color-gray-500); margin-bottom: 0.125rem;
+        }
+        .support-contact-value {
+            font-size: 0.875rem; font-weight: 600; color: var(--color-gray-900);
+            word-break: break-all;
+        }
+        .support-faq-item {
+            border: 1px solid var(--color-gray-200);
+            border-radius: 0.5rem; overflow: hidden; background-color: rgba(255,255,255,0.02);
+        }
+        .support-faq-item summary {
+            padding: 0.875rem 1rem; cursor: pointer; font-weight: 600;
+            font-size: 0.9375rem; color: var(--color-gray-900);
+            list-style: none; display: flex; align-items: center; justify-content: space-between;
+            gap: 0.5rem;
+        }
+        .support-faq-item summary::-webkit-details-marker { display: none; }
+        .support-faq-item summary svg { color: var(--color-gray-500); flex-shrink: 0; transition: transform 0.25s ease; }
+        .support-faq-item[open] summary svg { transform: rotate(180deg); }
+        .support-faq-answer {
+            padding: 0.875rem 1rem; font-size: 0.875rem; color: var(--color-gray-700);
+            line-height: 1.7; border-top: 1px solid var(--color-gray-200);
+            background-color: rgba(0,0,0,0.15);
+        }
+        .support-quick-link {
+            display: flex; align-items: center; gap: 0.625rem;
+            padding: 0.875rem 1rem; border: 1px solid var(--color-gray-200);
+            border-radius: 0.5rem; font-size: 0.875rem; color: var(--color-gray-700);
+            font-weight: 500; transition: var(--transition); cursor: pointer;
+        }
+        .support-quick-link:hover {
+            border-color: var(--color-black); color: var(--color-gray-900);
+            background-color: rgba(201,169,110,0.06);
+        }
+        .support-quick-link svg { color: var(--color-black); flex-shrink: 0; }
     </style>
 </head>
 <body>
@@ -1644,8 +1765,8 @@
                 <a class="nav-link" data-nav="home" href="index.html" data-i18n="nav_home">Home</a>
                 <a class="nav-link" data-nav="categories" href="index.html?page=categories" data-i18n="nav_shop">Shop</a>
                 <a class="nav-link" data-nav="categories" href="index.html?page=categories" data-i18n="nav_collections">Collections</a>
-                <a class="nav-link" data-nav="about" href="index.html?page=about" data-i18n="nav_about">About Us</a>
-                <a class="nav-link" data-nav="contact" href="index.html?page=contact" data-i18n="nav_contact">Contact</a>
+                <a class="nav-link" data-nav="support" href="index.html?page=support" data-i18n="nav_about">About Us</a>
+                <a class="nav-link" data-nav="support" href="index.html?page=support" data-i18n="nav_contact">Contact</a>
             </nav>
 
             <div class="header-icons">
@@ -1681,8 +1802,9 @@
             <a class="mobile-nav-link" data-nav="categories" href="index.html?page=categories" data-i18n="nav_shop">Shop</a>
             <a class="mobile-nav-link" data-nav="categories" href="index.html?page=categories" data-i18n="nav_collections">Collections</a>
             <a class="mobile-nav-link" data-nav="search" href="index.html?page=search" data-i18n="nav_search">Search</a>
-            <a class="mobile-nav-link" data-nav="about" href="index.html?page=about" data-i18n="nav_about">About Us</a>
-            <a class="mobile-nav-link" data-nav="contact" href="index.html?page=contact" data-i18n="nav_contact">Contact</a>
+            <a class="mobile-nav-link" data-nav="support" href="index.html?page=support" data-i18n="nav_about">About Us</a>
+            <a class="mobile-nav-link" data-nav="support" href="index.html?page=support" data-i18n="nav_contact">Contact</a>
+            <a class="mobile-nav-link" data-nav="privacy" href="index.html?page=privacy" data-i18n="footer_privacy">Privacy Policy</a>
             <button class="mobile-nav-link lang-toggle-mobile" id="langToggleMobile">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <span id="langToggleMobileText">ع — العربية</span>
@@ -1699,14 +1821,14 @@
             <section class="hero">
                 <div class="container hero-grid">
                     <div class="hero-content">
-                        <p class="hero-badge" data-i18n="hero_badge">New Arrivals</p>
-                        <h1 class="hero-title"><span data-i18n="hero_title_1">THRIFTED.</span><br><span data-i18n="hero_title_2">CURATED.</span></h1>
-                        <p class="hero-subtitle" data-i18n="hero_subtitle">Premium thrifted pieces. Handpicked for quality. Priced for you.</p>
+                        <p class="hero-badge" id="heroBadge" data-i18n="hero_badge">New Arrivals</p>
+                        <h1 class="hero-title" id="heroTitle"><span data-i18n="hero_title_1">THRIFTED.</span><br><span data-i18n="hero_title_2">CURATED.</span></h1>
+                        <p class="hero-subtitle" id="heroSubtitle" data-i18n="hero_subtitle">Premium thrifted pieces. Handpicked for quality. Priced for you.</p>
                         <a class="btn-primary" data-nav="categories" href="index.html?page=categories" data-i18n="hero_cta">Shop Now</a>
                     </div>
                     <div class="hero-image-wrapper">
                         <div class="hero-image-container">
-                            <img src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&h=750&fit=crop&crop=top" alt="NEON Thrifted Culture Model" class="hero-image">
+                            <img id="heroImage" src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&h=750&fit=crop&crop=top" alt="NOIR Thrifted Culture Model" class="hero-image">
                         </div>
                     </div>
                 </div>
@@ -1845,6 +1967,7 @@
                         <button class="tab-btn" data-tab="materials" data-i18n="tab_materials">Materials</button>
                         <button class="tab-btn" data-tab="size" data-i18n="tab_size">Size &amp; Fit</button>
                         <button class="tab-btn" data-tab="shipping" data-i18n="tab_shipping">Shipping &amp; Returns</button>
+                        <button class="tab-btn" data-tab="reviews">Reviews</button>
                     </div>
                     <div class="tab-panel active" id="panel-details">
                         <div class="tab-content-grid">
@@ -1858,6 +1981,7 @@
                     <div class="tab-panel" id="panel-materials"><p class="tab-text" id="textMaterials" style="max-width: 48rem;"></p></div>
                     <div class="tab-panel" id="panel-size"><p class="tab-text" id="textSize" style="max-width: 48rem;"></p></div>
                     <div class="tab-panel" id="panel-shipping"><p class="tab-text" id="textShipping" style="max-width: 48rem;"></p></div>
+                    <div class="tab-panel" id="panel-reviews"></div>
                 </div>
             </section>
 
@@ -2024,17 +2148,19 @@
                                         <label><span data-i18n="of_full_name">Full Name</span> <span class="req">*</span></label>
                                         <div class="form-input-wrap">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                            <input type="text" class="form-input" id="ckName" data-i18n-ph="of_full_name_ph" placeholder="Enter your full name">
+                                            <input type="text" class="form-input" id="ckName" maxlength="100" autocomplete="name" data-i18n-ph="of_full_name_ph" placeholder="Enter your full name">
                                         </div>
                                     </div>
                                     <div class="form-field">
                                         <label><span data-i18n="of_phone">Phone Number</span> <span class="req">*</span></label>
                                         <div class="form-input-wrap">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                                            <input type="tel" class="form-input" id="ckPhone" data-i18n-ph="of_phone_ph" placeholder="05 12 34 56 78">
+                                            <input type="tel" class="form-input" id="ckPhone" maxlength="15" pattern="0[5-7][0-9]{8}" autocomplete="tel" title="Phone must be 10 digits starting with 05, 06 or 07" data-i18n-ph="of_phone_ph" placeholder="05 12 34 56 78">
                                         </div>
                                     </div>
                                 </div>
+                                <!-- 🔒 Honeypot anti-spam field — hidden from real users, bots fill it -->
+                                <div style="position:absolute;left:-9999px;opacity:0;height:0;width:0;overflow:hidden;" aria-hidden="true"><input type="text" id="shv_hp_ck" name="url" tabindex="-1" autocomplete="off"></div>
                             </div>
 
                             <div class="checkout-card">
@@ -2047,7 +2173,7 @@
                                         <label><span data-i18n="of_wilaya">Wilaya</span> <span class="req">*</span></label>
                                         <div class="form-input-wrap">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                            <select class="form-select" id="ckWilaya">
+                                            <select class="form-select" id="ckWilaya" maxlength="50" autocomplete="address-level1">
                                                 <option value="" data-i18n="of_wilaya_ph">Select wilaya</option>
                                             </select>
                                         </div>
@@ -2056,7 +2182,7 @@
                                         <label><span data-i18n="of_baladiya">Baladiya</span> <span class="req">*</span></label>
                                         <div class="form-input-wrap">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                                            <input type="text" class="form-input" id="ckBaladiya" data-i18n-ph="of_baladiya_ph" placeholder="Select baladiya">
+                                            <input type="text" class="form-input" id="ckBaladiya" maxlength="100" autocomplete="address-level2" data-i18n-ph="of_baladiya_ph" placeholder="Select baladiya">
                                         </div>
                                     </div>
                                 </div>
@@ -2065,7 +2191,7 @@
                                         <label><span data-i18n="of_address">Detailed Address</span> <span class="req">*</span></label>
                                         <div class="form-input-wrap">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                                            <textarea class="form-textarea" id="ckAddress" data-i18n-ph="of_address_ph" placeholder="Neighborhood, street, building number, landmark..."></textarea>
+                                            <textarea class="form-textarea" id="ckAddress" maxlength="300" autocomplete="street-address" data-i18n-ph="of_address_ph" placeholder="Neighborhood, street, building number, landmark..."></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -2093,7 +2219,7 @@
                                 <div class="form-row single">
                                     <div class="form-field">
                                         <div class="form-input-wrap">
-                                            <textarea class="form-textarea" id="ckNotes" data-i18n-ph="of_notes_ph" placeholder="Write your notes in detail here..."></textarea>
+                                            <textarea class="form-textarea" id="ckNotes" maxlength="500" data-i18n-ph="of_notes_ph" placeholder="Write your notes in detail here..."></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -2109,6 +2235,38 @@
                     </div>
                 </div>
             </section>
+        </section>
+
+        <!-- ===================================================
+             PAGE: PRIVACY POLICY (NOIR design)
+             =================================================== -->
+        <section id="page-privacy" class="page">
+            <div class="page-hero">
+                <div class="container">
+                    <p class="hero-badge">Privacy</p>
+                    <h1 data-i18n="footer_privacy">Privacy Policy</h1>
+                    <p>Your privacy matters to us. Learn how we collect, use, and protect your data.</p>
+                </div>
+            </div>
+            <div class="container" style="padding:2.5rem 1rem 4rem;max-width:880px;">
+                <div id="privacyContent"></div>
+            </div>
+        </section>
+
+        <!-- ===================================================
+             PAGE: SUPPORT / CONTACT (NOIR design)
+             =================================================== -->
+        <section id="page-support" class="page">
+            <div class="page-hero">
+                <div class="container">
+                    <p class="hero-badge">Support</p>
+                    <h1 data-i18n="nav_contact">Contact &amp; Support</h1>
+                    <p>We're here to help. Reach out and we'll respond as soon as we can.</p>
+                </div>
+            </div>
+            <div class="container" style="padding:2.5rem 1rem 4rem;max-width:1100px;">
+                <div id="supportContent"></div>
+            </div>
         </section>
     </main>
 
@@ -2138,19 +2296,19 @@
                 <div>
                     <h3 class="footer-column-title" data-i18n="footer_company">Company</h3>
                     <ul class="footer-links">
-                        <li><a class="footer-link" data-i18n="footer_about">About Us</a></li>
-                        <li><a class="footer-link" data-i18n="footer_contact">Contact Us</a></li>
-                        <li><a class="footer-link" data-i18n="footer_shipping">Shipping &amp; Delivery</a></li>
-                        <li><a class="footer-link" data-i18n="footer_returns">Returns &amp; Refunds</a></li>
-                        <li><a class="footer-link" data-i18n="footer_privacy">Privacy Policy</a></li>
+                        <li><a class="footer-link" data-nav="support" href="index.html?page=support" data-i18n="footer_about">About Us</a></li>
+                        <li><a class="footer-link" data-nav="support" href="index.html?page=support" data-i18n="footer_contact">Contact Us</a></li>
+                        <li><a class="footer-link" data-nav="support" href="index.html?page=support" data-i18n="footer_shipping">Shipping &amp; Delivery</a></li>
+                        <li><a class="footer-link" data-nav="support" href="index.html?page=support" data-i18n="footer_returns">Returns &amp; Refunds</a></li>
+                        <li><a class="footer-link" data-nav="privacy" href="index.html?page=privacy" data-i18n="footer_privacy">Privacy Policy</a></li>
                     </ul>
                 </div>
                 <div>
                     <h3 class="footer-column-title" data-i18n="footer_help">Help</h3>
                     <ul class="footer-links">
-                        <li><a class="footer-link" data-i18n="footer_faqs">FAQs</a></li>
-                        <li><a class="footer-link" data-i18n="footer_track">Track Your Order</a></li>
-                        <li><a class="footer-link" data-i18n="footer_size_guide">Size Guide</a></li>
+                        <li><a class="footer-link" data-nav="support" href="index.html?page=support" data-i18n="footer_faqs">FAQs</a></li>
+                        <li><a class="footer-link" data-nav="support" href="index.html?page=support" data-i18n="footer_track">Track Your Order</a></li>
+                        <li><a class="footer-link" data-nav="support" href="index.html?page=support" data-i18n="footer_size_guide">Size Guide</a></li>
                         <li><a class="footer-link" data-nav="search" href="index.html?page=search" data-i18n="footer_search">Search</a></li>
                     </ul>
                 </div>
@@ -2282,8 +2440,11 @@
       let storeData = null;
       if (storeRow) {
         storeData = {
-          id: storeRow.id, name: storeRow.name, title: storeRow.title,
+          id: storeRow.id, name: storeRow.name, title: storeRow.title || storeRow.page_title,
           pageTitle: storeRow.page_title, pageSubtitle: storeRow.page_subtitle, heroDesc: storeRow.hero_desc,
+          coverImage: storeRow.cover_image || null,
+          hideTrustIcons: storeRow.hide_trust_icons || {},
+          trustIconsText: storeRow.trust_icons_text || {},
           template: storeRow.template, theme: storeRow.theme,
           shipping: storeRow.shipping || [], shippingProvider: storeRow.shipping_provider,
           bgColor: storeRow.bg_color, cardColor: storeRow.card_color, accentColor: storeRow.accent_color, textColor: storeRow.text_color,
@@ -2311,10 +2472,23 @@
         desc: p.description || '', shortDesc: p.description || '',
         image: p.image || '', images: p.images || [], detailImages: p.detail_images || [],
         sizes: (p.sizes || []).map(function(s) { return typeof s === 'string' ? s : s.name || String(s); }),
-        colors: (p.colors || []).map(function(c) { return typeof c === 'string' ? { name: c, hex: c } : { name: c.name || c, hex: c.hex || c }; }),
-        slug: p.slug || '', rating: 4.5 + Math.random() * 0.5, reviews: Math.floor(Math.random() * 100) + 10,
+        colors: (p.colors || []).map(function(c) {
+          if (typeof c === 'string') return { name: c, hex: c };
+          if (typeof c === 'object' && c !== null) {
+            var hex = c.hex || c.color || c.value || '';
+            var nm = c.name || c.label || hex || 'Color';
+            return { name: nm, hex: hex };
+          }
+          return { name: String(c), hex: String(c) };
+        }),
+        slug: p.slug || '',
+        shippingReturns: p.shipping_returns || '',
+        reviewsText: p.reviews_text || '',
+        reviewsData: Array.isArray(p.reviews_data) ? p.reviews_data : [],
+        details: Array.isArray(p.details) ? p.details : [],
+        rating: 4.5 + Math.random() * 0.5, reviews: Math.floor(Math.random() * 100) + 10,
         badge: p.discount_price != null && Number(p.discount_price) > 0 ? 'Sale' : '', isNew: false,
-        details: [], materials: '', sizeFit: '', shipping: '',
+        materials: '', sizeFit: '', shipping: '',
       }));
       try { localStorage.setItem(cacheKey, JSON.stringify({ products, version: remoteVer })); } catch {}
       return { store: storeData, products };
@@ -2333,7 +2507,21 @@
               emoji: p.emoji || '🛍️', category: p.category || '', desc: p.description || '',
               image: p.image || '', images: p.images || [],
               sizes: (p.sizes || []).map(function(s) { return typeof s === 'string' ? s : s.name || String(s); }),
-              colors: (p.colors || []).map(function(c) { return typeof c === 'string' ? { name: c, hex: c } : { name: c.name || c, hex: c.hex || c }; }),
+              colors: (p.colors || []).map(function(c) {
+                if (typeof c === 'string') return { name: c, hex: c };
+                if (typeof c === 'object' && c !== null) {
+                  var hex = c.hex || c.color || c.value || '';
+                  var nm = c.name || c.label || hex || 'Color';
+                  return { name: nm, hex: hex };
+                }
+                return { name: String(c), hex: String(c) };
+              }),
+              slug: p.slug || '',
+              shippingReturns: p.shipping_returns || '',
+              reviewsText: p.reviews_text || '',
+              reviewsData: Array.isArray(p.reviews_data) ? p.reviews_data : [],
+              details: Array.isArray(p.details) ? p.details : [],
+              desc: p.description || '',
             }));
             onUpdate(products);
           })
@@ -2412,6 +2600,35 @@
     <script>
     (function () {
         'use strict';
+
+        /* ===================== PER-WILAYA SHIPPING ===================== */
+        var WILAYA_NAME_TO_ID = {
+            'Adrar':1,'Chlef':2,'Laghouat':3,'Oum El Bouaghi':4,'Batna':5,'Béjaïa':6,'Biskra':7,'Béchar':8,
+            'Blida':9,'Bouira':10,'Tamanrasset':11,'Tébessa':12,'Tlemcen':13,'Tiaret':14,'Tizi Ouzou':15,
+            'Alger':16,'Djelfa':17,'Jijel':18,'Sétif':19,'Saïda':20,'Skikda':21,'Sidi Bel Abbès':22,'Annaba':23,
+            'Guelma':24,'Constantine':25,'Médéa':26,'Mostaganem':27,"M'Sila":28,'Mascara':29,'Ouargla':30,
+            'Oran':31,'El Bayadh':32,'Illizi':33,'Bordj Bou Arréridj':34,'Boumerdès':35,'El Tarf':36,
+            'Tindouf':37,'Tissemsilt':38,'El Oued':39,'Khenchela':40,'Souk Ahras':41,'Tipaza':42,'Mila':43,
+            "Aïn Defla":44,'Naâma':45,"Aïn Témouchent":46,'Ghardaïa':47,'Relizane':48,
+            'Timimoun':49,'Bordj Badji Mokhtar':50,'Ouled Djellal':51,'Béni Abbès':52,'In Salah':53,
+            'In Guezzam':54,'Touggourt':55,'Djanet':56,"El M'Ghair":57,'El Meniaa':58
+        };
+        function calcShipping(wilaya, subtotal, storeData) {
+            if (!storeData || !storeData.shipping || !Array.isArray(storeData.shipping) || storeData.shipping.length === 0) {
+                return subtotal >= 5000 ? 0 : 350;
+            }
+            var wilayaId = wilaya ? WILAYA_NAME_TO_ID[wilaya] : null;
+            if (!wilayaId) return subtotal >= 5000 ? 0 : 350;
+            var entry = null;
+            for (var i = 0; i < storeData.shipping.length; i++) {
+                if (Number(storeData.shipping[i].id) === wilayaId) { entry = storeData.shipping[i]; break; }
+            }
+            if (!entry) return subtotal >= 5000 ? 0 : 350;
+            var price = Number(entry.home) || 0;
+            if (subtotal >= 5000) return 0;
+            return price;
+        }
+        window.calcShipping = calcShipping;
 
         /* ===================== DATA (will be overridden by Supabase) ===================== */
         var NEON_DATA = {
@@ -3150,11 +3367,16 @@
         function parseURL() {
             var params = new URLSearchParams(window.location.search);
             var page = params.get('page') || 'home';
-            var validPages = { home: true, product: true, categories: true, search: true, checkout: true };
+            var validPages = { home: true, product: true, categories: true, search: true, checkout: true, privacy: true, support: true, about: true, contact: true };
             if (!validPages[page]) page = 'home';
+            // Map legacy about/contact → support
+            if (page === 'about' || page === 'contact') page = 'support';
             state.page = page;
             state.params = {};
-            if (page === 'product') state.params.id = params.get('id');
+            if (page === 'product') {
+                state.params.id = params.get('id');
+                state.params.slug = params.get('slug');
+            }
             if (page === 'categories') state.params.cat = params.get('cat') || 'all';
             if (page === 'search') {
                 state.params.q = params.get('q') || '';
@@ -3204,6 +3426,8 @@
             else if (state.page === 'categories') renderCategoriesPage();
             else if (state.page === 'search') renderSearchPage();
             else if (state.page === 'checkout') renderCheckoutPage();
+            else if (state.page === 'privacy') renderPrivacyPage();
+            else if (state.page === 'support') renderSupportPage();
 
             // Re-init icons after every render
             if (window.lucide) lucide.createIcons();
@@ -3212,29 +3436,34 @@
         /* ===================== PRODUCT CARD TEMPLATE ===================== */
         function productCardHTML(p, opts) {
             opts = opts || {};
-            var discount = discountPercent(p.price, p.originalPrice);
+            var eff = window._effectivePrice ? window._effectivePrice(p) : p.price;
+            var hasDiscount = p.originalPrice && p.originalPrice > eff;
+            var discount = hasDiscount ? discountPercent(eff, p.originalPrice) : discountPercent(p.price, p.originalPrice);
             var tag = '';
             if (p.isNew) tag = '<span class="product-tag new">' + escapeHTML(t('new_arrival')) + '</span>';
             else if (p.badge === 'Best Seller') tag = '<span class="product-tag">' + escapeHTML(t('best_seller')) + '</span>';
-            else if (discount) tag = '<span class="product-tag sale">-' + discount + '%</span>';
+            else if (hasDiscount) tag = '<span class="product-tag sale">-' + discount + '%</span>';
             var nameHTML = opts.highlightQuery ? highlight(p.name, opts.highlightQuery) : escapeHTML(p.name);
             var catHTML = opts.highlightQuery ? highlight(p.categoryLabel, opts.highlightQuery) : escapeHTML(p.categoryLabel);
             // rating count uses Western digits via toFixed and toString (always Latin)
             var reviewsStr = Number(p.reviews).toString();
+            // Use slug when available for SEO-friendly URLs
+            var cardParams = p.slug ? '{"slug":"' + escapeHTML(String(p.slug)) + '"}' : '{"id":"' + escapeHTML(String(p.id)) + '"}';
+            var cardHref = p.slug ? buildHref('product', { slug: p.slug }) : buildHref('product', { id: p.id });
             return '' +
                 '<div class="product-card">' +
-                    '<a class="product-image-wrapper" data-nav="product" data-params=\'{"id":"' + p.id + '"}\' href="' + buildHref('product', { id: p.id }) + '">' +
+                    '<a class="product-image-wrapper" data-nav="product" data-params=\'' + cardParams + '\' href="' + cardHref + '">' +
                         '<div class="product-image-box"><img src="' + p.images[0] + '" alt="' + escapeHTML(p.name) + '" class="product-image"></div>' +
                         tag +
                         '<span class="product-quick" data-stop-nav="1"><i data-lucide="heart"></i></span>' +
                     '</a>' +
                     '<div class="product-info">' +
                         '<p class="product-cat">' + catHTML + '</p>' +
-                        '<h3 class="product-name"><a data-nav="product" data-params=\'{"id":"' + p.id + '"}\' href="' + buildHref('product', { id: p.id }) + '">' + nameHTML + '</a></h3>' +
+                        '<h3 class="product-name"><a data-nav="product" data-params=\'' + cardParams + '\' href="' + cardHref + '">' + nameHTML + '</a></h3>' +
                         '<div class="product-rating"><i data-lucide="star" style="fill:currentColor;"></i><span>' + p.rating.toFixed(1) + ' (' + reviewsStr + ')</span></div>' +
                         '<div class="product-price-row">' +
-                            '<span class="product-price">' + formatPrice(p.price) + '</span>' +
-                            (p.originalPrice ? '<span class="product-price-orig">' + formatPrice(p.originalPrice) + '</span>' : '') +
+                            '<span class="product-price">' + formatPrice(eff) + '</span>' +
+                            (hasDiscount ? '<span class="product-price-orig">' + formatPrice(p.originalPrice) + '</span>' : '') +
                         '</div>' +
                         '<button class="btn-add-cart" data-add-product="' + p.id + '">' + escapeHTML(t('add_to_cart')) + '</button>' +
                     '</div>' +
@@ -3260,24 +3489,157 @@
             // Products (home uses legacy compact styling — no rating, no tag)
             var prodGrid = document.getElementById('homeProductsGrid');
             prodGrid.innerHTML = NEON_DATA.products.map(function (p) {
-                var pHref = buildHref('product', { id: p.id });
+                var pHref = p.slug ? buildHref('product', { slug: p.slug }) : buildHref('product', { id: p.id });
+                var pParams = p.slug ? '{"slug":"' + escapeHTML(String(p.slug)) + '"}' : '{"id":"' + escapeHTML(String(p.id)) + '"}';
+                var eff = window._effectivePrice ? window._effectivePrice(p) : p.price;
+                var hasDiscount = p.originalPrice && p.originalPrice > eff;
                 return '' +
                     '<div class="product-card">' +
-                        '<a class="product-image-wrapper" data-nav="product" data-params=\'{"id":"' + p.id + '"}\' href="' + pHref + '">' +
+                        '<a class="product-image-wrapper" data-nav="product" data-params=\'' + pParams + '\' href="' + pHref + '">' +
                             '<div class="product-image-box"><img src="' + p.images[0] + '" alt="' + escapeHTML(p.name) + '" class="product-image"></div>' +
                         '</a>' +
-                        '<a data-nav="product" data-params=\'{"id":"' + p.id + '"}\' href="' + pHref + '"><h3 class="product-name">' + escapeHTML(p.name) + '</h3></a>' +
-                        '<p class="product-price">' + formatPrice(p.price) + '</p>' +
+                        '<a data-nav="product" data-params=\'' + pParams + '\' href="' + pHref + '"><h3 class="product-name">' + escapeHTML(p.name) + '</h3></a>' +
+                        '<div class="product-price-row">' +
+                            '<span class="product-price">' + formatPrice(eff) + '</span>' +
+                            (hasDiscount ? '<span class="product-price-orig">' + formatPrice(p.originalPrice) + '</span>' : '') +
+                        '</div>' +
                         '<button class="btn-add-cart" data-add-product="' + p.id + '">' + escapeHTML(t('add_to_cart')) + '</button>' +
                     '</div>';
             }).join('');
             bindProductCardActions(prodGrid);
         }
 
+        /* ===================== REVIEWS PANEL (NOIR design) ===================== */
+        function renderReviewsPanel(p, avgRating, reviewCount) {
+            var panel = document.getElementById('panel-reviews');
+            if (!panel) return;
+            var esc = escapeHTML;
+            var revData = (Array.isArray(p.reviewsData) ? p.reviewsData : []);
+            var revText = p.reviewsText || '';
+            var rating = Number(avgRating) || 0;
+            var full = Math.floor(rating);
+            var half = (rating - full) >= 0.25;
+
+            var html = '';
+            // Summary block
+            html += '<div style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;margin-bottom:1.75rem;padding:1.25rem 1.5rem;background-color:#1a1a1a;border:1px solid var(--color-gray-200);border-radius:0.75rem;">';
+            html += '<div style="font-size:2.5rem;font-weight:800;color:var(--color-gray-900);line-height:1;letter-spacing:-0.02em;">' + rating.toFixed(1) + '</div>';
+            html += '<div>';
+            html += '<div class="stars" style="display:inline-flex;gap:0.125rem;color:var(--color-black);">';
+            for (var i = 0; i < full; i++) html += '<svg fill="currentColor" viewBox="0 0 24 24" style="width:18px;height:18px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+            if (half) html += '<svg fill="currentColor" viewBox="0 0 24 24" style="width:18px;height:18px;opacity:0.5;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+            for (var j = full + (half ? 1 : 0); j < 5; j++) html += '<svg class="empty" fill="currentColor" viewBox="0 0 24 24" style="width:18px;height:18px;color:var(--color-gray-300);"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+            html += '</div>';
+            html += '<div style="font-size:0.8125rem;color:var(--color-gray-500);margin-top:0.375rem;">Based on ' + (reviewCount || revData.length || 0) + ' reviews</div>';
+            html += '</div>';
+            html += '</div>';
+
+            // Custom reviews text block
+            if (revText) {
+                html += '<p class="tab-text" style="margin-bottom:1.5rem;max-width:48rem;">' + esc(revText) + '</p>';
+            }
+
+            // Individual review cards
+            if (revData.length) {
+                html += '<div style="display:flex;flex-direction:column;gap:1rem;max-width:48rem;">';
+                revData.forEach(function (r) {
+                    var name = r.name || 'Anonymous';
+                    var rRating = Math.max(0, Math.min(5, Math.floor(Number(r.rating) || 0)));
+                    var comment = r.comment || '';
+                    var date = r.date || '';
+                    var initials = (String(name).charAt(0) || 'A').toUpperCase();
+                    html += '<div style="background-color:#1a1a1a;border:1px solid var(--color-gray-200);border-radius:0.75rem;padding:1.25rem;">';
+                    html += '<div style="display:flex;align-items:flex-start;gap:0.875rem;">';
+                    html += '<div style="width:42px;height:42px;border-radius:9999px;background:linear-gradient(135deg,#c9a96e,#e8d5a3);color:#0a0a0a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0;">' + esc(initials) + '</div>';
+                    html += '<div style="flex:1;min-width:0;">';
+                    html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">';
+                    html += '<div style="font-weight:600;color:var(--color-gray-900);font-size:0.9375rem;">' + esc(name) + '</div>';
+                    if (date) html += '<div style="font-size:0.6875rem;color:var(--color-gray-500);letter-spacing:0.025em;">' + esc(date) + '</div>';
+                    html += '</div>';
+                    html += '<div class="stars" style="display:inline-flex;gap:0.125rem;margin-top:0.375rem;color:var(--color-black);">';
+                    for (var s = 0; s < rRating; s++) html += '<svg fill="currentColor" viewBox="0 0 24 24" style="width:13px;height:13px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+                    for (var s2 = rRating; s2 < 5; s2++) html += '<svg class="empty" fill="currentColor" viewBox="0 0 24 24" style="width:13px;height:13px;color:var(--color-gray-300);"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+                    html += '</div>';
+                    if (comment) html += '<p style="font-size:0.875rem;color:var(--color-gray-700);line-height:1.7;margin-top:0.625rem;">' + esc(comment) + '</p>';
+                    html += '</div>';
+                    html += '</div>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            } else if (!revText) {
+                // No reviews and no reviewsText — friendly default
+                html += '<div style="text-align:center;padding:2.5rem 1rem;color:var(--color-gray-500);background-color:#1a1a1a;border:1px solid var(--color-gray-200);border-radius:0.75rem;max-width:48rem;margin:0 auto;">';
+                html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin:0 auto 0.875rem;display:block;color:var(--color-gray-400);"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>';
+                html += '<p style="font-size:0.9375rem;">No reviews yet. Be the first to share your experience!</p>';
+                html += '</div>';
+            }
+
+            panel.innerHTML = html;
+        }
+
+        /* ===================== TRUST BADGES (from store settings) ===================== */
+        function buildTrustBadgesHTML() {
+            var sd = window._storeData || {};
+            var hide = sd.hideTrustIcons || {};
+            var txt = sd.trustIconsText || {};
+            var items = [
+                {
+                    key: 'free_shipping',
+                    hidden: !!hide.free_shipping,
+                    title: txt.free_shipping_title || t('trust_free_title'),
+                    desc: txt.free_shipping_desc || t('trust_free_desc'),
+                    iconPath: '<rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>',
+                    lucideIcon: 'truck'
+                },
+                {
+                    key: 'easy_returns',
+                    hidden: !!hide.easy_returns,
+                    title: txt.easy_returns_title || t('trust_returns_title'),
+                    desc: txt.easy_returns_desc || t('trust_returns_desc'),
+                    lucideIcon: 'rotate-ccw'
+                },
+                {
+                    key: 'secure_payment',
+                    hidden: !!hide.secure_payment,
+                    title: txt.secure_payment_title || t('trust_secure_title'),
+                    desc: txt.secure_payment_desc || t('trust_secure_desc'),
+                    lucideIcon: 'shield-check'
+                }
+            ];
+            var visible = items.filter(function (it) { return !it.hidden; });
+            if (visible.length === 0) return ''; // hide section entirely
+            var html = '<div class="trust-badges' + (visible.length === 1 ? ' trust-badges-one' : '') + (visible.length === 2 ? ' trust-badges-two' : '') + '">';
+            visible.forEach(function (it) {
+                html += '<div class="trust-item"><div class="trust-icon"><i data-lucide="' + it.lucideIcon + '"></i></div><div><div class="trust-title">' + escapeHTML(it.title) + '</div><div class="trust-desc">' + escapeHTML(it.desc) + '</div></div></div>';
+            });
+            html += '</div>';
+            return html;
+        }
+
+        /* ===================== FIND PRODUCT BY ID OR SLUG ===================== */
+        function findProductByIdOrSlug(id, slug) {
+            if (slug) {
+                var bySlug = NEON_DATA.products.find(function (x) { return x.slug && String(x.slug) === String(slug); });
+                if (bySlug) return bySlug;
+            }
+            if (id) {
+                var byId = NEON_DATA.products.find(function (x) { return String(x.id) === String(id); });
+                if (byId) return byId;
+            }
+            return null;
+        }
+
+        function openProduct(ref, isSlug) {
+            if (isSlug) navigate('product', { slug: ref });
+            else navigate('product', { id: ref });
+        }
+        window.openProduct = openProduct;
+
         /* ===================== PRODUCT PAGE ===================== */
         function renderProductPage() {
-            var id = state.params.id || 1;
-            var p = NEON_DATA.getProductById(id);
+            var id = state.params.id;
+            var slug = state.params.slug;
+            var p = findProductByIdOrSlug(id, slug) || NEON_DATA.getProductById(id || 1);
             var grid = document.getElementById('productGrid');
             if (!p) {
                 grid.innerHTML = '<p style="padding:4rem 0;text-align:center;color:var(--color-gray-500);">Product not found. <a data-nav="categories" style="color:var(--color-black);text-decoration:underline;cursor:pointer;">Browse all products</a></p>';
@@ -3303,7 +3665,9 @@
             document.getElementById('crumbCategory').setAttribute('data-params', JSON.stringify({ cat: p.category }));
             document.getElementById('crumbProduct').textContent = p.name;
 
-            var discount = discountPercent(p.price, p.originalPrice);
+            var eff = window._effectivePrice ? window._effectivePrice(p) : p.price;
+            var hasDiscount = p.originalPrice && p.originalPrice > eff;
+            var discount = hasDiscount ? discountPercent(eff, p.originalPrice) : 0;
 
             var galleryHTML =
                 '<div class="gallery">' +
@@ -3328,8 +3692,8 @@
                         '<span class="rating-text"><strong>' + p.rating.toFixed(1) + '</strong> (' + Number(p.reviews).toString() + ' ' + escapeHTML(t('reviews')) + ')</span>' +
                     '</div>' +
                     '<div class="price-row">' +
-                        '<span class="price-current">' + formatPrice(p.price) + '</span>' +
-                        (p.originalPrice ? '<span class="price-original">' + formatPrice(p.originalPrice) + '</span>' : '') +
+                        '<span class="price-current">' + formatPrice(eff) + '</span>' +
+                        (hasDiscount ? '<span class="price-original">' + formatPrice(p.originalPrice) + '</span>' : '') +
                         (discount ? '<span class="price-discount">' + discount + '% ' + escapeHTML(t('off')) + '</span>' : '') +
                     '</div>' +
                     '<p class="short-desc">' + escapeHTML(p.shortDesc) + '</p>' +
@@ -3363,23 +3727,25 @@
                         '<button class="btn-cart" id="addToCartBtn"><i data-lucide="shopping-bag"></i>' + escapeHTML(t('pd_add_to_cart')) + '</button>' +
                         '<button class="btn-wishlist" id="wishlistBtn" aria-label="' + escapeHTML(t('pd_wishlist')) + '"><i data-lucide="heart"></i></button>' +
                     '</div>' +
-                    '<div class="trust-badges">' +
-                        '<div class="trust-item"><div class="trust-icon"><i data-lucide="truck"></i></div><div><div class="trust-title">' + escapeHTML(t('trust_free_title')) + '</div><div class="trust-desc">' + escapeHTML(t('trust_free_desc')) + '</div></div></div>' +
-                        '<div class="trust-item"><div class="trust-icon"><i data-lucide="rotate-ccw"></i></div><div><div class="trust-title">' + escapeHTML(t('trust_returns_title')) + '</div><div class="trust-desc">' + escapeHTML(t('trust_returns_desc')) + '</div></div></div>' +
-                        '<div class="trust-item"><div class="trust-icon"><i data-lucide="shield-check"></i></div><div><div class="trust-title">' + escapeHTML(t('trust_secure_title')) + '</div><div class="trust-desc">' + escapeHTML(t('trust_secure_desc')) + '</div></div></div>' +
-                    '</div>' +
+                    buildTrustBadgesHTML() +
                 '</div>';
 
             grid.innerHTML = galleryHTML + infoHTML;
 
-            // Tabs content
-            document.getElementById('textDetails').textContent = t('tab_details_text');
-            document.getElementById('specsList').innerHTML = p.details.map(function (d) { return '<li><i data-lucide="check"></i> ' + escapeHTML(d) + '</li>'; }).join('');
+            // Tabs content — Description (Details) + specs list from product.details
+            var descText = p.shortDesc || p.desc || t('tab_details_text');
+            document.getElementById('textDetails').textContent = descText;
+            var specs = (Array.isArray(p.details) && p.details.length) ? p.details : [];
+            document.getElementById('specsList').innerHTML = specs.map(function (d) { return '<li><i data-lucide="check"></i> ' + escapeHTML(String(d)) + '</li>'; }).join('');
             document.getElementById('detailImage').src = p.images[1] || p.images[0];
             document.getElementById('detailImage').alt = p.name + ' detail';
-            document.getElementById('textMaterials').textContent = p.materials;
-            document.getElementById('textSize').textContent = p.sizeFit;
-            document.getElementById('textShipping').textContent = t('shipping_text');
+            document.getElementById('textMaterials').textContent = p.materials || t('tab_details_text');
+            document.getElementById('textSize').textContent = p.sizeFit || 'Standard fit. Fits true to size.';
+            // Shipping & Returns — use product.shippingReturns if set, else default
+            var shippingText = p.shippingReturns || t('shipping_text');
+            document.getElementById('textShipping').textContent = shippingText;
+            // Reviews tab — render summary + reviewsData cards
+            renderReviewsPanel(p, p.rating || 0, p.reviews || 0);
 
             // Reset tabs to first
             var tabBtns = document.querySelectorAll('.tab-btn');
@@ -3394,14 +3760,17 @@
             // Related
             var related = NEON_DATA.getRelatedProducts(p.id, 4);
             document.getElementById('relatedGrid').innerHTML = related.map(function (rp) {
+                var rpEff = window._effectivePrice ? window._effectivePrice(rp) : rp.price;
+                var rpParams = rp.slug ? '{"slug":"' + escapeHTML(String(rp.slug)) + '"}' : '{"id":"' + escapeHTML(String(rp.id)) + '"}';
+                var rpHref = rp.slug ? buildHref('product', { slug: rp.slug }) : buildHref('product', { id: rp.id });
                 return '' +
-                    '<a class="related-card" data-nav="product" data-params=\'{"id":"' + rp.id + '"}\' href="' + buildHref('product', { id: rp.id }) + '">' +
+                    '<a class="related-card" data-nav="product" data-params=\'' + rpParams + '\' href="' + rpHref + '">' +
                         '<div class="related-image-box">' +
                             '<img src="' + rp.images[0] + '" alt="' + escapeHTML(rp.name) + '">' +
                             '<span class="related-wishlist" data-stop-nav="1"><i data-lucide="heart"></i></span>' +
                         '</div>' +
                         '<div class="related-name">' + escapeHTML(rp.name) + '</div>' +
-                        '<div class="related-price">' + formatPrice(rp.price) + '</div>' +
+                        '<div class="related-price">' + formatPrice(rpEff) + '</div>' +
                     '</a>';
             }).join('');
 
@@ -3415,11 +3784,13 @@
             if (!card || !p) return;
 
             var qty = state.quantity || 1;
-            var subtotal = p.price * qty;
-            var savings = p.originalPrice ? (p.originalPrice - p.price) * qty : 0;
-            var shipping = subtotal >= 5000 ? 0 : 350;
-            var total = subtotal + shipping;
+            var effUnit = window._effectivePrice ? window._effectivePrice(p) : p.price;
+            var subtotal = effUnit * qty;
+            var hasDiscountOS = p.originalPrice && p.originalPrice > effUnit;
+            var savings = hasDiscountOS ? (p.originalPrice - effUnit) * qty : 0;
             var d = state.checkoutData || {};
+            var shipping = calcShipping(d.wilaya || '', subtotal, window._storeData);
+            var total = subtotal + shipping;
 
             card.innerHTML =
                 '<div class="order-summary-header">' +
@@ -3441,8 +3812,8 @@
                         '</div>' +
                     '</div>' +
                     '<div class="order-item-price">' +
-                        '<span class="current">' + formatPrice(p.price) + '</span>' +
-                        (p.originalPrice ? '<span class="original">' + formatPrice(p.originalPrice) + '</span>' : '') +
+                        '<span class="current">' + formatPrice(window._effectivePrice ? window._effectivePrice(p) : p.price) + '</span>' +
+                        (hasDiscountOS ? '<span class="original">' + formatPrice(p.originalPrice) + '</span>' : '') +
                     '</div>' +
                 '</div>' +
 
@@ -3457,17 +3828,19 @@
                             '<label>' + escapeHTML(t('of_full_name')) + ' <span class="req">*</span></label>' +
                             '<div class="form-input-wrap">' +
                                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
-                                '<input type="text" class="form-input" id="coName" placeholder="' + escapeHTML(t('of_full_name_ph')) + '" value="' + escapeHTML(d.fullName || '') + '">' +
+                                '<input type="text" class="form-input" id="coName" maxlength="100" autocomplete="name" placeholder="' + escapeHTML(t('of_full_name_ph')) + '" value="' + escapeHTML(d.fullName || '') + '">' +
                             '</div>' +
                         '</div>' +
                         '<div class="form-field">' +
                             '<label>' + escapeHTML(t('of_phone')) + ' <span class="req">*</span></label>' +
                             '<div class="form-input-wrap">' +
                                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>' +
-                                '<input type="tel" class="form-input" id="coPhone" placeholder="' + escapeHTML(t('of_phone_ph')) + '" value="' + escapeHTML(d.phone || '') + '">' +
+                                '<input type="tel" class="form-input" id="coPhone" maxlength="15" pattern="0[5-7][0-9]{8}" autocomplete="tel" title="Phone must be 10 digits starting with 05, 06 or 07" placeholder="' + escapeHTML(t('of_phone_ph')) + '" value="' + escapeHTML(d.phone || '') + '">' +
                             '</div>' +
                         '</div>' +
                     '</div>' +
+                    /* 🔒 Honeypot anti-spam field — hidden from real users, bots fill it */
+                    '<div style="position:absolute;left:-9999px;opacity:0;height:0;width:0;overflow:hidden;" aria-hidden="true"><input type="text" id="shv_hp_co" name="url" tabindex="-1" autocomplete="off"></div>' +
                 '</div>' +
 
                 /* Delivery Address section */
@@ -3481,7 +3854,7 @@
                             '<label>' + escapeHTML(t('of_wilaya')) + ' <span class="req">*</span></label>' +
                             '<div class="form-input-wrap">' +
                                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>' +
-                                '<select class="form-select" id="coWilaya">' +
+                                '<select class="form-select" id="coWilaya" maxlength="50" autocomplete="address-level1">' +
                                     '<option value="">' + escapeHTML(t('of_wilaya_ph')) + '</option>' +
                                     ALGERIAN_WILAYAS.map(function (w) { return '<option value="' + escapeHTML(w) + '"' + (d.wilaya === w ? ' selected' : '') + '>' + escapeHTML(w) + '</option>'; }).join('') +
                                 '</select>' +
@@ -3491,7 +3864,7 @@
                             '<label>' + escapeHTML(t('of_baladiya')) + ' <span class="req">*</span></label>' +
                             '<div class="form-input-wrap">' +
                                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
-                                '<input type="text" class="form-input" id="coBaladiya" placeholder="' + escapeHTML(t('of_baladiya_ph')) + '" value="' + escapeHTML(d.baladiya || '') + '">' +
+                                '<input type="text" class="form-input" id="coBaladiya" maxlength="100" autocomplete="address-level2" placeholder="' + escapeHTML(t('of_baladiya_ph')) + '" value="' + escapeHTML(d.baladiya || '') + '">' +
                             '</div>' +
                         '</div>' +
                     '</div>' +
@@ -3500,7 +3873,7 @@
                             '<label>' + escapeHTML(t('of_address')) + ' <span class="req">*</span></label>' +
                             '<div class="form-input-wrap">' +
                                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
-                                '<textarea class="form-textarea" id="coAddress" placeholder="' + escapeHTML(t('of_address_ph')) + '">' + escapeHTML(d.address || '') + '</textarea>' +
+                                '<textarea class="form-textarea" id="coAddress" maxlength="300" autocomplete="street-address" placeholder="' + escapeHTML(t('of_address_ph')) + '">' + escapeHTML(d.address || '') + '</textarea>' +
                             '</div>' +
                         '</div>' +
                     '</div>' +
@@ -3530,7 +3903,7 @@
                     '<div class="form-row single">' +
                         '<div class="form-field">' +
                             '<div class="form-input-wrap">' +
-                                '<textarea class="form-textarea" id="coNotes" placeholder="' + escapeHTML(t('of_notes_ph')) + '">' + escapeHTML(d.notes || '') + '</textarea>' +
+                                '<textarea class="form-textarea" id="coNotes" maxlength="500" placeholder="' + escapeHTML(t('of_notes_ph')) + '">' + escapeHTML(d.notes || '') + '</textarea>' +
                             '</div>' +
                         '</div>' +
                     '</div>' +
@@ -3563,7 +3936,7 @@
             bindOrderFormInteractions(p);
         }
 
-        /* Algerian Wilayas list */
+        /* Algerian Wilayas list (58) */
         var ALGERIAN_WILAYAS = [
             'Adrar','Chlef','Laghouat','Oum El Bouaghi','Batna','Béjaïa','Biskra','Béchar',
             'Blida','Bouira','Tamanrasset','Tébessa','Tlemcen','Tiaret','Tizi Ouzou',
@@ -3571,7 +3944,9 @@
             'Guelma','Constantine','Médéa','Mostaganem','M\'Sila','Mascara','Ouargla',
             'Oran','El Bayadh','Illizi','Bordj Bou Arréridj','Boumerdès','El Tarf',
             'Tindouf','Tissemsilt','El Oued','Khenchela','Souk Ahras','Tipaza','Mila',
-            'Aïn Defla','Naâma','Aïn Témouchent','Ghardaïa','Relizane'
+            'Aïn Defla','Naâma','Aïn Témouchent','Ghardaïa','Relizane',
+            'Timimoun','Bordj Badji Mokhtar','Ouled Djellal','Béni Abbès','In Salah',
+            'In Guezzam','Touggourt','Djanet','El M\'Ghair','El Meniaa'
         ];
 
         function bindOrderFormInteractions(p) {
@@ -3597,10 +3972,22 @@
                 }
             });
 
+            // Wilaya change → recompute shipping + totals live
+            var coWilayaEl = document.getElementById('coWilaya');
+            if (coWilayaEl) coWilayaEl.addEventListener('change', function () {
+                saveFormFields();
+                if (state.product) renderOrderSummary(state.product);
+            });
+
             // Submit button
             var submitBtn = document.getElementById('osSubmitBtn');
             if (submitBtn) submitBtn.addEventListener('click', function () {
                 saveFormFields();
+                // 🔒 Honeypot anti-spam check — bots fill hidden fields, humans don't
+                var hpCo = document.getElementById('shv_hp_co');
+                if (hpCo && hpCo.value) { showToast(t('of_required')); return; }
+                // 🔒 3-second minimum page load time (block instant bot submissions)
+                if (typeof window._SHV_PAGE_LOAD_TS !== 'undefined' && Date.now() - window._SHV_PAGE_LOAD_TS < 3000) { showToast(t('of_required')); return; }
                 var d = state.checkoutData;
                 if (!d.fullName || !d.phone || !d.wilaya || !d.baladiya || !d.address) {
                     showToast(t('of_required'));
@@ -3914,10 +4301,13 @@
         function renderTrending() {
             var trending = NEON_DATA.products.slice().sort(function (a, b) { return b.rating - a.rating; }).slice(0, 4);
             document.getElementById('recentGrid').innerHTML = trending.map(function (p) {
+                var tEff = window._effectivePrice ? window._effectivePrice(p) : p.price;
+                var tParams = p.slug ? '{"slug":"' + escapeHTML(String(p.slug)) + '"}' : '{"id":"' + escapeHTML(String(p.id)) + '"}';
+                var tHref = p.slug ? buildHref('product', { slug: p.slug }) : buildHref('product', { id: p.id });
                 return '' +
-                    '<a class="recent-card" data-nav="product" data-params=\'{"id":"' + p.id + '"}\' href="' + buildHref('product', { id: p.id }) + '">' +
+                    '<a class="recent-card" data-nav="product" data-params=\'' + tParams + '\' href="' + tHref + '">' +
                         '<div class="recent-card-img"><img src="' + p.images[0] + '" alt="' + escapeHTML(p.name) + '"></div>' +
-                        '<div class="recent-card-info"><div class="recent-card-name">' + escapeHTML(p.name) + '</div><div class="recent-card-price">' + formatPrice(p.price) + ' • ' + p.rating.toFixed(1) + ' ★</div></div>' +
+                        '<div class="recent-card-info"><div class="recent-card-name">' + escapeHTML(p.name) + '</div><div class="recent-card-price">' + formatPrice(tEff) + ' • ' + p.rating.toFixed(1) + ' ★</div></div>' +
                     '</a>';
             }).join('');
         }
@@ -3959,6 +4349,17 @@
             if (d.baladiya) { var b = document.getElementById('ckBaladiya'); if (b) b.value = d.baladiya; }
             if (d.address) { var a = document.getElementById('ckAddress'); if (a) a.value = d.address; }
             if (d.notes) { var no = document.getElementById('ckNotes'); if (no) no.value = d.notes; }
+
+            // Bind wilaya change → recompute totals (live)
+            var ckWilayaEl = document.getElementById('ckWilaya');
+            if (ckWilayaEl && !ckWilayaEl.__shvBound) {
+                ckWilayaEl.__shvBound = true;
+                ckWilayaEl.addEventListener('change', function () {
+                    if (!state.checkoutData) state.checkoutData = {};
+                    state.checkoutData.wilaya = ckWilayaEl.value;
+                    renderCheckoutPage();
+                });
+            }
 
             // Empty cart state
             if (cart.length === 0) {
@@ -4015,7 +4416,8 @@
 
             // Render summary card
             var subtotal = cart.reduce(function (s, i) { return s + (i.price * i.qty); }, 0);
-            var shipping = subtotal >= 5000 ? 0 : 350;
+            var ckWilayaVal = (function(sel){ return sel ? sel.value : ''; })(document.getElementById('ckWilaya'));
+            var shipping = calcShipping(ckWilayaVal || '', subtotal, window._storeData);
             var total = subtotal + shipping;
             if (summaryCard) {
                 summaryCard.innerHTML =
@@ -4054,6 +4456,11 @@
                     if (bl) state.checkoutData.baladiya = bl.value;
                     if (ad) state.checkoutData.address = ad.value;
                     if (nt) state.checkoutData.notes = nt.value;
+                    // 🔒 Honeypot anti-spam check — bots fill hidden fields, humans don't
+                    var hpCk = document.getElementById('shv_hp_ck');
+                    if (hpCk && hpCk.value) { showToast(t('of_required')); return; }
+                    // 🔒 3-second minimum page load time (block instant bot submissions)
+                    if (typeof window._SHV_PAGE_LOAD_TS !== 'undefined' && Date.now() - window._SHV_PAGE_LOAD_TS < 3000) { showToast(t('of_required')); return; }
                     var cd = state.checkoutData;
                     if (!cd.fullName || !cd.phone || !cd.wilaya || !cd.baladiya || !cd.address) {
                         showToast(t('of_required'));
@@ -4068,11 +4475,13 @@
                     try {
                         var cart = getCart();
                         var subtotal = cart.reduce(function(s, i) { return s + (i.price * i.qty); }, 0);
-                        var total = subtotal + 350; // default shipping
+                        var freshShipping = calcShipping(cd.wilaya || '', subtotal, window._storeData);
+                        var total = subtotal + freshShipping;
                         var payload = {
                             customer: { name: cd.fullName, phone: cd.phone, wilaya: cd.wilaya, commune: cd.baladiya, address: cd.address, delivery_type: 'COD' },
                             items: cart.map(function(i) { return { id: i.id, name: i.name, qty: i.qty, unit_price: i.price, line_total: i.price * i.qty, size: i.size, color: i.color }; }),
-                            pricing: { subtotal: subtotal, shipping_fee: 350, total: total, currency: 'DZD' },
+                            pricing: { subtotal: subtotal, shipping_fee: freshShipping, total: total, currency: 'DZD' },
+                            note: cd.notes || null,
                         };
                         if (typeof window.saveOrderToFirestore === 'function') {
                             var orderId = await window.saveOrderToFirestore(payload);
@@ -4090,6 +4499,118 @@
                     setTimeout(function () { navigate('home', {}); }, 2000);
                 });
             }
+        }
+
+        /* ===================== PRIVACY POLICY PAGE (NOIR) ===================== */
+        var PRIVACY_SECTIONS = [
+            { title: '1. Information We Collect', text: 'We collect only the data necessary to process your order and provide you with the best possible service.', list: ['Full name and phone number for order confirmation', 'Delivery address (wilaya, commune, detailed address)', 'Order details and payment preference', 'No banking or credit card information is collected'] },
+            { title: '2. How We Use Your Information', text: 'Your information is used solely for the following purposes:', list: ['Processing and delivering your orders', 'Contacting you about your order status', 'Improving our products and services', 'Sending you important updates about your purchases'] },
+            { title: '3. Data Protection', text: 'We take your privacy seriously and protect your data with industry-standard measures.', list: ['Data stored securely on encrypted servers', 'Access restricted to authorized personnel only', 'No marketing communications without your consent', 'You have the right to request deletion of your data at any time'] },
+            { title: '4. Information Sharing', text: 'We never sell, rent, or share your personal information with third parties, except:', list: ['When required by law', 'With delivery partners to fulfill your order (only name, phone, and address)', 'With payment processors (for verification purposes only)'] },
+            { title: '5. Cookies', text: 'Our website uses minimal cookies to enhance your shopping experience. We use localStorage to remember your cart contents and improve page load times. No tracking cookies are used without your explicit consent.' },
+            { title: '6. Your Rights', text: 'You have the following rights regarding your personal data:', list: ['Right to access your data', 'Right to correct inaccurate data', 'Right to request deletion of your data', 'Right to opt out of any marketing communications'] },
+            { title: '7. Contact Us', text: 'If you have any questions about our privacy policy or how your data is handled, please contact us through our Support page.' }
+        ];
+
+        function renderPrivacyPage() {
+            var esc = escapeHTML;
+            var sd = window._storeData || {};
+            var storeName = sd.name || sd.title || 'NOIR';
+            var container = document.getElementById('privacyContent');
+            if (!container) return;
+            var html = '<div class="policy-card">';
+            html += '<div class="policy-badge">Privacy</div>';
+            html += '<h1 class="policy-title">' + esc(t('footer_privacy')) + '</h1>';
+            html += '<div class="policy-date">Last updated: ' + new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) + '</div>';
+            PRIVACY_SECTIONS.forEach(function (s) {
+                html += '<div class="policy-section"><div class="policy-section-title">' + esc(s.title) + '</div>';
+                if (s.text) html += '<p class="policy-text">' + esc(s.text.replace(/NOIR/g, storeName)) + '</p>';
+                if (s.list) html += '<ul class="policy-list">' + s.list.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>';
+                html += '</div>';
+            });
+            html += '</div>';
+            container.innerHTML = html;
+            document.title = t('footer_privacy') + ' | ' + storeName;
+        }
+
+        /* ===================== SUPPORT / CONTACT PAGE (NOIR) ===================== */
+        var FAQ_ITEMS = [
+            { q: 'How long does delivery take?', a: 'Delivery typically takes 2-5 business days depending on your wilaya. Northern wilayas receive orders in 2-3 days, while southern wilayas may take 4-6 days.' },
+            { q: 'What payment methods do you accept?', a: 'We accept Cash on Delivery (COD) exclusively. Pay cash when you receive your order — no prepayment required.' },
+            { q: 'Can I return a product?', a: 'Yes, returns are accepted within 7 days of delivery, provided the product is in its original condition. Please contact us to initiate a return.' },
+            { q: 'How do I track my order?', a: 'After placing your order, our team will call you within 24 hours to confirm. You will then receive updates as your order is processed and shipped.' },
+            { q: 'Do you ship to all 58 wilayas?', a: 'Yes! We deliver to all 58 wilayas of Algeria, with both home delivery and stop desk pickup options available.' },
+            { q: 'What are your shipping costs?', a: 'Shipping costs vary by wilaya and are calculated at checkout. Orders above 5,000 DA may qualify for free shipping.' }
+        ];
+
+        function renderSupportPage() {
+            var esc = escapeHTML;
+            var sd = window._storeData || {};
+            var storeName = sd.name || sd.title || 'NOIR';
+            var container = document.getElementById('supportContent');
+            if (!container) return;
+            var instagram = sd.instagram || '';
+            var tiktok = sd.tiktok || '';
+            var facebook = sd.facebook || '';
+
+            var html = '<div style="display:grid;grid-template-columns:1fr;gap:1.5rem;">';
+
+            // Contact card
+            html += '<div class="support-card">';
+            html += '<div class="support-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><span>Get in Touch</span></div>';
+            html += '<p class="policy-text" style="margin-bottom:1.25rem;">Have a question or need help with your order? We\'re here to assist you. Reach out through any of the channels below.</p>';
+            html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.875rem;">';
+            if (instagram) {
+                html += '<a href="' + esc(instagram) + '" target="_blank" rel="noopener" class="support-contact-link">';
+                html += '<div class="support-contact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></div>';
+                html += '<div><div class="support-contact-label">Instagram</div><div class="support-contact-value">' + esc(instagram.replace(/^https?:\/\//, '').replace(/^www\./, '')) + '</div></div>';
+                html += '</a>';
+            }
+            if (tiktok) {
+                html += '<a href="' + esc(tiktok) + '" target="_blank" rel="noopener" class="support-contact-link">';
+                html += '<div class="support-contact-icon"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg></div>';
+                html += '<div><div class="support-contact-label">TikTok</div><div class="support-contact-value">' + esc(tiktok.replace(/^https?:\/\//, '').replace(/^www\./, '')) + '</div></div>';
+                html += '</a>';
+            }
+            if (facebook) {
+                html += '<a href="' + esc(facebook) + '" target="_blank" rel="noopener" class="support-contact-link">';
+                html += '<div class="support-contact-icon"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></div>';
+                html += '<div><div class="support-contact-label">Facebook</div><div class="support-contact-value">' + esc(facebook.replace(/^https?:\/\//, '').replace(/^www\./, '')) + '</div></div>';
+                html += '</a>';
+            }
+            if (!instagram && !tiktok && !facebook) {
+                html += '<div style="padding:1rem;background-color:rgba(255,255,255,0.04);border-radius:0.5rem;font-size:0.875rem;color:var(--color-gray-500);">Contact information will be displayed here once available.</div>';
+            }
+            html += '</div>';
+            html += '</div>';
+
+            // FAQ card
+            html += '<div class="support-card">';
+            html += '<div class="support-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Frequently Asked Questions</span></div>';
+            html += '<div style="display:flex;flex-direction:column;gap:0.625rem;">';
+            FAQ_ITEMS.forEach(function (item) {
+                html += '<details class="support-faq-item">';
+                html += '<summary><span>' + esc(item.q) + '</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="6 9 12 15 18 9"/></svg></summary>';
+                html += '<div class="support-faq-answer">' + esc(item.a) + '</div>';
+                html += '</details>';
+            });
+            html += '</div>';
+            html += '</div>';
+
+            // Quick links card
+            html += '<div class="support-card">';
+            html += '<div class="support-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M9 11H3v10h6V11zM21 3h-6v18h6V3zM15 9H9v12h6V9z"/></svg><span>Quick Links</span></div>';
+            html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.625rem;">';
+            html += '<a class="support-quick-link" data-nav="categories"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;"><path d="M3 3h18v18H3z"/><line x1="3" y1="9" x2="21" y2="9"/></svg>Shop Products</a>';
+            html += '<a class="support-quick-link" data-nav="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Search</a>';
+            html += '<a class="support-quick-link" data-nav="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Privacy Policy</a>';
+            html += '<a class="support-quick-link" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Back to Home</a>';
+            html += '</div>';
+            html += '</div>';
+
+            html += '</div>';
+            container.innerHTML = html;
+            document.title = 'Support & Contact | ' + storeName;
         }
 
         /* ===================== BIND PRODUCT CARD ACTIONS ===================== */
@@ -4144,8 +4665,7 @@
                 e.stopPropagation();
                 var page = target.getAttribute('data-nav');
                 if (page === 'about' || page === 'contact') {
-                    showToast(t('toast_coming_soon'));
-                    return;
+                    page = 'support';
                 }
                 if (page === 'cart') {
                     openCart();
@@ -4283,7 +4803,7 @@
                 return;
             }
             var subtotal = cart.reduce(function (s, i) { return s + (i.price * i.qty); }, 0);
-            var shipping = subtotal >= 5000 ? 0 : 350;
+            var shipping = calcShipping('', subtotal, window._storeData);
             var total = subtotal + shipping;
             body.innerHTML = cart.map(function (item, idx) {
                 return '' +
@@ -4358,6 +4878,41 @@
         }
 
         /* ===================== INIT ===================== */
+        function applyHeroSettings(s) {
+            if (!s) return;
+            // 🔒 SECURITY: validate cover_image URL scheme — only allow https: (and data:image/)
+            var safeCover = '';
+            if (s.coverImage && typeof s.coverImage === 'string') {
+                var cov = String(s.coverImage).trim();
+                if (/^https:\/\//i.test(cov) || /^data:image\//i.test(cov)) {
+                    safeCover = cov;
+                }
+            }
+            // Hero image (NOIR uses an <img class="hero-image">)
+            if (safeCover) {
+                var heroImg = document.getElementById('heroImage');
+                if (heroImg) {
+                    heroImg.src = safeCover;
+                    heroImg.alt = (s.name || 'NOIR') + ' — Hero';
+                }
+            }
+            // Hero description
+            if (s.heroDesc) {
+                var hd = document.getElementById('heroSubtitle');
+                if (hd) hd.textContent = s.heroDesc;
+            }
+            // Hero title (support pipe-delimited multi-line)
+            if (s.title) {
+                var ht = document.getElementById('heroTitle');
+                if (ht) ht.innerHTML = escapeHTML(s.title).replace(/\|/g, '<br>');
+            }
+            // Hero badge (kicker) — uses store name uppercased
+            if (s.name) {
+                var hb = document.getElementById('heroBadge');
+                if (hb) hb.textContent = s.name.toUpperCase();
+            }
+        }
+
         async function init() {
             // Init cart count
             setCart(getCart());
@@ -4386,6 +4941,8 @@
                         if (s.instagram) { var ig = document.querySelector('a[aria-label="Instagram"]'); if (ig) ig.href = s.instagram; }
                         if (s.tiktok) { var tk = document.querySelector('a[aria-label="TikTok"]'); if (tk) tk.href = s.tiktok; }
                         if (s.facebook) { var fb = document.querySelector('a[aria-label="WhatsApp"]'); if (fb) { fb.href = s.facebook; fb.setAttribute('aria-label', 'Facebook'); } }
+                        // Apply hero customization (cover image / title / desc / kicker)
+                        applyHeroSettings(s);
                         // إعداد البكسل
                         if (typeof window.ShvPixels === 'object') window.ShvPixels.init(s);
                     }
@@ -4398,19 +4955,27 @@
                                 category: p.category || 'general',
                                 categoryLabel: p.category || 'General',
                                 price: p.price || 0,
+                                discountPrice: p.discountPrice || null,
                                 originalPrice: p.originalPrice || null,
                                 rating: p.rating || 4.8,
                                 reviews: p.reviews || 100,
                                 badge: p.badge || (p.discountPrice > 0 ? 'Sale' : ''),
                                 isNew: p.isNew || false,
                                 images: p.images && p.images.length > 0 ? p.images : [p.image || ''],
+                                image: p.image || '',
+                                emoji: p.emoji || '🛍️',
                                 shortDesc: p.shortDesc || p.desc || '',
+                                desc: p.desc || '',
                                 colors: p.colors || [],
                                 sizes: p.sizes || [],
-                                details: p.details || ['Quality product'],
+                                details: Array.isArray(p.details) ? p.details : (p.details ? [String(p.details)] : ['Quality product']),
                                 materials: p.materials || 'Premium materials.',
                                 sizeFit: p.sizeFit || 'Standard fit.',
                                 shipping: p.shipping || 'Free shipping on orders above 5,000 DA across Algeria. Delivery in 3-5 business days.',
+                                shippingReturns: p.shippingReturns || '',
+                                reviewsText: p.reviewsText || '',
+                                reviewsData: Array.isArray(p.reviewsData) ? p.reviewsData : [],
+                                slug: p.slug || '',
                             };
                         });
                         // بناء الفئات من المنتجات
@@ -4430,12 +4995,21 @@
                                 return {
                                     id: p.id || (i + 1), name: p.name || '', category: p.category || 'general',
                                     categoryLabel: p.category || 'General', price: p.price || 0,
+                                    discountPrice: p.discountPrice || null,
                                     originalPrice: p.originalPrice || null, rating: p.rating || 4.8, reviews: p.reviews || 100,
                                     badge: p.badge || '', isNew: false,
                                     images: p.images && p.images.length > 0 ? p.images : [p.image || ''],
-                                    shortDesc: p.desc || '', colors: p.colors || [], sizes: p.sizes || [],
-                                    details: ['Quality product'], materials: 'Premium materials.',
-                                    sizeFit: 'Standard fit.', shipping: 'Free shipping on orders above 5,000 DA.',
+                                    image: p.image || '', emoji: p.emoji || '🛍️',
+                                    shortDesc: p.desc || '', desc: p.desc || '',
+                                    colors: p.colors || [], sizes: p.sizes || [],
+                                    details: Array.isArray(p.details) ? p.details : (p.details ? [String(p.details)] : ['Quality product']),
+                                    materials: 'Premium materials.',
+                                    sizeFit: 'Standard fit.',
+                                    shipping: 'Free shipping on orders above 5,000 DA.',
+                                    shippingReturns: p.shippingReturns || '',
+                                    reviewsText: p.reviewsText || '',
+                                    reviewsData: Array.isArray(p.reviewsData) ? p.reviewsData : [],
+                                    slug: p.slug || '',
                                 };
                             });
                             route();
