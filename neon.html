@@ -1170,6 +1170,13 @@
             box-shadow: 0 2px 12px rgba(0,0,0,0.04);
         }
         @media (max-width: 640px) { .direct-order-wrap .order-summary-card { padding: 1.125rem; border-radius: 0.75rem; } }
+        /* Desktop: wider card with bigger padding for comfortable form filling */
+        @media (min-width: 1024px) { .direct-order-wrap .order-summary-card { padding: 2rem; } }
+        /* 2-column form fields at >=768px, single column on mobile for readability */
+        @media (max-width: 767px) { .direct-order-wrap .form-row { grid-template-columns: 1fr; } }
+        /* Order summary item: more spacious horizontal layout on desktop */
+        @media (min-width: 768px) { .direct-order-wrap .order-item { gap: 1.25rem; padding: 1rem 1.25rem; align-items: center; } }
+        @media (min-width: 768px) { .direct-order-wrap .order-item-img { width: 84px; height: 100px; } }
         .direct-order-wrap .checkout-section { padding: 0; background: transparent; }
         .direct-order-wrap .container { padding: 0; max-width: none; }
 
@@ -1684,6 +1691,111 @@
             flex-shrink: 0;
         }
         [dir="rtl"] .delivery-type-btn { flex-direction: row-reverse; }
+
+        /* ===== TRY TWO SIZES (TTS) — NEON minimal black/white uppercase ===== */
+        .tts-section {
+            margin-bottom: 1.5rem;
+            padding: 1.125rem 1.25rem;
+            background-color: var(--color-white);
+            border: 1.5px solid var(--color-black);
+            border-radius: 0;
+        }
+        .tts-header {
+            display: flex; align-items: flex-start; gap: 0.875rem;
+            cursor: pointer;
+        }
+        .tts-icon {
+            width: 36px; height: 36px;
+            background: var(--color-black);
+            color: var(--color-white);
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tts-icon svg { width: 18px; height: 18px; }
+        .tts-header-text { flex: 1; min-width: 0; }
+        .tts-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--color-black);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            line-height: 1.3;
+        }
+        .tts-desc {
+            font-size: 0.75rem;
+            color: var(--color-gray-500);
+            margin-top: 0.25rem;
+            line-height: 1.5;
+        }
+        .tts-toggle {
+            position: relative;
+            width: 44px; height: 24px;
+            background: var(--color-gray-200);
+            border-radius: 0;
+            flex-shrink: 0;
+            transition: background 0.2s ease;
+            cursor: pointer;
+        }
+        .tts-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 20px; height: 20px;
+            background: var(--color-white);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease;
+        }
+        .tts-section.active .tts-toggle { background: var(--color-black); }
+        .tts-section.active .tts-toggle::after { transform: translateX(-20px); background: var(--color-white); }
+        [dir="rtl"] .tts-toggle::after { transform: translateX(20px); }
+        [dir="rtl"] .tts-section.active .tts-toggle::after { transform: translateX(0); }
+        .tts-backup-row {
+            display: none;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--color-gray-100);
+        }
+        .tts-section.active .tts-backup-row { display: block; }
+        .tts-backup-label {
+            display: block;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            color: var(--color-gray-700);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .tts-size-row {
+            display: flex; flex-wrap: wrap; gap: 0.375rem;
+        }
+        .tts-size-btn {
+            padding: 0.5rem 0.875rem;
+            border: 1.5px solid var(--color-black);
+            background: var(--color-white);
+            color: var(--color-black);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-radius: 0;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+        .tts-size-btn:hover:not(:disabled) { background: var(--color-black); color: var(--color-white); }
+        .tts-size-btn.selected {
+            background: var(--color-black);
+            color: var(--color-white);
+        }
+        .tts-size-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .tts-fee-note {
+            font-size: 0.6875rem;
+            color: var(--color-gray-500);
+            margin-top: 0.625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .tts-fee-note strong { color: var(--color-black); font-weight: 700; }
 
         .order-terms {
             font-size: 0.75rem;
@@ -2558,8 +2670,9 @@
                     <h2 class="footer-logo" style="cursor:pointer"><a data-nav="home" href="index.html" style="color:inherit;text-decoration:none">NEON</a></h2>
                     <p class="footer-desc" data-i18n="footer_desc">Thrifted culture. Curated style. Pieces with a past, made for the present.</p>
                     <div class="social-links">
-                        <a href="#" class="social-link" aria-label="Instagram"><i data-lucide="instagram" style="width: 16px; height: 16px;"></i></a>
-                        <a href="#" class="social-link" aria-label="TikTok"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg></a>
+                        <a href="#" id="socialInstagram" style="display:none" target="_blank" rel="noopener" class="social-link" aria-label="Instagram"><i data-lucide="instagram" style="width: 16px; height: 16px;"></i></a>
+                        <a href="#" id="socialTiktok" style="display:none" target="_blank" rel="noopener" class="social-link" aria-label="TikTok"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg></a>
+                        <a href="#" id="socialFacebook" style="display:none" target="_blank" rel="noopener" class="social-link" aria-label="Facebook"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a>
                         <a href="#" class="social-link" aria-label="WhatsApp"><i data-lucide="message-circle" style="width: 16px; height: 16px;"></i></a>
                     </div>
                 </div>
@@ -2822,6 +2935,7 @@
           snapPixelId: storeRow.snap_pixel_id, googleAnalyticsId: storeRow.google_analytics_id,
           gtmId: storeRow.gtm_id, capiWorkerUrl: storeRow.capi_worker_url,
           ttsEnabled: storeRow.tts_enabled === true, ttsDefaultFee: Number(storeRow.tts_default_fee) || 0,
+          ttsMinPrice: Number(storeRow.tts_min_price) || 0,
           coverImage: storeRow.cover_image || null,
           hideTrustIcons: storeRow.hide_trust_icons || {},
           trustIconsText: storeRow.trust_icons_text || {},
@@ -3545,6 +3659,9 @@
                 of_cod: 'Cash on Delivery',
                 of_cod_sub: 'Pay cash when you receive your order',
                 delivery_type: 'Delivery Type', delivery_home: 'Home Delivery', delivery_office: 'Office Pickup',
+                // Try Two Sizes (TTS) — neon minimal black/white uppercase toggle
+                tts_title: 'TRY TWO SIZES', tts_desc: 'Not sure about your size? Add a backup size for a small fee — keep the one that fits, return the other.',
+                tts_add: 'Add Backup Size', tts_backup_label: 'Backup Size', tts_fee: 'TTS Fee',
                 of_card: 'Electronic Payment',
                 of_card_sub: 'Visa, MasterCard',
                 of_notes: 'Additional Notes (Optional)',
@@ -3757,6 +3874,9 @@
                 of_cod: 'الدفع عند الاستلام',
                 of_cod_sub: 'ادفع نقداً عند استلام طلبك',
                 delivery_type: 'نوع التوصيل', delivery_home: 'توصيل للمنزل', delivery_office: 'توصيل للمكتب',
+                // Try Two Sizes (TTS) — neon minimal
+                tts_title: 'جرّب المقاسين', tts_desc: 'لست متأكداً من مقاسك؟ أضف مقاساً احتياطياً برسم بسيط — احتفظ بما يناسبك وأرجِع الآخر.',
+                tts_add: 'إضافة مقاس احتياطي', tts_backup_label: 'المقاس الاحتياطي', tts_fee: 'رسم المقاسين',
                 of_card: 'الدفع الإلكتروني',
                 of_card_sub: 'فيزا، ماستركارد',
                 of_notes: 'ملاحظات إضافية (اختياري)',
@@ -3872,6 +3992,8 @@
             zoomIndex: 0,
             // checkout form
             checkoutData: { fullName: '', phone: '', wilaya: '', baladiya: '', address: '', notes: '', deliveryType: 'home' },
+            // Try Two Sizes (TTS) state
+            ttsEnabled: false, ttsBackupSize: '',
             // categories page
             catActive: 'all',
             catSort: 'featured',
@@ -3906,6 +4028,11 @@
 
         /* ===================== HELPERS ===================== */
         function buildHref(page, params) {
+            // Clean URLs for product pages: /product/:slug (or /product/:id when no slug)
+            if (page === 'product') {
+                if (params && params.slug) return '/product/' + encodeURIComponent(params.slug);
+                if (params && params.id)   return '/product/' + encodeURIComponent(params.id);
+            }
             var href = 'index.html';
             if (page && page !== 'home') {
                 href += '?page=' + page;
@@ -4303,6 +4430,14 @@
         }
 
         function buildURL(page, params) {
+            // Clean URLs for product pages: /product/:slug (or /product/:id when no slug)
+            if (page === 'product' && params && (params.slug || params.id)) {
+                var id = params.slug || params.id;
+                var cleanUrl = new URL(window.location.href);
+                cleanUrl.search = '';
+                cleanUrl.pathname = '/product/' + encodeURIComponent(id);
+                return cleanUrl.toString();
+            }
             var url = new URL(window.location.href);
             url.search = '';
             if (page && page !== 'home') url.searchParams.set('page', page);
@@ -4632,7 +4767,14 @@
             // 🚚 Free shipping: if this product has freeShipping=true, shipping = 0 regardless of wilaya/subtotal
             var isFreeShipping = (p.freeShipping === true);
             var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData, deliveryType);
-            var total = subtotal + shipping;
+            // Try Two Sizes (TTS) — only available when store enables it AND product has ≥2 sizes AND price ≥ ttsMinPrice
+            var ttsAvailable = !!(window._storeData && window._storeData.ttsEnabled === true
+                                && p.sizes && p.sizes.length >= 2
+                                && effUnit >= (Number(window._storeData.ttsMinPrice) || 0));
+            var ttsEnabled = ttsAvailable && state.ttsEnabled === true;
+            var ttsFee = ttsEnabled ? (Number(p.ttsFee || (window._storeData && window._storeData.ttsDefaultFee)) || 0) : 0;
+            var ttsBackupSize = state.ttsBackupSize || '';
+            var total = subtotal + shipping + ttsFee;
 
             card.innerHTML =
                 '<div class="order-summary-header direct-order-header">' +
@@ -4659,6 +4801,35 @@
                         (p.originalPrice && (window._effectivePrice ? window._effectivePrice(p) : p.price) < p.originalPrice ? '<span class="original">' + formatPrice(p.originalPrice) + '</span>' : '') +
                     '</div>' +
                 '</div>' +
+
+                /* Try Two Sizes (TTS) — only render if store enabled it AND product qualifies */
+                (ttsAvailable ?
+                    '<div class="tts-section' + (ttsEnabled ? ' active' : '') + '" id="coTtsSection">' +
+                        '<div class="tts-header" id="coTtsToggle">' +
+                            '<div class="tts-icon">' +
+                                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 12h18M3 17h18"/></svg>' +
+                            '</div>' +
+                            '<div class="tts-header-text">' +
+                                '<div class="tts-title">' + escapeHTML(t('tts_title')) + '</div>' +
+                                '<div class="tts-desc">' + escapeHTML(t('tts_desc')) + '</div>' +
+                            '</div>' +
+                            '<div class="tts-toggle" role="switch" aria-checked="' + (ttsEnabled ? 'true' : 'false') + '" aria-label="' + escapeHTML(t('tts_add')) + '"></div>' +
+                        '</div>' +
+                        '<div class="tts-backup-row">' +
+                            '<label class="tts-backup-label">' + escapeHTML(t('tts_backup_label')) + ' <span class="req">*</span></label>' +
+                            '<div class="tts-size-row" id="coTtsSizeRow">' +
+                                p.sizes.map(function (s) {
+                                    var isCurrent = (s === state.selectedSize);
+                                    var isBackup = (s === ttsBackupSize);
+                                    return '<button type="button" class="tts-size-btn' + (isBackup ? ' selected' : '') + '"' +
+                                        (isCurrent ? ' disabled' : '') +
+                                        ' data-tts-size="' + escapeHTML(s) + '">' + escapeHTML(s) + (isCurrent ? ' ✓' : '') + '</button>';
+                                }).join('') +
+                            '</div>' +
+                            '<div class="tts-fee-note">' + escapeHTML(t('tts_fee')) + ': <strong>' + formatPrice(ttsFee) + '</strong></div>' +
+                        '</div>' +
+                    '</div>'
+                : '') +
 
                 /* Personal Information section */
                 '<div class="form-section">' +
@@ -4773,6 +4944,7 @@
                     '<div class="order-total-row"><span class="label">' + escapeHTML(t('os_subtotal')) + '</span><span class="value">' + formatPrice(subtotal) + '</span></div>' +
                     '<div class="order-total-row"><span class="label">' + escapeHTML(t('os_shipping')) + '</span><span class="value">' + (shipping === 0 ? (isFreeShipping ? '<span style="display:inline-flex;align-items:center;gap:0.25rem;color:var(--color-black);font-weight:700;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' + escapeHTML(t('os_free')) + '</span>' : escapeHTML(t('os_free'))) : formatPrice(shipping)) + '</span></div>' +
                     (savings > 0 ? '<div class="order-total-row discount"><span class="label">' + escapeHTML(t('os_discount')) + '</span><span class="value">-' + formatPrice(savings) + '</span></div>' : '') +
+                    (ttsEnabled ? '<div class="order-total-row"><span class="label">' + escapeHTML(t('tts_fee')) + (ttsBackupSize ? ' (' + escapeHTML(ttsBackupSize) + ')' : '') + '</span><span class="value">' + formatPrice(ttsFee) + '</span></div>' : '') +
                     '<div class="order-total-row grand"><span class="label">' + escapeHTML(t('os_total')) + '</span><span class="value">' + formatPrice(total) + '</span></div>' +
                 '</div>' +
 
@@ -4844,13 +5016,39 @@
             }
 
             // Delivery type buttons (home / office) → recompute shipping + totals
-            var coDeliveryBtns = card.querySelectorAll('#coDeliveryType .delivery-type-btn');
+            // NOTE: use document (not `card`) — `card` is not in scope inside this function.
+            var coDeliveryBtns = document.querySelectorAll('#coDeliveryType .delivery-type-btn');
             coDeliveryBtns.forEach(function (btn) {
                 if (btn.__shvBound) return;
                 btn.__shvBound = true;
                 btn.addEventListener('click', function () {
                     coDeliveryBtns.forEach(function (b) { b.classList.remove('active'); });
                     btn.classList.add('active');
+                    saveFormFields();
+                    if (state.product) renderOrderSummary(state.product);
+                });
+            });
+
+            // TTS toggle (Try Two Sizes) — flip state.ttsEnabled and re-render
+            var coTtsToggle = document.getElementById('coTtsToggle');
+            if (coTtsToggle && !coTtsToggle.__shvBound) {
+                coTtsToggle.__shvBound = true;
+                coTtsToggle.addEventListener('click', function (e) {
+                    if (e.target.closest('.tts-size-btn')) return;
+                    state.ttsEnabled = !state.ttsEnabled;
+                    if (!state.ttsEnabled) state.ttsBackupSize = '';
+                    saveFormFields();
+                    if (state.product) renderOrderSummary(state.product);
+                });
+            }
+
+            // TTS backup size buttons
+            var coTtsSizeBtns = document.querySelectorAll('#coTtsSizeRow .tts-size-btn');
+            coTtsSizeBtns.forEach(function (btn) {
+                if (btn.__shvBound || btn.disabled) return;
+                btn.__shvBound = true;
+                btn.addEventListener('click', function () {
+                    state.ttsBackupSize = btn.getAttribute('data-tts-size') || '';
                     saveFormFields();
                     if (state.product) renderOrderSummary(state.product);
                 });
@@ -4902,12 +5100,27 @@
                     // 🚚 Free shipping: if this product has freeShipping=true, shipping = 0
                     var isFreeShipping = (p.freeShipping === true);
                     var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData, deliveryType);
-                    var total = subtotal + shipping;
+                    // Try Two Sizes (TTS) — recompute fee + validation in submit handler
+                    var ttsAvailable = !!(window._storeData && window._storeData.ttsEnabled === true
+                                        && p.sizes && p.sizes.length >= 2
+                                        && unitPrice >= (Number(window._storeData.ttsMinPrice) || 0));
+                    var ttsEnabled = ttsAvailable && state.ttsEnabled === true;
+                    var ttsFee = ttsEnabled ? (Number(p.ttsFee || (window._storeData && window._storeData.ttsDefaultFee)) || 0) : 0;
+                    var ttsBackupSize = ttsEnabled ? (state.ttsBackupSize || '') : '';
+                    // If TTS enabled but no backup size selected, prompt user to pick one
+                    if (ttsEnabled && !ttsBackupSize) {
+                        showToast(t('tts_backup_label'));
+                        submitBtn.disabled = false; submitBtn.textContent = t('of_submit');
+                        return;
+                    }
+                    var total = subtotal + shipping + ttsFee;
                     var payload = {
                         customer: { name: d.fullName, phone: d.phone, wilaya: d.wilaya, commune: d.baladiya, address: d.address, delivery_type: deliveryType, notes: d.notes || '' },
                         items: [{ id: p.id, name: p.name, qty: qty, unit_price: unitPrice, line_total: subtotal, size: state.selectedSize, color: (p.colors[state.selectedColor||0]||{}).name || null, free_shipping: isFreeShipping }],
-                        pricing: { subtotal: subtotal, shipping_fee: shipping, total: total, currency: 'DZD' },
+                        pricing: { subtotal: subtotal, shipping_fee: shipping, tts_fee: ttsFee, total: total, currency: 'DZD' },
                         note: d.notes || null,
+                        try_two_sizes: ttsEnabled,
+                        tts_backup_size: ttsEnabled ? ttsBackupSize : null,
                     };
                     submitBtn.disabled = true; submitBtn.textContent = '...';
                     // 🔒 Server-side price verification before sending the order
@@ -4926,8 +5139,9 @@
                     if (typeof window._shvStampSubmit === 'function') window._shvStampSubmit();
                     if (typeof window.ShvPixels === 'object') window.ShvPixels.track('Purchase', { content_ids: [String(p.id)], value: total, currency: 'DZD', num_items: qty });
                     state.checkoutData = { fullName: '', phone: '', wilaya: '', baladiya: '', address: '', notes: '', deliveryType: 'home' };
+                    state.ttsEnabled = false; state.ttsBackupSize = '';
                     // Show order success page
-                    state.orderSuccess = { orderId: orderId, items: payload.items, customer: payload.customer, total: total, shipping: shipping, subtotal: subtotal };
+                    state.orderSuccess = { orderId: orderId, items: payload.items, customer: payload.customer, total: total, shipping: shipping, subtotal: subtotal, ttsFee: ttsFee, ttsBackupSize: ttsBackupSize };
                     navigate('order-success', {});
                 } catch (e) {
                     showToast('❌ ' + (e.message || 'error'));
@@ -4956,6 +5170,13 @@
             if (coDeliveryEl) {
                 var activeBtn = coDeliveryEl.querySelector('.delivery-type-btn.active');
                 if (activeBtn) state.checkoutData.deliveryType = activeBtn.getAttribute('data-delivery') || 'home';
+            }
+            // Read TTS (Try Two Sizes) state
+            var coTtsSection = document.getElementById('coTtsSection');
+            if (coTtsSection) {
+                state.ttsEnabled = coTtsSection.classList.contains('active');
+                var selTtsBtn = coTtsSection.querySelector('.tts-size-btn.selected');
+                state.ttsBackupSize = selTtsBtn ? (selTtsBtn.getAttribute('data-tts-size') || '') : (state.ttsBackupSize || '');
             }
         }
 
@@ -6152,9 +6373,9 @@
                                 if (_cFooterLogo) _cFooterLogo.textContent = _cs.name;
                                 document.title = (_cs.title || _cs.name) + ' | NEON';
                             }
-                            if (_cs.instagram) { var _ig = document.querySelector('a[aria-label="Instagram"]'); if (_ig) _ig.href = _cs.instagram; }
-                            if (_cs.tiktok)    { var _tk = document.querySelector('a[aria-label="TikTok"]');    if (_tk) _tk.href = _cs.tiktok; }
-                            if (_cs.facebook)  { var _fb = document.querySelector('a[aria-label="WhatsApp"]');  if (_fb) { _fb.href = _cs.facebook; _fb.setAttribute('aria-label', 'Facebook'); } }
+                            if (_cs.instagram) { var _ig = document.getElementById('socialInstagram'); if (_ig) { _ig.href = _cs.instagram; _ig.style.display = ''; } }
+                            if (_cs.tiktok)    { var _tk = document.getElementById('socialTiktok');    if (_tk) { _tk.href = _cs.tiktok;    _tk.style.display = ''; } }
+                            if (_cs.facebook)  { var _fb = document.getElementById('socialFacebook');  if (_fb) { _fb.href = _cs.facebook;  _fb.style.display = ''; } }
                             applyHeroSettings(_cs);
                         }
                     }
@@ -6175,9 +6396,9 @@
                         if (footerLogo && s.name) footerLogo.textContent = s.name;
                         if (s.name || s.title) document.title = (s.title || s.name) + ' | NEON';
                         // تطبيق الروابط الاجتماعية
-                        if (s.instagram) { var ig = document.querySelector('a[aria-label="Instagram"]'); if (ig) ig.href = s.instagram; }
-                        if (s.tiktok) { var tk = document.querySelector('a[aria-label="TikTok"]'); if (tk) tk.href = s.tiktok; }
-                        if (s.facebook) { var fb = document.querySelector('a[aria-label="WhatsApp"]'); if (fb) { fb.href = s.facebook; fb.setAttribute('aria-label', 'Facebook'); } }
+                        if (s.instagram) { var ig = document.getElementById('socialInstagram'); if (ig) { ig.href = s.instagram; ig.style.display = ''; } }
+                        if (s.tiktok) { var tk = document.getElementById('socialTiktok'); if (tk) { tk.href = s.tiktok; tk.style.display = ''; } }
+                        if (s.facebook) { var fb = document.getElementById('socialFacebook'); if (fb) { fb.href = s.facebook; fb.style.display = ''; } }
                         // Hero customization from store settings (cover image + title + desc)
                         applyHeroSettings(s);
                         // Persist store snapshot to localStorage for instant application on next load
