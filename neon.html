@@ -1647,6 +1647,44 @@
         .btn-submit-order:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-submit-order svg { width: 18px; height: 18px; }
 
+        /* ===== DELIVERY TYPE SELECTOR ===== */
+        .delivery-type-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        .delivery-type-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid var(--color-gray-200);
+            background: var(--color-white);
+            color: var(--color-gray-700);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .delivery-type-btn:hover {
+            border-color: var(--color-black);
+            color: var(--color-black);
+        }
+        .delivery-type-btn.active {
+            border-color: var(--color-black);
+            background: var(--color-black);
+            color: var(--color-white);
+        }
+        .delivery-type-btn svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+        [dir="rtl"] .delivery-type-btn { flex-direction: row-reverse; }
+
         .order-terms {
             font-size: 0.75rem;
             color: var(--color-gray-500);
@@ -2407,6 +2445,15 @@
                                 </div>
                                 <div class="form-row single">
                                     <div class="form-field">
+                                        <label><span data-i18n="delivery_type">Delivery Type</span> <span class="req">*</span></label>
+                                        <div class="delivery-type-selector" id="ckDeliveryType">
+                                            <button type="button" class="delivery-type-btn active" data-delivery="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span data-i18n="delivery_home">Home Delivery</span></button>
+                                            <button type="button" class="delivery-type-btn" data-delivery="office"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><span data-i18n="delivery_office">Office Pickup</span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row single">
+                                    <div class="form-field">
                                         <label><span data-i18n="of_address">Detailed Address</span> <span class="req">*</span></label>
                                         <div class="form-input-wrap">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -2671,7 +2718,7 @@
     // compare against the client-supplied unit_price, and override with the server value
     // if there is any mismatch. This prevents price tampering and fake bot orders.
     // Also re-computes shipping: 0 if ALL items have free_shipping=true, else normal per-wilaya.
-    window._shvVerifyOrderPrices = async (payload, storeId, wilayaName) => {
+    window._shvVerifyOrderPrices = async (payload, storeId, wilayaName, deliveryType) => {
       if (!payload || !Array.isArray(payload.items) || payload.items.length === 0) return payload;
       var verifiedItems = [];
       for (var item of payload.items) {
@@ -2706,7 +2753,7 @@
       var shipping = 0;
       if (!allFreeShipping) {
         shipping = (typeof window.calcShipping === 'function')
-          ? window.calcShipping(wilayaName || '', verifiedSubtotal, window._storeData)
+          ? window.calcShipping(wilayaName || '', verifiedSubtotal, window._storeData, deliveryType)
           : 0;
       }
       payload.pricing.shipping_fee = shipping;
@@ -3071,20 +3118,23 @@
             'In Guezzam':54,'Touggourt':55,'Djanet':56,"El M'Ghair":57,'El Meniaa':58
         };
         var DEFAULT_WILAYA_PRICES = {1:900,2:650,3:700,4:500,5:600,6:600,7:650,8:850,9:400,10:500,11:1200,12:650,13:650,14:600,15:550,16:350,17:650,18:600,19:600,20:650,21:600,22:650,23:600,24:620,25:580,26:500,27:600,28:650,29:620,30:800,31:550,32:750,33:1300,34:580,35:420,36:620,37:1400,38:600,39:750,40:650,41:620,42:430,43:580,44:520,45:800,46:620,47:780,48:600,49:950,50:1500,51:700,52:900,53:1200,54:1300,55:780,56:1300,57:800,58:950};
-        function calcShipping(wilaya, subtotal, storeData) {
+        function calcShipping(wilaya, subtotal, storeData, deliveryType) {
             // Use admin's per-wilaya prices if set, otherwise use DEFAULT_WILAYA_PRICES fallback
             var wilayaId = wilaya ? WILAYA_NAME_TO_ID[wilaya] : null;
             if (!wilayaId) return 0; // No wilaya selected yet — can't calculate
+            var isOffice = (deliveryType === 'office');
             // Check admin's custom shipping config first
             if (storeData && storeData.shipping && Array.isArray(storeData.shipping) && storeData.shipping.length > 0) {
                 for (var i = 0; i < storeData.shipping.length; i++) {
                     if (Number(storeData.shipping[i].id) === wilayaId) {
-                        return Number(storeData.shipping[i].home) || 0;
+                        var price = isOffice ? (Number(storeData.shipping[i].office) || Number(storeData.shipping[i].home) || 0) : (Number(storeData.shipping[i].home) || 0);
+                        return price;
                     }
                 }
             }
-            // Fallback: use DEFAULT_WILAYA_PRICES (same defaults shown in admin ShippingTab)
-            return DEFAULT_WILAYA_PRICES[wilayaId] || 0;
+            // Fallback: use DEFAULT_WILAYA_PRICES (home price). For office, multiply by 0.75
+            var homePrice = DEFAULT_WILAYA_PRICES[wilayaId] || 0;
+            return isOffice ? Math.round(homePrice * 0.75) : homePrice;
         }
         window.calcShipping = calcShipping;
 
@@ -3494,6 +3544,7 @@
                 of_payment: 'Payment Method',
                 of_cod: 'Cash on Delivery',
                 of_cod_sub: 'Pay cash when you receive your order',
+                delivery_type: 'Delivery Type', delivery_home: 'Home Delivery', delivery_office: 'Office Pickup',
                 of_card: 'Electronic Payment',
                 of_card_sub: 'Visa, MasterCard',
                 of_notes: 'Additional Notes (Optional)',
@@ -3705,6 +3756,7 @@
                 of_payment: 'طريقة الدفع',
                 of_cod: 'الدفع عند الاستلام',
                 of_cod_sub: 'ادفع نقداً عند استلام طلبك',
+                delivery_type: 'نوع التوصيل', delivery_home: 'توصيل للمنزل', delivery_office: 'توصيل للمكتب',
                 of_card: 'الدفع الإلكتروني',
                 of_card_sub: 'فيزا، ماستركارد',
                 of_notes: 'ملاحظات إضافية (اختياري)',
@@ -3819,7 +3871,7 @@
             currentImage: 0,
             zoomIndex: 0,
             // checkout form
-            checkoutData: { fullName: '', phone: '', wilaya: '', baladiya: '', address: '', notes: '' },
+            checkoutData: { fullName: '', phone: '', wilaya: '', baladiya: '', address: '', notes: '', deliveryType: 'home' },
             // categories page
             catActive: 'all',
             catSort: 'featured',
@@ -4575,11 +4627,12 @@
             var effUnit = window._effectivePrice ? window._effectivePrice(p) : p.price;
             var subtotal = effUnit * qty;
             var savings = p.originalPrice && p.originalPrice > effUnit ? (p.originalPrice - effUnit) * qty : 0;
+            var d = state.checkoutData || {};
+            var deliveryType = d.deliveryType || 'home';
             // 🚚 Free shipping: if this product has freeShipping=true, shipping = 0 regardless of wilaya/subtotal
             var isFreeShipping = (p.freeShipping === true);
-            var shipping = isFreeShipping ? 0 : calcShipping(state.checkoutData && state.checkoutData.wilaya ? state.checkoutData.wilaya : '', subtotal, window._storeData);
+            var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData, deliveryType);
             var total = subtotal + shipping;
-            var d = state.checkoutData || {};
 
             card.innerHTML =
                 '<div class="order-summary-header direct-order-header">' +
@@ -4653,6 +4706,22 @@
                             '<div class="form-input-wrap">' +
                                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
                                 '<input type="text" class="form-input" id="coBaladiya" maxlength="100" autocomplete="address-level2" placeholder="' + escapeHTML(t('of_baladiya_ph')) + '" value="' + escapeHTML(d.baladiya || '') + '">' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    /* Delivery type selector (home vs office) — drives the calcShipping deliveryType parameter */
+                    '<div class="form-row single">' +
+                        '<div class="form-field">' +
+                            '<label>' + escapeHTML(t('delivery_type')) + ' <span class="req">*</span></label>' +
+                            '<div class="delivery-type-selector" id="coDeliveryType">' +
+                                '<button type="button" class="delivery-type-btn' + (deliveryType === 'home' ? ' active' : '') + '" data-delivery="home">' +
+                                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
+                                    '<span>' + escapeHTML(t('delivery_home')) + '</span>' +
+                                '</button>' +
+                                '<button type="button" class="delivery-type-btn' + (deliveryType === 'office' ? ' active' : '') + '" data-delivery="office">' +
+                                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>' +
+                                    '<span>' + escapeHTML(t('delivery_office')) + '</span>' +
+                                '</button>' +
                             '</div>' +
                         '</div>' +
                     '</div>' +
@@ -4774,6 +4843,19 @@
                 });
             }
 
+            // Delivery type buttons (home / office) → recompute shipping + totals
+            var coDeliveryBtns = card.querySelectorAll('#coDeliveryType .delivery-type-btn');
+            coDeliveryBtns.forEach(function (btn) {
+                if (btn.__shvBound) return;
+                btn.__shvBound = true;
+                btn.addEventListener('click', function () {
+                    coDeliveryBtns.forEach(function (b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    saveFormFields();
+                    if (state.product) renderOrderSummary(state.product);
+                });
+            });
+
             // Submit button
             var submitBtn = document.getElementById('osSubmitBtn');
             if (submitBtn) submitBtn.addEventListener('click', async function () {
@@ -4816,12 +4898,13 @@
                     var qty = state.quantity || 1;
                     var unitPrice = window._effectivePrice ? window._effectivePrice(p) : (p.discountPrice || p.price);
                     var subtotal = unitPrice * qty;
+                    var deliveryType = d.deliveryType || 'home';
                     // 🚚 Free shipping: if this product has freeShipping=true, shipping = 0
                     var isFreeShipping = (p.freeShipping === true);
-                    var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData);
+                    var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData, deliveryType);
                     var total = subtotal + shipping;
                     var payload = {
-                        customer: { name: d.fullName, phone: d.phone, wilaya: d.wilaya, commune: d.baladiya, address: d.address, delivery_type: 'COD' },
+                        customer: { name: d.fullName, phone: d.phone, wilaya: d.wilaya, commune: d.baladiya, address: d.address, delivery_type: deliveryType, notes: d.notes || '' },
                         items: [{ id: p.id, name: p.name, qty: qty, unit_price: unitPrice, line_total: subtotal, size: state.selectedSize, color: (p.colors[state.selectedColor||0]||{}).name || null, free_shipping: isFreeShipping }],
                         pricing: { subtotal: subtotal, shipping_fee: shipping, total: total, currency: 'DZD' },
                         note: d.notes || null,
@@ -4829,7 +4912,7 @@
                     submitBtn.disabled = true; submitBtn.textContent = '...';
                     // 🔒 Server-side price verification before sending the order
                     if (typeof window._shvVerifyOrderPrices === 'function') {
-                        try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), d.wilaya); }
+                        try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), d.wilaya, deliveryType); }
                         catch(verr) {
                             showToast('❌ ' + (verr.message || 'error'));
                             submitBtn.disabled = false; submitBtn.textContent = t('of_submit');
@@ -4842,7 +4925,7 @@
                     var orderId = await window.saveOrderToFirestore(payload);
                     if (typeof window._shvStampSubmit === 'function') window._shvStampSubmit();
                     if (typeof window.ShvPixels === 'object') window.ShvPixels.track('Purchase', { content_ids: [String(p.id)], value: total, currency: 'DZD', num_items: qty });
-                    state.checkoutData = { fullName: '', phone: '', wilaya: '', baladiya: '', address: '', notes: '' };
+                    state.checkoutData = { fullName: '', phone: '', wilaya: '', baladiya: '', address: '', notes: '', deliveryType: 'home' };
                     // Show order success page
                     state.orderSuccess = { orderId: orderId, items: payload.items, customer: payload.customer, total: total, shipping: shipping, subtotal: subtotal };
                     navigate('order-success', {});
@@ -4868,6 +4951,12 @@
             if (baladiya) state.checkoutData.baladiya = baladiya.value;
             if (address) state.checkoutData.address = address.value;
             if (notes) state.checkoutData.notes = notes.value;
+            // Read delivery type from the active button
+            var coDeliveryEl = document.getElementById('coDeliveryType');
+            if (coDeliveryEl) {
+                var activeBtn = coDeliveryEl.querySelector('.delivery-type-btn.active');
+                if (activeBtn) state.checkoutData.deliveryType = activeBtn.getAttribute('data-delivery') || 'home';
+            }
         }
 
         function bindProductPageInteractions() {
@@ -5210,6 +5299,20 @@
                 });
             }
 
+            // Bind delivery type buttons (home / office) → recompute summary
+            var ckDtBtns = document.querySelectorAll('#ckDeliveryType .delivery-type-btn');
+            ckDtBtns.forEach(function (btn) {
+                if (btn.__shvBound) return;
+                btn.__shvBound = true;
+                btn.addEventListener('click', function () {
+                    ckDtBtns.forEach(function (b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    if (!state.checkoutData) state.checkoutData = {};
+                    state.checkoutData.deliveryType = btn.getAttribute('data-delivery') || 'home';
+                    renderCheckoutPage();
+                });
+            });
+
             // Empty cart state
             if (cart.length === 0) {
                 if (itemsContainer) itemsContainer.innerHTML = '';
@@ -5309,7 +5412,15 @@
                     '</div>';
             }
             var isAllFreeShip = _allCartItemsFreeShip(cart);
-            var shipping = isAllFreeShip ? 0 : calcShipping(ckWilayaVal || (state.checkoutData && state.checkoutData.wilaya) || '', subtotal, window._storeData);
+            var ckDeliveryType = (state.checkoutData && state.checkoutData.deliveryType) || 'home';
+            // Sync delivery-type button active state with state
+            (function () {
+                var btns = document.querySelectorAll('#ckDeliveryType .delivery-type-btn');
+                btns.forEach(function (b) {
+                    b.classList.toggle('active', b.getAttribute('data-delivery') === ckDeliveryType);
+                });
+            })();
+            var shipping = isAllFreeShip ? 0 : calcShipping(ckWilayaVal || (state.checkoutData && state.checkoutData.wilaya) || '', subtotal, window._storeData, ckDeliveryType);
             var total = subtotal + shipping;
             if (summaryCard) {
                 summaryCard.innerHTML = _renderSummaryCard(subtotal, shipping, isAllFreeShip, ckWilayaVal);
@@ -5363,12 +5474,13 @@
                     // Submit order via Worker
                     try {
                         var cart = getCart();
+                        var freshDeliveryType = (state.checkoutData && state.checkoutData.deliveryType) || 'home';
                         var subtotal = cart.reduce(function(s, i) { return s + (i.price * i.qty); }, 0);
                         var freshIsAllFree = _allCartItemsFreeShip(cart);
-                        var shipping = freshIsAllFree ? 0 : calcShipping(cd.wilaya || '', subtotal, window._storeData);
+                        var shipping = freshIsAllFree ? 0 : calcShipping(cd.wilaya || '', subtotal, window._storeData, freshDeliveryType);
                         var total = subtotal + shipping;
                         var payload = {
-                            customer: { name: cd.fullName, phone: cd.phone, wilaya: cd.wilaya, commune: cd.baladiya, address: cd.address, delivery_type: 'COD' },
+                            customer: { name: cd.fullName, phone: cd.phone, wilaya: cd.wilaya, commune: cd.baladiya, address: cd.address, delivery_type: freshDeliveryType, notes: cd.notes || '' },
                             items: cart.map(function(i) {
                                 var fs = (i.freeShipping === true);
                                 if (!fs && i.id && typeof NEON_DATA !== 'undefined' && Array.isArray(NEON_DATA.products)) {
@@ -5378,13 +5490,14 @@
                                 return { id: i.id, name: i.name, qty: i.qty, unit_price: i.price, line_total: i.price * i.qty, size: i.size, color: i.color, free_shipping: fs };
                             }),
                             pricing: { subtotal: subtotal, shipping_fee: shipping, total: total, currency: 'DZD' },
+                            note: cd.notes || null,
                         };
                         placeBtn.disabled = true; placeBtn.textContent = '...';
                         var orderId = null;
                         if (typeof window.saveOrderToFirestore === 'function') {
                             // 🔒 Server-side price verification before sending the order
                             if (typeof window._shvVerifyOrderPrices === 'function') {
-                                try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), cd.wilaya); }
+                                try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), cd.wilaya, freshDeliveryType); }
                                 catch(verr) {
                                     showToast('❌ ' + (verr.message || 'Order failed'));
                                     placeBtn.disabled = false; placeBtn.textContent = t('checkout_place_order');

@@ -681,6 +681,44 @@
         font-size: 0.6875rem;
         color: var(--text3);
     }
+
+    /* ===== DELIVERY TYPE SELECTOR ===== */
+    .delivery-type-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+    .delivery-type-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      background: var(--white);
+      color: var(--text2);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      font-family: var(--font-serif);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .delivery-type-btn:hover {
+      border-color: var(--hero-blue);
+      color: var(--hero-blue);
+    }
+    .delivery-type-btn.active {
+      border-color: var(--hero-blue);
+      background: rgba(68, 114, 164, 0.05);
+      color: var(--hero-blue);
+    }
+    .delivery-type-btn svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    [dir="rtl"] .delivery-type-btn { flex-direction: row-reverse; }
     .direct-order-totals {
         padding-top: 1rem;
         margin-top: 0.5rem;
@@ -1530,6 +1568,7 @@
                 <div class="hp-field"><input type="text" id="shv_hp_co_phone" name="phone_optional" tabindex="-1" autocomplete="off" placeholder="Phone (optional)"></div>
                 <div class="form-row"><div class="form-field"><label><span data-i18n="form_name">Full Name</span> <span class="req">*</span></label><input type="text" class="form-input" id="ckName" placeholder="Your full name" data-i18n-ph="form_name_ph" maxlength="100" autocomplete="name"></div><div class="form-field"><label><span data-i18n="form_phone">Phone</span> <span class="req">*</span></label><input type="tel" class="form-input" id="ckPhone" placeholder="0555123456" data-i18n-ph="form_phone_ph" maxlength="15" pattern="0[5-7][0-9]{8}" title="Algerian phone: starts with 05/06/07 followed by 8 digits" autocomplete="tel"></div></div>
                 <div class="form-row"><div class="form-field"><label><span data-i18n="form_wilaya">Wilaya</span> <span class="req">*</span></label><select class="form-select" id="ckWilaya" maxlength="50"><option value="" data-i18n="form_wilaya_ph">Select wilaya</option></select></div><div class="form-field"><label><span data-i18n="form_commune">Commune</span> <span class="req">*</span></label><input type="text" class="form-input" id="ckBaladiya" placeholder="Your commune" data-i18n-ph="form_commune_ph" maxlength="100" autocomplete="address-level2"></div></div>
+                <div class="form-row single"><div class="form-field"><label><span data-i18n="delivery_type">Delivery Type</span> <span class="req">*</span></label><div class="delivery-type-selector" id="ckDeliveryType"><button type="button" class="delivery-type-btn active" data-delivery="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span data-i18n="delivery_home">Home Delivery</span></button><button type="button" class="delivery-type-btn" data-delivery="office"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><span data-i18n="delivery_office">Office Pickup</span></button></div></div></div>
                 <div class="form-row single"><div class="form-field"><label><span data-i18n="form_address">Address</span> <span class="req">*</span></label><textarea class="form-textarea" id="ckAddress" placeholder="Neighborhood, street, building..." data-i18n-ph="form_address_ph" maxlength="300" autocomplete="street-address"></textarea></div></div>
                 <div class="form-row single"><div class="form-field"><label><span data-i18n="form_notes">Order Notes (Optional)</span></label><textarea class="form-textarea" id="ckNotes" placeholder="Any special instructions..." data-i18n-ph="form_notes_ph" maxlength="500"></textarea></div></div>
               </div>
@@ -1684,7 +1723,7 @@
     // compare against the client-supplied unit_price, and override with the server value
     // if there is any mismatch. This prevents price tampering and fake bot orders.
     // Also re-computes shipping: 0 if ALL items have free_shipping=true, else normal per-wilaya.
-    window._shvVerifyOrderPrices = async (payload, storeId, wilayaName) => {
+    window._shvVerifyOrderPrices = async (payload, storeId, wilayaName, deliveryType) => {
       if (!payload || !Array.isArray(payload.items) || payload.items.length === 0) return payload;
       var verifiedItems = [];
       for (var item of payload.items) {
@@ -1723,7 +1762,7 @@
       var shipping = 0;
       if (!allFreeShipping) {
         shipping = (typeof window.calcShipping === 'function')
-          ? window.calcShipping(wilayaName || '', verifiedSubtotal, window._storeData)
+          ? window.calcShipping(wilayaName || '', verifiedSubtotal, window._storeData, deliveryType)
           : 0;
       }
       payload.pricing.shipping_fee = shipping;
@@ -2138,6 +2177,7 @@
         form_name_ph: 'Your full name', form_phone_ph: '0555123456',
         form_wilaya_ph: 'Select wilaya', form_commune_ph: 'Your commune',
         form_address_ph: 'Neighborhood, street, building...', form_notes_ph: 'Any special instructions...',
+        delivery_type: 'Delivery Type', delivery_home: 'Home Delivery', delivery_office: 'Office Pickup',
         cod_title: 'Cash on Delivery', cod_desc: 'Pay cash when you receive your order',
         // Success
         success_title: 'Order Confirmed!', success_desc: 'Thank you for your order. We will call you within 24 hours to confirm delivery.',
@@ -2269,6 +2309,7 @@
         form_name_ph: 'اسمك الكامل', form_phone_ph: '0555123456',
         form_wilaya_ph: 'اختر الولاية', form_commune_ph: 'بلديتك',
         form_address_ph: 'حي، شارع، رقم المبنى...', form_notes_ph: 'أي تعليمات خاصة...',
+        delivery_type: 'نوع التوصيل', delivery_home: 'توصيل للمنزل', delivery_office: 'توصيل للمكتب',
         cod_title: 'الدفع عند الاستلام', cod_desc: 'ادفع نقداً عند استلام طلبك',
         // Success
         success_title: 'تم تأكيد طلبك!', success_desc: 'شكراً لطلبك. سنتصل بك خلال 24 ساعة لتأكيد التوصيل.',
@@ -2397,20 +2438,23 @@
       'In Guezzam':54,'Touggourt':55,'Djanet':56,"El M'Ghair":57,'El Meniaa':58
     };
     var DEFAULT_WILAYA_PRICES = {1:900,2:650,3:700,4:500,5:600,6:600,7:650,8:850,9:400,10:500,11:1200,12:650,13:650,14:600,15:550,16:350,17:650,18:600,19:600,20:650,21:600,22:650,23:600,24:620,25:580,26:500,27:600,28:650,29:620,30:800,31:550,32:750,33:1300,34:580,35:420,36:620,37:1400,38:600,39:750,40:650,41:620,42:430,43:580,44:520,45:800,46:620,47:780,48:600,49:950,50:1500,51:700,52:900,53:1200,54:1300,55:780,56:1300,57:800,58:950};
-    function calcShipping(wilaya, subtotal, storeData) {
+    function calcShipping(wilaya, subtotal, storeData, deliveryType) {
       // Use admin's per-wilaya prices if set, otherwise use DEFAULT_WILAYA_PRICES fallback
       var wilayaId = wilaya ? WILAYA_NAME_TO_ID[wilaya] : null;
       if (!wilayaId) return 0; // No wilaya selected yet — can't calculate
+      var isOffice = (deliveryType === 'office');
       // Check admin's custom shipping config first
       if (storeData && storeData.shipping && Array.isArray(storeData.shipping) && storeData.shipping.length > 0) {
         for (var i = 0; i < storeData.shipping.length; i++) {
           if (Number(storeData.shipping[i].id) === wilayaId) {
-            return Number(storeData.shipping[i].home) || 0;
+            var price = isOffice ? (Number(storeData.shipping[i].office) || Number(storeData.shipping[i].home) || 0) : (Number(storeData.shipping[i].home) || 0);
+            return price;
           }
         }
       }
-      // Fallback: use DEFAULT_WILAYA_PRICES (same defaults shown in admin ShippingTab)
-      return DEFAULT_WILAYA_PRICES[wilayaId] || 0;
+      // Fallback: use DEFAULT_WILAYA_PRICES (home price). For office, multiply by 0.75
+      var homePrice = DEFAULT_WILAYA_PRICES[wilayaId] || 0;
+      return isOffice ? Math.round(homePrice * 0.75) : homePrice;
     }
     window.calcShipping = calcShipping;
 
@@ -2460,7 +2504,7 @@
       currentImage: 0, zoomIndex: 0,
       catActive: 'all', catSort: 'featured',
       searchQuery: '', searchActive: 'all', searchSort: 'featured',
-      checkoutData: { fullName:'', phone:'', wilaya:'', baladiya:'', address:'', notes:'' }
+      checkoutData: { fullName:'', phone:'', wilaya:'', baladiya:'', address:'', notes:'', deliveryType: 'home' }
     };
 
     var CART_KEY = 'zephyr_cart';
@@ -3063,8 +3107,9 @@
       var subtotal = eff * qty;
       var d = state.checkoutData || {};
       // 🚚 Free shipping: if this product has freeShipping=true, shipping = 0 regardless of wilaya/subtotal
+      var deliveryType = d.deliveryType || 'home';
       var isFreeShipping = (p.freeShipping === true);
-      var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData);
+      var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData, deliveryType);
       var total = subtotal + shipping;
       var colorName = (p.colors && p.colors[state.selectedColor]) ? (p.colors[state.selectedColor].name || p.colors[state.selectedColor]) : null;
       var sizeName = state.selectedSize || (p.sizes && p.sizes[0]) || null;
@@ -3135,6 +3180,22 @@
           '<div class="direct-order-field-row">' +
             '<div class="direct-order-field"><label>' + esc(t('form_wilaya')) + ' <span class="req">*</span></label><select id="doWilaya" maxlength="50">' + wilayaOptions + '</select></div>' +
             '<div class="direct-order-field"><label>' + esc(t('form_commune')) + ' <span class="req">*</span></label><input type="text" id="doBaladiya" placeholder="' + esc(t('form_commune_ph')) + '" maxlength="100" autocomplete="address-level2" value="' + esc(d.baladiya || '') + '"></div>' +
+          '</div>' +
+          /* Delivery type selector (home vs office) — drives the calcShipping deliveryType parameter */
+          '<div class="direct-order-field-row single">' +
+            '<div class="direct-order-field">' +
+              '<label>' + esc(t('delivery_type')) + ' <span class="req">*</span></label>' +
+              '<div class="delivery-type-selector" id="doDeliveryType">' +
+                '<button type="button" class="delivery-type-btn' + (deliveryType === 'home' ? ' active' : '') + '" data-delivery="home">' +
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
+                  '<span>' + esc(t('delivery_home')) + '</span>' +
+                '</button>' +
+                '<button type="button" class="delivery-type-btn' + (deliveryType === 'office' ? ' active' : '') + '" data-delivery="office">' +
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>' +
+                  '<span>' + esc(t('delivery_office')) + '</span>' +
+                '</button>' +
+              '</div>' +
+            '</div>' +
           '</div>' +
           /* Bug 4: visible per-wilaya shipping cost message, updates live when wilaya changes */
           '<div class="direct-order-field-row single" style="margin-top:-0.25rem;"><div class="direct-order-field" style="display:flex;align-items:center;justify-content:flex-start;"><div id="doShippingInfo">' + formatShippingInfoHTML(d.wilaya || '', shipping, isFreeShipping, window._storeData) + '</div></div></div>' +
@@ -3218,6 +3279,17 @@
         renderDirectOrderCard(p);
       });
 
+      // Bind delivery type buttons (home / office) → recalc shipping
+      var doDeliveryTypeBtns = card.querySelectorAll('#doDeliveryType .delivery-type-btn');
+      doDeliveryTypeBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          doDeliveryTypeBtns.forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          saveDirectOrderFields();
+          renderDirectOrderCard(p);
+        });
+      });
+
       // Bind submit button
       var submitBtn = document.getElementById('doSubmitBtn');
       if (submitBtn) submitBtn.addEventListener('click', async function() {
@@ -3259,12 +3331,13 @@
           var qty = state.quantity || 1;
           var unitPrice = effectivePrice(p);
           var subtotal = unitPrice * qty;
+          var deliveryType = d.deliveryType || 'home';
           // 🚚 Free shipping: if this product has freeShipping=true, shipping = 0
           var isFreeShipping = (p.freeShipping === true);
-          var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData);
+          var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData, deliveryType);
           var total = subtotal + shipping;
           var payload = {
-            customer: { name: d.fullName, phone: d.phone, wilaya: d.wilaya, commune: d.baladiya, address: d.address, delivery_type: 'COD', notes: d.notes || '' },
+            customer: { name: d.fullName, phone: d.phone, wilaya: d.wilaya, commune: d.baladiya, address: d.address, delivery_type: deliveryType, notes: d.notes || '' },
             items: [{ id: p.id, name: p.name, qty: qty, unit_price: unitPrice, line_total: subtotal, size: state.selectedSize, color: colorName, image: firstImg, free_shipping: isFreeShipping }],
             pricing: { subtotal: subtotal, shipping_fee: shipping, total: total, currency: 'DZD' },
             note: d.notes || null,
@@ -3274,7 +3347,7 @@
           if (typeof window.saveOrderToFirestore === 'function') {
             // 🔒 Server-side price verification before sending the order
             if (typeof window._shvVerifyOrderPrices === 'function') {
-              try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), d.wilaya); }
+              try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), d.wilaya, deliveryType); }
               catch(verr) {
                 showToast(t('order_failed') + ': ' + (verr.message || ''));
                 submitBtn.disabled = false;
@@ -3290,7 +3363,7 @@
           }
           if (typeof window._shvStampSubmit === 'function') window._shvStampSubmit();
           if (typeof window.ShvPixels === 'object') window.ShvPixels.track('Purchase', { content_ids: [String(p.id)], value: total, currency: 'DZD', num_items: qty });
-          state.checkoutData = { fullName: '', phone: '', wilaya: '', baladiya: '', address: '', notes: '' };
+          state.checkoutData = { fullName: '', phone: '', wilaya: '', baladiya: '', address: '', notes: '', deliveryType: 'home' };
           state.orderSuccess = { orderId: orderId, items: payload.items, customer: payload.customer, total: total, shipping: shipping, subtotal: subtotal };
           navigate('success', {});
         } catch (e) {
@@ -3317,6 +3390,12 @@
       if (baladiya) state.checkoutData.baladiya = baladiya.value;
       if (address) state.checkoutData.address = address.value;
       if (notes) state.checkoutData.notes = notes.value;
+      // Read delivery type from the active button
+      var doDeliveryTypeEl = document.getElementById('doDeliveryType');
+      if (doDeliveryTypeEl) {
+        var activeBtn = doDeliveryTypeEl.querySelector('.delivery-type-btn.active');
+        if (activeBtn) state.checkoutData.deliveryType = activeBtn.getAttribute('data-delivery') || 'home';
+      }
     }
 
     function toggleWishlist() {
@@ -3488,8 +3567,16 @@
       var subtotal = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
       var selWilayaEl = document.getElementById('ckWilaya');
       var ckWilayaVal = selWilayaEl ? selWilayaEl.value : '';
+      var ckDeliveryType = state.checkoutData.deliveryType || 'home';
+      // Sync delivery-type button active state with state
+      (function() {
+        var btns = document.querySelectorAll('#ckDeliveryType .delivery-type-btn');
+        btns.forEach(function(b) {
+          b.classList.toggle('active', b.getAttribute('data-delivery') === ckDeliveryType);
+        });
+      })();
       var isAllFreeShip = _allCartItemsFreeShip(cart);
-      var shipping = isAllFreeShip ? 0 : calcShipping(ckWilayaVal || '', subtotal, window._storeData);
+      var shipping = isAllFreeShip ? 0 : calcShipping(ckWilayaVal || '', subtotal, window._storeData, ckDeliveryType);
       var total = subtotal + shipping;
       document.getElementById('checkoutSummaryCard').innerHTML = _renderSummaryCard(subtotal, shipping, isAllFreeShip, ckWilayaVal);
       var btn = document.getElementById('placeOrderBtn');
@@ -3515,12 +3602,13 @@
         // 🔒 Reject obviously fake phones (all-same digits after prefix)
         if (typeof window._shvIsRepeatedDigitsPhone === 'function' && window._shvIsRepeatedDigitsPhone(phone)) { showToast(t('invalid_phone')); return; }
         try {
+          var freshDeliveryType = (state.checkoutData && state.checkoutData.deliveryType) || 'home';
           var freshSubtotal = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
           var freshIsAllFree = _allCartItemsFreeShip(cart);
-          var freshShipping = freshIsAllFree ? 0 : calcShipping(wilaya || '', freshSubtotal, window._storeData);
+          var freshShipping = freshIsAllFree ? 0 : calcShipping(wilaya || '', freshSubtotal, window._storeData, freshDeliveryType);
           var freshTotal = freshSubtotal + freshShipping;
           var payload = {
-            customer: { name: name, phone: phone, wilaya: wilaya, commune: baladiya, address: address, delivery_type: 'COD', notes: notesVal },
+            customer: { name: name, phone: phone, wilaya: wilaya, commune: baladiya, address: address, delivery_type: freshDeliveryType, notes: notesVal },
             items: cart.map(function(i) {
               // Resolve freeShipping flag from product data so the server-side verifier has it
               var fs = (i.freeShipping === true);
@@ -3537,7 +3625,7 @@
           if (typeof window.saveOrderToFirestore === 'function') {
             // 🔒 Server-side price verification before sending the order
             if (typeof window._shvVerifyOrderPrices === 'function') {
-              try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), wilaya); }
+              try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), wilaya, freshDeliveryType); }
               catch(verr) { showToast(t('order_failed') + ': ' + (verr.message || '')); return; }
               freshSubtotal = payload.pricing.subtotal;
               freshShipping = payload.pricing.shipping_fee;
@@ -3557,7 +3645,8 @@
         selWilayaEl.addEventListener('change', function() {
           var ns = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
           var nIsFree = _allCartItemsFreeShip(cart);
-          var nsh = nIsFree ? 0 : calcShipping(this.value || '', ns, window._storeData);
+          var nDt = (state.checkoutData && state.checkoutData.deliveryType) || 'home';
+          var nsh = nIsFree ? 0 : calcShipping(this.value || '', ns, window._storeData, nDt);
           var nt = ns + nsh;
           var sumCard = document.getElementById('checkoutSummaryCard');
           if (!sumCard) return;
@@ -3569,6 +3658,28 @@
           }
         });
       }
+      // Bind delivery type buttons (home / office) → recalc summary
+      var ckDtBtns = document.querySelectorAll('#ckDeliveryType .delivery-type-btn');
+      ckDtBtns.forEach(function(btn) {
+        if (btn.__shvBound) return;
+        btn.__shvBound = true;
+        btn.addEventListener('click', function() {
+          ckDtBtns.forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          if (!state.checkoutData) state.checkoutData = {};
+          state.checkoutData.deliveryType = btn.getAttribute('data-delivery') || 'home';
+          var ns = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
+          var nIsFree = _allCartItemsFreeShip(cart);
+          var nsh = nIsFree ? 0 : calcShipping((selWilayaEl ? selWilayaEl.value : '') || '', ns, window._storeData, state.checkoutData.deliveryType);
+          var sumCard = document.getElementById('checkoutSummaryCard');
+          if (!sumCard) return;
+          sumCard.innerHTML = _renderSummaryCard(ns, nsh, nIsFree, (selWilayaEl ? selWilayaEl.value : '') || '');
+          var nb = document.getElementById('placeOrderBtn');
+          if (nb) {
+            nb.addEventListener('click', function() { btn.click(); });
+          }
+        });
+      });
     }
 
     /* ===== SUCCESS (Zephyr design — rich order details page) ===== */
