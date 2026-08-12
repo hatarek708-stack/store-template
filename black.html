@@ -3803,7 +3803,7 @@
         /* ===================== HELPERS ===================== */
         function buildHref(page, params) {
             // Use query string URLs for SPA navigation (clean URLs handled by worker for SEO)
-            var href = 'index.html';
+            var href = '';
             if (page && page !== 'home') {
                 href += '?page=' + page;
                 if (params) {
