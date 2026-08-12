@@ -288,6 +288,29 @@
         }
         .product-tag.new { background-color: #16a34a; }
         .product-tag.sale { background-color: #ef4444; }
+        /* Free Shipping badge — NOIR gold luxury (#c9a96e) with elegant serif text */
+        .free-ship-badge {
+            position: absolute; top: 0.625rem; right: 0.625rem;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            background-color: rgba(10,10,10,0.92); color: #c9a96e;
+            padding: 0.25rem 0.5rem; border-radius: 2px;
+            border: 1px solid rgba(201,169,110,0.5);
+            font-family: 'Playfair Display', 'Times New Roman', serif;
+            font-size: 0.625rem; font-weight: 500; letter-spacing: 0.04em;
+            box-shadow: 0 2px 10px rgba(201,169,110,0.25); z-index: 3;
+        }
+        .free-ship-badge svg { width: 12px; height: 12px; flex-shrink: 0; }
+        .free-ship-badge-inline {
+            display: inline-flex; align-items: center; gap: 0.375rem;
+            padding: 0.35rem 0.75rem;
+            background-color: rgba(201,169,110,0.08); color: #c9a96e;
+            border: 1px solid rgba(201,169,110,0.35); border-radius: 2px;
+            font-family: 'Playfair Display', 'Times New Roman', serif;
+            font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.04em;
+            margin-top: 0.5rem;
+        }
+        .free-ship-badge-inline svg { width: 14px; height: 14px; flex-shrink: 0; }
+        [dir="rtl"] .free-ship-badge { right: auto; left: 0.625rem; }
         .product-quick {
             position: absolute; bottom: 0.625rem; right: 0.625rem;
             width: 36px; height: 36px; border-radius: 9999px;
@@ -1834,10 +1857,11 @@
                 </div>
             </section>
 
-            <!-- Features Bar -->
+            <!-- Features Bar (dynamic — populated by buildHomeFeaturesHTML) -->
             <section class="features-bar">
                 <div class="container">
-                    <div class="features-grid">
+                    <div class="features-grid" id="homeFeaturesGrid">
+                        <!-- Default items shown before JS runs; replaced by buildHomeFeaturesHTML() on init/renderHome -->
                         <div class="feature-item">
                             <div class="feature-icon"><i data-lucide="truck" style="width: 24px; height: 24px;"></i></div>
                             <div><h3 class="feature-title" data-i18n="feat_free_shipping">Free Shipping</h3><p class="feature-desc" data-i18n="feat_free_shipping_desc">On all orders above 5,000 DA</p></div>
@@ -2161,6 +2185,7 @@
                                 </div>
                                 <!-- 🔒 Honeypot anti-spam field — hidden from real users, bots fill it -->
                                 <div style="position:absolute;left:-9999px;opacity:0;height:0;width:0;overflow:hidden;" aria-hidden="true"><input type="text" id="shv_hp_ck" name="url" tabindex="-1" autocomplete="off"></div>
+                                <div style="position:absolute;left:-9999px;opacity:0;height:0;width:0;overflow:hidden;" aria-hidden="true"><input type="text" id="shv_hp_ck_phone" name="phone_optional" tabindex="-1" autocomplete="off" placeholder="Phone (optional)"></div>
                             </div>
 
                             <div class="checkout-card">
@@ -2432,16 +2457,80 @@
       return data.id;
     };
 
+    // 🔒 SECURITY: Server-side price verification.
+    // Re-fetch each product from Supabase to get the REAL price/discount/free_shipping,
+    // compare against the client-supplied unit_price, and override with the server value
+    // if there is any mismatch. This prevents price tampering and fake bot orders.
+    // Also re-computes shipping: 0 if ALL items have free_shipping=true, else normal per-wilaya.
+    window._shvVerifyOrderPrices = async (payload, storeId, wilayaName) => {
+      if (!payload || !Array.isArray(payload.items) || payload.items.length === 0) return payload;
+      var verifiedItems = [];
+      for (var item of payload.items) {
+        var productId = item && item.id ? String(item.id) : '';
+        if (!productId) { verifiedItems.push(item); continue; }
+        var { data: prodRow, error: prodErr } = await supabase.from('products')
+          .select('price,discount_price,free_shipping')
+          .eq('store_id', storeId)
+          .eq('id', productId)
+          .maybeSingle();
+        if (prodErr || !prodRow) {
+          throw new Error('Product not found: ' + productId);
+        }
+        var realPrice = (typeof window._effectivePrice === 'function')
+          ? window._effectivePrice({ price: Number(prodRow.price) || 0, discountPrice: prodRow.discount_price != null ? Number(prodRow.discount_price) : null })
+          : (prodRow.discount_price != null && Number(prodRow.discount_price) > 0 ? Number(prodRow.discount_price) : Number(prodRow.price) || 0);
+        var clientPrice = Number(item.unit_price) || 0;
+        if (Math.abs(realPrice - clientPrice) > 1) {
+          console.warn('Price mismatch detected for product ' + productId, { client: clientPrice, server: realPrice });
+          item.unit_price = realPrice;
+          item.line_total = realPrice * (Number(item.qty) || 1);
+        }
+        item.free_shipping = prodRow.free_shipping === true;
+        verifiedItems.push(item);
+      }
+      payload.items = verifiedItems;
+      var verifiedSubtotal = verifiedItems.reduce(function(s, i) { return s + (Number(i.line_total) || (Number(i.unit_price) * Number(i.qty))); }, 0);
+      if (!payload.pricing) payload.pricing = {};
+      payload.pricing.subtotal = verifiedSubtotal;
+      payload.subtotal = verifiedSubtotal;
+      var allFreeShipping = verifiedItems.every(function(i) { return i.free_shipping === true; });
+      var shipping = 0;
+      if (!allFreeShipping) {
+        shipping = (typeof window.calcShipping === 'function')
+          ? window.calcShipping(wilayaName || '', verifiedSubtotal, window._storeData)
+          : (verifiedSubtotal >= 5000 ? 0 : 350);
+      }
+      payload.pricing.shipping_fee = shipping;
+      payload.shippingCost = shipping;
+      payload.pricing.total = verifiedSubtotal + shipping;
+      payload.total = verifiedSubtotal + shipping;
+      return payload;
+    };
+
     window.fetchStoreFromFirestore = async (storeId) => {
       if (!storeId || typeof storeId !== 'string' || storeId.trim() === '') return { store: null, products: [] };
       const cleanStoreId = storeId.trim();
       const cacheKey = `shv_store_${cleanStoreId}`;
       const { data: storeRow } = await supabase.from('stores').select('*').eq('id', cleanStoreId).maybeSingle();
       let storeData = null;
+      // Parse hero settings from page_subtitle JSON (e.g. {heroTitle1, heroTitle2, heroKicker, heroBtn})
+      var heroSettings = {};
+      try {
+        if (storeRow && storeRow.page_subtitle && typeof storeRow.page_subtitle === 'string' && storeRow.page_subtitle.trim().startsWith('{')) {
+          heroSettings = JSON.parse(storeRow.page_subtitle);
+        } else if (storeRow && storeRow.page_subtitle && typeof storeRow.page_subtitle === 'object') {
+          heroSettings = storeRow.page_subtitle;
+        }
+      } catch(e) {}
       if (storeRow) {
         storeData = {
           id: storeRow.id, name: storeRow.name, title: storeRow.title || storeRow.page_title,
           pageTitle: storeRow.page_title, pageSubtitle: storeRow.page_subtitle, heroDesc: storeRow.hero_desc,
+          // Hero settings (from page_subtitle JSON) — NOIR defaults match existing hero text
+          heroTitle1: heroSettings.heroTitle1 || 'THRIFTED.',
+          heroTitle2: heroSettings.heroTitle2 || 'CURATED.',
+          heroKicker: heroSettings.heroKicker || 'New Arrivals',
+          heroBtn: heroSettings.heroBtn || 'Shop Now',
           coverImage: storeRow.cover_image || null,
           hideTrustIcons: storeRow.hide_trust_icons || {},
           trustIconsText: storeRow.trust_icons_text || {},
@@ -2489,6 +2578,7 @@
         rating: 4.5 + Math.random() * 0.5, reviews: Math.floor(Math.random() * 100) + 10,
         badge: p.discount_price != null && Number(p.discount_price) > 0 ? 'Sale' : '', isNew: false,
         materials: '', sizeFit: '', shipping: '',
+        freeShipping: p.free_shipping === true,
       }));
       try { localStorage.setItem(cacheKey, JSON.stringify({ products, version: remoteVer })); } catch {}
       return { store: storeData, products };
@@ -2522,6 +2612,7 @@
               reviewsData: Array.isArray(p.reviews_data) ? p.reviews_data : [],
               details: Array.isArray(p.details) ? p.details : [],
               desc: p.description || '',
+              freeShipping: p.free_shipping === true,
             }));
             onUpdate(products);
           })
@@ -2534,6 +2625,18 @@
     window._shvCheckRateLimit = function() { var last = parseInt(localStorage.getItem('shv_last_submit_ts') || '0', 10); var diff = Date.now() - last; if (diff < 45000) return Math.ceil((45000 - diff) / 1000); return 0; };
     window._shvStampSubmit = function() { localStorage.setItem('shv_last_submit_ts', String(Date.now())); };
     window._SHV_PAGE_LOAD_TS = Date.now();
+    window._SHV_FIRST_FOCUS_TS = null; // ⚡ Set on first field focus; used to detect bot-style instant submissions
+    window._shvIsRepeatedDigitsPhone = function(phone) {
+      // Reject obviously fake phones like 0555555555, 0666666666, 0777777777 (all-same digits after prefix)
+      if (!phone) return false;
+      var s = String(phone).replace(/\D/g, '');
+      if (s.length < 4) return false;
+      var tail = s.substring(2); // skip 05/06/07 prefix
+      if (!tail.length) return false;
+      var first = tail.charAt(0);
+      for (var i = 1; i < tail.length; i++) { if (tail.charAt(i) !== first) return false; }
+      return true;
+    };
     window._firebaseReady = true;
     if (window._onFirebaseReady) window._onFirebaseReady();
 
@@ -2831,6 +2934,7 @@
                 hero_cta: 'Shop Now',
                 // Features
                 feat_free_shipping: 'Free Shipping',
+                tag_free_shipping: 'Free Shipping',
                 feat_free_shipping_desc: 'On all orders above 5,000 DA',
                 feat_premium: 'Premium Quality',
                 feat_premium_desc: 'Handpicked & quality checked',
@@ -3031,6 +3135,7 @@
                 hero_subtitle: 'قطع بريميوم مستعملة. منتقاة يدوياً للجودة. بأسعار تناسبك.',
                 hero_cta: 'تسوق الآن',
                 feat_free_shipping: 'شحن مجاني',
+                tag_free_shipping: 'شحن مجاني',
                 feat_free_shipping_desc: 'لجميع الطلبات فوق 5,000 دج',
                 feat_premium: 'جودة عالية',
                 feat_premium_desc: 'منتقى يدوياً ومفحوص',
@@ -3443,6 +3548,7 @@
             if (p.isNew) tag = '<span class="product-tag new">' + escapeHTML(t('new_arrival')) + '</span>';
             else if (p.badge === 'Best Seller') tag = '<span class="product-tag">' + escapeHTML(t('best_seller')) + '</span>';
             else if (hasDiscount) tag = '<span class="product-tag sale">-' + discount + '%</span>';
+            var freeShipBadge = (p.freeShipping === true) ? freeShippingBadgeHTML() : '';
             var nameHTML = opts.highlightQuery ? highlight(p.name, opts.highlightQuery) : escapeHTML(p.name);
             var catHTML = opts.highlightQuery ? highlight(p.categoryLabel, opts.highlightQuery) : escapeHTML(p.categoryLabel);
             // rating count uses Western digits via toFixed and toString (always Latin)
@@ -3455,6 +3561,7 @@
                     '<a class="product-image-wrapper" data-nav="product" data-params=\'' + cardParams + '\' href="' + cardHref + '">' +
                         '<div class="product-image-box"><img src="' + p.images[0] + '" alt="' + escapeHTML(p.name) + '" class="product-image"></div>' +
                         tag +
+                        freeShipBadge +
                         '<span class="product-quick" data-stop-nav="1"><i data-lucide="heart"></i></span>' +
                     '</a>' +
                     '<div class="product-info">' +
@@ -3473,6 +3580,13 @@
         /* ===================== HOME PAGE ===================== */
         function renderHome() {
             document.title = 'NOIR — Luxury Store';
+            // Populate home features bar from store settings (hide flags + custom text)
+            var featuresGrid = document.getElementById('homeFeaturesGrid');
+            if (featuresGrid) {
+                var fh = buildHomeFeaturesHTML();
+                if (fh) featuresGrid.innerHTML = fh;
+                if (window.lucide) lucide.createIcons();
+            }
             // Categories
             var catGrid = document.getElementById('homeCategoriesGrid');
             catGrid.innerHTML = NEON_DATA.categories.map(function (cat) {
@@ -3616,6 +3730,63 @@
             return html;
         }
 
+        /* ===================== HOME FEATURES BAR (from store settings) =====================
+           Renders the home page features bar respecting per-icon hide flags + custom text.
+           The first 3 items are trust-icon controlled (free_shipping / easy_returns / secure_payment).
+           The 4th item (24/7 Support) is a standalone item not affected by trust-icon hide flags. */
+        function buildHomeFeaturesHTML() {
+            var sd = window._storeData || {};
+            var hide = sd.hideTrustIcons || {};
+            var txt = sd.trustIconsText || {};
+            var items = [
+                {
+                    hidden: !!hide.free_shipping,
+                    iconHTML: '<i data-lucide="truck" style="width: 24px; height: 24px;"></i>',
+                    title: txt.free_shipping_title || t('feat_free_shipping'),
+                    desc: txt.free_shipping_desc || t('feat_free_shipping_desc')
+                },
+                {
+                    hidden: !!hide.secure_payment,
+                    iconHTML: '<i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>',
+                    title: txt.secure_payment_title || t('feat_premium'),
+                    desc: txt.secure_payment_desc || t('feat_premium_desc')
+                },
+                {
+                    hidden: !!hide.easy_returns,
+                    iconHTML: '<i data-lucide="rotate-ccw" style="width: 24px; height: 24px;"></i>',
+                    title: txt.easy_returns_title || t('feat_returns'),
+                    desc: txt.easy_returns_desc || t('feat_returns_desc')
+                },
+                // 4th item: 24/7 Support — always visible, NOT a trust icon
+                {
+                    hidden: false,
+                    iconHTML: '<i data-lucide="headphones" style="width: 24px; height: 24px;"></i>',
+                    title: t('feat_support'),
+                    desc: t('feat_support_desc')
+                }
+            ];
+            var visible = items.filter(function (it) { return !it.hidden; });
+            if (visible.length === 0) return '';
+            var html = '';
+            visible.forEach(function (it) {
+                html += '<div class="feature-item">' +
+                    '<div class="feature-icon">' + it.iconHTML + '</div>' +
+                    '<div><h3 class="feature-title">' + escapeHTML(it.title) + '</h3><p class="feature-desc">' + escapeHTML(it.desc) + '</p></div>' +
+                '</div>';
+            });
+            return html;
+        }
+
+        /* ===================== FREE SHIPPING BADGE (NOIR gold luxury) =====================
+           Renders a gold (#c9a96e) truck-icon badge with elegant serif text. Luxury feel.
+           Used on product cards (corner) and product detail page (inline near price). */
+        function freeShippingBadgeHTML() {
+            return '<span class="free-ship-badge" title="Free Shipping" aria-label="Free Shipping">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' +
+                '<span>' + escapeHTML(t('tag_free_shipping') || 'Free Shipping') + '</span>' +
+            '</span>';
+        }
+
         /* ===================== FIND PRODUCT BY ID OR SLUG ===================== */
         function findProductByIdOrSlug(id, slug) {
             if (slug) {
@@ -3696,6 +3867,7 @@
                         (hasDiscount ? '<span class="price-original">' + formatPrice(p.originalPrice) + '</span>' : '') +
                         (discount ? '<span class="price-discount">' + discount + '% ' + escapeHTML(t('off')) + '</span>' : '') +
                     '</div>' +
+                    (p.freeShipping === true ? '<div>' + freeShippingBadgeHTML().replace('free-ship-badge"', 'free-ship-badge-inline"') + '</div>' : '') +
                     '<p class="short-desc">' + escapeHTML(p.shortDesc) + '</p>' +
                     '<div class="divider"></div>' +
                     '<div class="selector-row">' +
@@ -3789,7 +3961,9 @@
             var hasDiscountOS = p.originalPrice && p.originalPrice > effUnit;
             var savings = hasDiscountOS ? (p.originalPrice - effUnit) * qty : 0;
             var d = state.checkoutData || {};
-            var shipping = calcShipping(d.wilaya || '', subtotal, window._storeData);
+            // 🚚 Free shipping: if this product has freeShipping=true, shipping = 0 regardless of wilaya/subtotal
+            var isFreeShipping = (p.freeShipping === true);
+            var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData);
             var total = subtotal + shipping;
 
             card.innerHTML =
@@ -3841,6 +4015,7 @@
                     '</div>' +
                     /* 🔒 Honeypot anti-spam field — hidden from real users, bots fill it */
                     '<div style="position:absolute;left:-9999px;opacity:0;height:0;width:0;overflow:hidden;" aria-hidden="true"><input type="text" id="shv_hp_co" name="url" tabindex="-1" autocomplete="off"></div>' +
+                    '<div style="position:absolute;left:-9999px;opacity:0;height:0;width:0;overflow:hidden;" aria-hidden="true"><input type="text" id="shv_hp_co_phone" name="phone_optional" tabindex="-1" autocomplete="off" placeholder="Phone (optional)"></div>' +
                 '</div>' +
 
                 /* Delivery Address section */
@@ -3912,7 +4087,7 @@
                 /* Order totals */
                 '<div class="order-totals">' +
                     '<div class="order-total-row"><span class="label">' + escapeHTML(t('os_subtotal')) + '</span><span class="value">' + formatPrice(subtotal) + '</span></div>' +
-                    '<div class="order-total-row"><span class="label">' + escapeHTML(t('os_shipping')) + '</span><span class="value">' + (shipping === 0 ? escapeHTML(t('os_free')) : formatPrice(shipping)) + '</span></div>' +
+                    '<div class="order-total-row"><span class="label">' + escapeHTML(t('os_shipping')) + '</span><span class="value">' + (shipping === 0 ? (isFreeShipping ? '<span style="display:inline-flex;align-items:center;gap:0.25rem;color:#c9a96e;font-weight:600;font-family:\'Playfair Display\',serif;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' + escapeHTML(t('os_free')) + '</span>' : escapeHTML(t('os_free'))) : formatPrice(shipping)) + '</span></div>' +
                     (savings > 0 ? '<div class="order-total-row discount"><span class="label">' + escapeHTML(t('os_discount')) + '</span><span class="value">-' + formatPrice(savings) + '</span></div>' : '') +
                     '<div class="order-total-row grand"><span class="label">' + escapeHTML(t('os_total')) + '</span><span class="value">' + formatPrice(total) + '</span></div>' +
                 '</div>' +
@@ -3983,13 +4158,31 @@
             var submitBtn = document.getElementById('osSubmitBtn');
             if (submitBtn) submitBtn.addEventListener('click', function () {
                 saveFormFields();
-                // 🔒 Honeypot anti-spam check — bots fill hidden fields, humans don't
+                // 🔒 Honeypot anti-spam check — check BOTH hidden fields
                 var hpCo = document.getElementById('shv_hp_co');
-                if (hpCo && hpCo.value) { showToast(t('of_required')); return; }
-                // 🔒 3-second minimum page load time (block instant bot submissions)
-                if (typeof window._SHV_PAGE_LOAD_TS !== 'undefined' && Date.now() - window._SHV_PAGE_LOAD_TS < 3000) { showToast(t('of_required')); return; }
+                var hpCo2 = document.getElementById('shv_hp_co_phone');
+                if ((hpCo && hpCo.value) || (hpCo2 && hpCo2.value)) { showToast(t('of_required')); return; }
+                // 🔒 Increased from 3s to 5s minimum page load time (block instant bot submissions)
+                if (typeof window._SHV_PAGE_LOAD_TS !== 'undefined' && Date.now() - window._SHV_PAGE_LOAD_TS < 5000) { showToast(t('of_required')); return; }
+                // 🔒 Fast-submit check: <1s after first field focus = bot
+                if (window._SHV_FIRST_FOCUS_TS && Date.now() - window._SHV_FIRST_FOCUS_TS < 1000) { showToast(t('of_required')); return; }
+                // 🔒 Rate limit
+                if (typeof window._shvCheckRateLimit === 'function') {
+                    var _rl = window._shvCheckRateLimit();
+                    if (_rl > 0) { showToast(t('of_required')); return; }
+                }
                 var d = state.checkoutData;
                 if (!d.fullName || !d.phone || !d.wilaya || !d.baladiya || !d.address) {
+                    showToast(t('of_required'));
+                    return;
+                }
+                // 🔒 Phone validation (Algerian format: 05/06/07 + 8 digits)
+                if (!/^0[5-7]\d{8}$/.test(d.phone)) {
+                    showToast(t('of_required'));
+                    return;
+                }
+                // 🔒 Reject obviously fake phones (all-same digits after prefix)
+                if (typeof window._shvIsRepeatedDigitsPhone === 'function' && window._shvIsRepeatedDigitsPhone(d.phone)) {
                     showToast(t('of_required'));
                     return;
                 }
@@ -3999,6 +4192,7 @@
                 }
                 // Add to cart and show success
                 addToCart(p, state.selectedSize, p.colors[state.selectedColor || 0].name, state.quantity);
+                if (typeof window._shvStampSubmit === 'function') window._shvStampSubmit();
                 showToast(t('of_order_success'));
                 // Reset form
                 state.checkoutData = { fullName: '', phone: '', wilaya: '', baladiya: '', address: '', notes: '' };
@@ -4417,15 +4611,30 @@
             // Render summary card
             var subtotal = cart.reduce(function (s, i) { return s + (i.price * i.qty); }, 0);
             var ckWilayaVal = (function(sel){ return sel ? sel.value : ''; })(document.getElementById('ckWilaya'));
-            var shipping = calcShipping(ckWilayaVal || '', subtotal, window._storeData);
-            var total = subtotal + shipping;
-            if (summaryCard) {
-                summaryCard.innerHTML =
-                    '<h3>' + escapeHTML(t('checkout_summary')) + '</h3>' +
+            // 🚚 Free shipping: if ALL cart items have freeShipping=true, shipping = 0
+            function _allCartItemsFreeShip(c) {
+                if (!c || !c.length) return false;
+                return c.every(function(it) {
+                    if (it.freeShipping === true) return true;
+                    if (it.id && typeof NEON_DATA !== 'undefined' && Array.isArray(NEON_DATA.products)) {
+                        var p = NEON_DATA.products.find(function(x) { return String(x.id) === String(it.id); });
+                        if (p && p.freeShipping === true) return true;
+                    }
+                    return false;
+                });
+            }
+            function _renderSummaryCard(sub, ship, isFreeShip) {
+                var tot = sub + ship;
+                var shippingVal = ship === 0
+                    ? (isFreeShip
+                        ? '<span style="display:inline-flex;align-items:center;gap:0.25rem;color:#c9a96e;font-weight:600;font-family:\'Playfair Display\',serif;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' + escapeHTML(t('cart_free')) + '</span>'
+                        : escapeHTML(t('cart_free')))
+                    : formatPrice(ship);
+                return '<h3>' + escapeHTML(t('checkout_summary')) + '</h3>' +
                     '<div class="order-totals" style="border-top:none;padding-top:0;margin-top:0;">' +
-                        '<div class="order-total-row"><span class="label">' + escapeHTML(t('cart_subtotal')) + '</span><span class="value">' + formatPrice(subtotal) + '</span></div>' +
-                        '<div class="order-total-row"><span class="label">' + escapeHTML(t('cart_shipping')) + '</span><span class="value">' + (shipping === 0 ? escapeHTML(t('cart_free')) : formatPrice(shipping)) + '</span></div>' +
-                        '<div class="order-total-row grand"><span class="label">' + escapeHTML(t('cart_total')) + '</span><span class="value">' + formatPrice(total) + '</span></div>' +
+                        '<div class="order-total-row"><span class="label">' + escapeHTML(t('cart_subtotal')) + '</span><span class="value">' + formatPrice(sub) + '</span></div>' +
+                        '<div class="order-total-row"><span class="label">' + escapeHTML(t('cart_shipping')) + '</span><span class="value">' + shippingVal + '</span></div>' +
+                        '<div class="order-total-row grand"><span class="label">' + escapeHTML(t('cart_total')) + '</span><span class="value">' + formatPrice(tot) + '</span></div>' +
                     '</div>' +
                     '<button class="btn-submit-order" id="ckPlaceOrderBtn" type="button">' +
                         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
@@ -4439,6 +4648,12 @@
                             '<div class="order-trust-sub">' + escapeHTML(t('os_trust_sub')) + '</div>' +
                         '</div>' +
                     '</div>';
+            }
+            var isAllFreeShip = _allCartItemsFreeShip(cart);
+            var shipping = isAllFreeShip ? 0 : calcShipping(ckWilayaVal || '', subtotal, window._storeData);
+            var total = subtotal + shipping;
+            if (summaryCard) {
+                summaryCard.innerHTML = _renderSummaryCard(subtotal, shipping, isAllFreeShip);
 
                 var placeBtn = document.getElementById('ckPlaceOrderBtn');
                 if (placeBtn) placeBtn.addEventListener('click', async function () {
@@ -4456,13 +4671,26 @@
                     if (bl) state.checkoutData.baladiya = bl.value;
                     if (ad) state.checkoutData.address = ad.value;
                     if (nt) state.checkoutData.notes = nt.value;
-                    // 🔒 Honeypot anti-spam check — bots fill hidden fields, humans don't
+                    // 🔒 Honeypot — check BOTH hidden fields
                     var hpCk = document.getElementById('shv_hp_ck');
-                    if (hpCk && hpCk.value) { showToast(t('of_required')); return; }
-                    // 🔒 3-second minimum page load time (block instant bot submissions)
-                    if (typeof window._SHV_PAGE_LOAD_TS !== 'undefined' && Date.now() - window._SHV_PAGE_LOAD_TS < 3000) { showToast(t('of_required')); return; }
+                    var hpCk2 = document.getElementById('shv_hp_ck_phone');
+                    if ((hpCk && hpCk.value) || (hpCk2 && hpCk2.value)) { showToast(t('of_required')); return; }
+                    // 🔒 Increased from 3s to 5s minimum page load time
+                    if (typeof window._SHV_PAGE_LOAD_TS !== 'undefined' && Date.now() - window._SHV_PAGE_LOAD_TS < 5000) { showToast(t('of_required')); return; }
+                    // 🔒 Fast-submit check: <1s after first field focus = bot
+                    if (window._SHV_FIRST_FOCUS_TS && Date.now() - window._SHV_FIRST_FOCUS_TS < 1000) { showToast(t('of_required')); return; }
                     var cd = state.checkoutData;
                     if (!cd.fullName || !cd.phone || !cd.wilaya || !cd.baladiya || !cd.address) {
+                        showToast(t('of_required'));
+                        return;
+                    }
+                    // 🔒 Phone validation (Algerian format)
+                    if (!/^0[5-7]\d{8}$/.test(cd.phone)) {
+                        showToast(t('of_required'));
+                        return;
+                    }
+                    // 🔒 Reject obviously fake phones (all-same digits after prefix)
+                    if (typeof window._shvIsRepeatedDigitsPhone === 'function' && window._shvIsRepeatedDigitsPhone(cd.phone)) {
                         showToast(t('of_required'));
                         return;
                     }
@@ -4475,15 +4703,34 @@
                     try {
                         var cart = getCart();
                         var subtotal = cart.reduce(function(s, i) { return s + (i.price * i.qty); }, 0);
-                        var freshShipping = calcShipping(cd.wilaya || '', subtotal, window._storeData);
+                        var freshIsAllFree = _allCartItemsFreeShip(cart);
+                        var freshShipping = freshIsAllFree ? 0 : calcShipping(cd.wilaya || '', subtotal, window._storeData);
                         var total = subtotal + freshShipping;
                         var payload = {
                             customer: { name: cd.fullName, phone: cd.phone, wilaya: cd.wilaya, commune: cd.baladiya, address: cd.address, delivery_type: 'COD' },
-                            items: cart.map(function(i) { return { id: i.id, name: i.name, qty: i.qty, unit_price: i.price, line_total: i.price * i.qty, size: i.size, color: i.color }; }),
+                            items: cart.map(function(i) {
+                                var fs = (i.freeShipping === true);
+                                if (!fs && i.id && typeof NEON_DATA !== 'undefined' && Array.isArray(NEON_DATA.products)) {
+                                    var p = NEON_DATA.products.find(function(x) { return String(x.id) === String(i.id); });
+                                    if (p && p.freeShipping === true) fs = true;
+                                }
+                                return { id: i.id, name: i.name, qty: i.qty, unit_price: i.price, line_total: i.price * i.qty, size: i.size, color: i.color, free_shipping: fs };
+                            }),
                             pricing: { subtotal: subtotal, shipping_fee: freshShipping, total: total, currency: 'DZD' },
                             note: cd.notes || null,
                         };
                         if (typeof window.saveOrderToFirestore === 'function') {
+                            // 🔒 Server-side price verification before sending the order
+                            if (typeof window._shvVerifyOrderPrices === 'function') {
+                                try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), cd.wilaya); }
+                                catch(verr) {
+                                    showToast(t('of_required') + ': ' + (verr.message || ''));
+                                    return;
+                                }
+                                subtotal = payload.pricing.subtotal;
+                                freshShipping = payload.pricing.shipping_fee;
+                                total = payload.pricing.total;
+                            }
                             var orderId = await window.saveOrderToFirestore(payload);
                             if (typeof window._shvStampSubmit === 'function') window._shvStampSubmit();
                             // Pixel: Purchase
@@ -4654,6 +4901,12 @@
 
         /* ===================== GLOBAL CLICK DELEGATION (router links) ===================== */
         function bindGlobalClicks() {
+            // 🔒 Track first focus on any form field (used to detect bot-style instant submissions)
+            if (!window._SHV_FIRST_FOCUS_TS) {
+                document.addEventListener('focusin', function() {
+                    if (!window._SHV_FIRST_FOCUS_TS) window._SHV_FIRST_FOCUS_TS = Date.now();
+                }, true);
+            }
             document.addEventListener('click', function (e) {
                 // Find closest [data-nav]
                 var target = e.target.closest('[data-nav]');
@@ -4803,7 +5056,16 @@
                 return;
             }
             var subtotal = cart.reduce(function (s, i) { return s + (i.price * i.qty); }, 0);
-            var shipping = calcShipping('', subtotal, window._storeData);
+            // 🚚 Free shipping: if ALL cart items have freeShipping=true, shipping = 0
+            var _allFreeCart = cart.every(function(it) {
+                if (it.freeShipping === true) return true;
+                if (it.id && typeof NEON_DATA !== 'undefined' && Array.isArray(NEON_DATA.products)) {
+                    var p = NEON_DATA.products.find(function(x) { return String(x.id) === String(it.id); });
+                    if (p && p.freeShipping === true) return true;
+                }
+                return false;
+            });
+            var shipping = _allFreeCart ? 0 : calcShipping('', subtotal, window._storeData);
             var total = subtotal + shipping;
             body.innerHTML = cart.map(function (item, idx) {
                 return '' +
@@ -4901,15 +5163,28 @@
                 var hd = document.getElementById('heroSubtitle');
                 if (hd) hd.textContent = s.heroDesc;
             }
-            // Hero title (support pipe-delimited multi-line)
-            if (s.title) {
-                var ht = document.getElementById('heroTitle');
-                if (ht) ht.innerHTML = escapeHTML(s.title).replace(/\|/g, '<br>');
-            }
-            // Hero badge (kicker) — uses store name uppercased
-            if (s.name) {
+            // Hero kicker (badge) from heroKicker — falls back to store name uppercased
+            var kickerText = s.heroKicker || (s.name ? s.name.toUpperCase() : null);
+            if (kickerText) {
                 var hb = document.getElementById('heroBadge');
-                if (hb) hb.textContent = s.name.toUpperCase();
+                if (hb) hb.textContent = kickerText;
+            }
+            // Hero title — composed from heroTitle1 + heroTitle2 (with <br> between),
+            // OR fall back to s.title (pipe-delimited).
+            var ht = document.getElementById('heroTitle');
+            if (ht) {
+                if (s.heroTitle1 || s.heroTitle2) {
+                    var line1 = escapeHTML(s.heroTitle1 || '');
+                    var line2 = escapeHTML(s.heroTitle2 || '');
+                    ht.innerHTML = '<span>' + line1 + '</span>' + (line2 ? '<br><span>' + line2 + '</span>' : '');
+                } else if (s.title) {
+                    ht.innerHTML = escapeHTML(s.title).replace(/\|/g, '<br>');
+                }
+            }
+            // Hero button text from heroBtn (overrides i18n default)
+            if (s.heroBtn) {
+                var hbtn = document.querySelector('.btn-primary[data-i18n="hero_cta"]');
+                if (hbtn) hbtn.textContent = s.heroBtn;
             }
         }
 
@@ -4923,6 +5198,35 @@
             bindTabs();
             bindLanguageToggle();
             bindZoomViewer();
+
+            // ⚡ Apply cached store settings from localStorage BEFORE the first render.
+            // This prevents the visible "flash" where the default hero/cover/name shows
+            // first and then the real store customization appears once Supabase returns.
+            var _cachedStoreId = window._getStoreId();
+            if (_cachedStoreId) {
+                try {
+                    var _cacheKey = 'shv_store_' + _cachedStoreId.trim();
+                    var _cachedRaw = localStorage.getItem(_cacheKey);
+                    if (_cachedRaw) {
+                        var _cachedParsed = JSON.parse(_cachedRaw);
+                        if (_cachedParsed && _cachedParsed.store) {
+                            var _cs = _cachedParsed.store;
+                            window._storeData = _cs;
+                            if (_cs.name) {
+                                var _cLogo = document.querySelector('.logo');
+                                if (_cLogo) _cLogo.textContent = _cs.name;
+                                var _cFooterLogo = document.querySelector('.footer-logo a');
+                                if (_cFooterLogo) _cFooterLogo.textContent = _cs.name;
+                                document.title = (_cs.title || _cs.name) + ' | NOIR';
+                            }
+                            if (_cs.instagram) { var _ig = document.querySelector('a[aria-label="Instagram"]'); if (_ig) _ig.href = _cs.instagram; }
+                            if (_cs.tiktok)    { var _tk = document.querySelector('a[aria-label="TikTok"]');    if (_tk) _tk.href = _cs.tiktok; }
+                            if (_cs.facebook)  { var _fb = document.querySelector('a[aria-label="WhatsApp"]');  if (_fb) { _fb.href = _cs.facebook; _fb.setAttribute('aria-label', 'Facebook'); } }
+                            applyHeroSettings(_cs);
+                        }
+                    }
+                } catch(e) { /* ignore cache errors */ }
+            }
 
             // ── جلب بيانات المتجر من Supabase ──
             var storeId = window._getStoreId();
@@ -4943,6 +5247,8 @@
                         if (s.facebook) { var fb = document.querySelector('a[aria-label="WhatsApp"]'); if (fb) { fb.href = s.facebook; fb.setAttribute('aria-label', 'Facebook'); } }
                         // Apply hero customization (cover image / title / desc / kicker)
                         applyHeroSettings(s);
+                        // Persist store snapshot to localStorage for instant application on next load
+                        try { localStorage.setItem('shv_store_' + storeId.trim(), JSON.stringify({ store: s, products: result.products || [], version: String(s.updatedAt?.seconds ?? 0) })); } catch(ee) {}
                         // إعداد البكسل
                         if (typeof window.ShvPixels === 'object') window.ShvPixels.init(s);
                     }
@@ -4976,6 +5282,7 @@
                                 reviewsText: p.reviewsText || '',
                                 reviewsData: Array.isArray(p.reviewsData) ? p.reviewsData : [],
                                 slug: p.slug || '',
+                                freeShipping: p.freeShipping === true,
                             };
                         });
                         // بناء الفئات من المنتجات
@@ -5010,6 +5317,7 @@
                                     reviewsText: p.reviewsText || '',
                                     reviewsData: Array.isArray(p.reviewsData) ? p.reviewsData : [],
                                     slug: p.slug || '',
+                                    freeShipping: p.freeShipping === true,
                                 };
                             });
                             route();
