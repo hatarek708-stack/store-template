@@ -249,6 +249,19 @@
     .selector-label .size-guide{font-size:0.75rem;color:var(--text3);cursor:pointer;text-decoration:underline;}
     .selector-label .size-guide:hover{color:var(--text);}
 
+    /* Purchase card — wraps color/size/qty/cart into ONE organized card (Zephyr design) */
+    .purchase-card{background:var(--white);border:1px solid var(--border-light);border-radius:8px;padding:1.5rem;margin-bottom:1.5rem;box-shadow:0 1px 2px rgba(0,0,0,0.03);}
+    .purchase-card-section{padding:0;}
+    .purchase-card-section + .purchase-card-section,
+    .purchase-card-divider + .purchase-card-section,
+    .purchase-card-section + .purchase-card-divider{margin-top:1.25rem;}
+    .purchase-card-divider{height:1px;background:var(--border-light);margin:1.25rem 0;border:none;}
+    .purchase-card-section .selector{margin-bottom:0;}
+    .purchase-card-section .qty-row{margin-bottom:0;}
+    .purchase-card-actions{margin-top:1.25rem;}
+    [dir="rtl"] .purchase-card{text-align:right;}
+    @media (max-width:640px){ .purchase-card{padding:1.125rem;} }
+
     .color-row{display:flex;gap:0.625rem;flex-wrap:wrap;}
     .color-dot{width:34px;height:34px;border-radius:50%;border:2px solid var(--border);cursor:pointer;transition:var(--transition);position:relative;}
     .color-dot.selected{border-color:var(--text);box-shadow:0 0 0 2px var(--white),0 0 0 4px var(--text);}
@@ -1155,8 +1168,16 @@
     [dir="rtl"] .gallery{direction:rtl;}
     [dir="rtl"] .thumbnails{direction:rtl;}
     [dir="rtl"] .product-info{text-align:right;}
-    [dir="rtl"] .selector-label{flex-direction:row-reverse;}
-    [dir="rtl"] .action-row{direction:rtl;}
+    /* Fix RTL for selector labels — text should be right-aligned */
+    [dir="rtl"] .selector-label { flex-direction: row-reverse; text-align: right; }
+    [dir="rtl"] .selector-label .lbl,
+    [dir="rtl"] .selector-label .val { text-align: right; }
+    [dir="rtl"] .selector-label > span { text-align: right; }
+    [dir="rtl"] .color-row { justify-content: flex-end; flex-direction: row-reverse; }
+    [dir="rtl"] .size-row { justify-content: flex-end; flex-direction: row-reverse; }
+    [dir="rtl"] .qty-row { flex-direction: row-reverse; }
+    [dir="rtl"] .qty-control { flex-direction: row-reverse; }
+    [dir="rtl"] .action-row { flex-direction: row-reverse; direction: rtl; }
     [dir="rtl"] .qty-control{direction:rtl;}
 
     /* Cards & grids */
@@ -1625,6 +1646,7 @@
       realtime: { params: { eventsPerSecond: 5 } },
     });
     const SHV_WORKER_URL = 'https://ai-proxy-worker.hatarek708.workers.dev';
+    window._SHV_WORKER_URL = SHV_WORKER_URL;
 
     window.saveOrderToFirestore = async (payload) => {
       const storeId = (window._storeData && window._storeData.id) || window._getStoreId();
@@ -1702,13 +1724,39 @@
       if (!allFreeShipping) {
         shipping = (typeof window.calcShipping === 'function')
           ? window.calcShipping(wilayaName || '', verifiedSubtotal, window._storeData)
-          : (verifiedSubtotal >= 5000 ? 0 : 350);
+          : 0;
       }
       payload.pricing.shipping_fee = shipping;
       payload.shippingCost = shipping;
       payload.pricing.total = verifiedSubtotal + shipping;
       payload.total = verifiedSubtotal + shipping;
       return payload;
+    };
+
+    window._shvFetchAllReviewsMap = async (storeId) => {
+      if (!storeId) return {};
+      try {
+        const { data: reviewRows, error } = await supabase.from('product_reviews')
+          .select('product_id, customer_name, rating, comment, created_at')
+          .eq('store_id', storeId)
+          .order('created_at', { ascending: false })
+          .limit(500);
+        if (error || !Array.isArray(reviewRows)) return {};
+        const map = {};
+        for (const r of reviewRows) {
+          if (!r.product_id) continue;
+          if (!map[r.product_id]) map[r.product_id] = [];
+          map[r.product_id].push({
+            name: r.customer_name || 'Anonymous',
+            rating: Number(r.rating) || 0,
+            comment: r.comment || '',
+            date: r.created_at ? String(r.created_at).split('T')[0] : ''
+          });
+        }
+        return map;
+      } catch(e) {
+        return {};
+      }
     };
 
     window.fetchStoreFromFirestore = async (storeId) => {
@@ -1756,24 +1804,33 @@
         if (cached) { const { products, version } = JSON.parse(cached); if (version === remoteVer && Array.isArray(products)) return { store: storeData, products }; }
       } catch {}
       const { data: productRows } = await supabase.from('products').select('*').eq('store_id', cleanStoreId).limit(50);
-      const products = (productRows || []).map(p => ({
-        id: p.id, name: p.name, price: Number(p.price) || 0,
-        discountPrice: p.discount_price != null ? Number(p.discount_price) : null,
-        originalPrice: p.discount_price != null && Number(p.discount_price) > 0 ? Number(p.price) : null,
-        emoji: p.emoji || '🛍️', category: p.category || '', desc: p.description || '',
-        image: p.image || '', images: p.images || [],
-        sizes: (p.sizes || []).map(s => typeof s === 'string' ? s : s.name || String(s)),
-        colors: (p.colors || []).map(c => typeof c === 'string' ? { name: c, hex: c } : { name: c.name || c.hex || c, hex: c.hex || c.name || c }),
-        details: p.details || [],
-        shippingReturns: p.shipping_returns || '',
-        reviewsText: p.reviews_text || '',
-        reviewsData: p.reviews_data || [],
-        slug: p.slug || '',
-        freeShipping: p.free_shipping === true,
-        // Bug 5: rating/reviews — compute from reviews_data, else deterministic default from id seed
-        rating: window._shvProductRating(p),
-        reviews: window._shvProductReviewCount(p),
-      }));
+      // Fetch real customer reviews from product_reviews table (batch per store)
+      const reviewsMap = await window._shvFetchAllReviewsMap(cleanStoreId);
+      const products = (productRows || []).map(p => {
+        const adminReviews = Array.isArray(p.reviews_data) ? p.reviews_data : [];
+        const customerReviews = reviewsMap[p.id] || [];
+        // Merge: customer-submitted reviews take priority (most recent first), then admin reviews_data
+        const mergedReviews = customerReviews.concat(adminReviews);
+        const pWithReviews = Object.assign({}, p, { reviews_data: mergedReviews, reviewsData: mergedReviews });
+        return {
+          id: p.id, name: p.name, price: Number(p.price) || 0,
+          discountPrice: p.discount_price != null ? Number(p.discount_price) : null,
+          originalPrice: p.discount_price != null && Number(p.discount_price) > 0 ? Number(p.price) : null,
+          emoji: p.emoji || '🛍️', category: p.category || '', desc: p.description || '',
+          image: p.image || '', images: p.images || [],
+          sizes: (p.sizes || []).map(s => typeof s === 'string' ? s : s.name || String(s)),
+          colors: (p.colors || []).map(c => typeof c === 'string' ? { name: c, hex: c } : { name: c.name || c.hex || c, hex: c.hex || c.name || c }),
+          details: p.details || [],
+          shippingReturns: p.shipping_returns || '',
+          reviewsText: p.reviews_text || '',
+          reviewsData: mergedReviews,
+          slug: p.slug || '',
+          freeShipping: p.free_shipping === true,
+          // Rating/reviews — computed from real reviews only (no fake defaults)
+          rating: window._shvProductRating(pWithReviews),
+          reviews: window._shvProductReviewCount(pWithReviews),
+        };
+      });
       try { localStorage.setItem(cacheKey, JSON.stringify({ products, version: remoteVer })); } catch {}
       return { store: storeData, products };
     };
@@ -1784,23 +1841,61 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `store_id=eq.${storeId}` },
           async () => {
             const { data: rows } = await supabase.from('products').select('*').eq('store_id', storeId).limit(50);
-            const products = (rows || []).map(p => ({
-              id: p.id, name: p.name, price: Number(p.price) || 0,
-              discountPrice: p.discount_price != null ? Number(p.discount_price) : null,
-              originalPrice: p.discount_price != null && Number(p.discount_price) > 0 ? Number(p.price) : null,
-              emoji: p.emoji || '🛍️', category: p.category || '', desc: p.description || '',
-              image: p.image || '', images: p.images || [],
-              sizes: (p.sizes || []).map(s => typeof s === 'string' ? s : s.name || String(s)),
-              colors: (p.colors || []).map(c => typeof c === 'string' ? { name: c, hex: c } : { name: c.name || c.hex || c, hex: c.hex || c.name || c }),
-              details: p.details || [],
-              shippingReturns: p.shipping_returns || '',
-              reviewsText: p.reviews_text || '',
-              reviewsData: p.reviews_data || [],
-              slug: p.slug || '',
-              freeShipping: p.free_shipping === true,
-              rating: window._shvProductRating(p),
-              reviews: window._shvProductReviewCount(p),
-            }));
+            // Re-fetch customer reviews on every realtime update so new reviews appear live
+            const reviewsMap = await window._shvFetchAllReviewsMap(storeId);
+            const products = (rows || []).map(p => {
+              const adminReviews = Array.isArray(p.reviews_data) ? p.reviews_data : [];
+              const customerReviews = reviewsMap[p.id] || [];
+              const mergedReviews = customerReviews.concat(adminReviews);
+              const pWithReviews = Object.assign({}, p, { reviews_data: mergedReviews, reviewsData: mergedReviews });
+              return {
+                id: p.id, name: p.name, price: Number(p.price) || 0,
+                discountPrice: p.discount_price != null ? Number(p.discount_price) : null,
+                originalPrice: p.discount_price != null && Number(p.discount_price) > 0 ? Number(p.price) : null,
+                emoji: p.emoji || '🛍️', category: p.category || '', desc: p.description || '',
+                image: p.image || '', images: p.images || [],
+                sizes: (p.sizes || []).map(s => typeof s === 'string' ? s : s.name || String(s)),
+                colors: (p.colors || []).map(c => typeof c === 'string' ? { name: c, hex: c } : { name: c.name || c.hex || c, hex: c.hex || c.name || c }),
+                details: p.details || [],
+                shippingReturns: p.shipping_returns || '',
+                reviewsText: p.reviews_text || '',
+                reviewsData: mergedReviews,
+                slug: p.slug || '',
+                freeShipping: p.free_shipping === true,
+                rating: window._shvProductRating(pWithReviews),
+                reviews: window._shvProductReviewCount(pWithReviews),
+              };
+            });
+            onUpdate(products);
+          })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'product_reviews', filter: `store_id=eq.${storeId}` },
+          async () => {
+            // New review inserted — re-fetch products so rating/reviewsData update
+            const { data: rows } = await supabase.from('products').select('*').eq('store_id', storeId).limit(50);
+            const reviewsMap = await window._shvFetchAllReviewsMap(storeId);
+            const products = (rows || []).map(p => {
+              const adminReviews = Array.isArray(p.reviews_data) ? p.reviews_data : [];
+              const customerReviews = reviewsMap[p.id] || [];
+              const mergedReviews = customerReviews.concat(adminReviews);
+              const pWithReviews = Object.assign({}, p, { reviews_data: mergedReviews, reviewsData: mergedReviews });
+              return {
+                id: p.id, name: p.name, price: Number(p.price) || 0,
+                discountPrice: p.discount_price != null ? Number(p.discount_price) : null,
+                originalPrice: p.discount_price != null && Number(p.discount_price) > 0 ? Number(p.price) : null,
+                emoji: p.emoji || '🛍️', category: p.category || '', desc: p.description || '',
+                image: p.image || '', images: p.images || [],
+                sizes: (p.sizes || []).map(s => typeof s === 'string' ? s : s.name || String(s)),
+                colors: (p.colors || []).map(c => typeof c === 'string' ? { name: c, hex: c } : { name: c.name || c.hex || c, hex: c.hex || c.name || c }),
+                details: p.details || [],
+                shippingReturns: p.shipping_returns || '',
+                reviewsText: p.reviews_text || '',
+                reviewsData: mergedReviews,
+                slug: p.slug || '',
+                freeShipping: p.free_shipping === true,
+                rating: window._shvProductRating(pWithReviews),
+                reviews: window._shvProductReviewCount(pWithReviews),
+              };
+            });
             onUpdate(products);
           })
         .subscribe();
@@ -1824,63 +1919,74 @@
       return true; // all digits after prefix are identical → likely fake
     };
 
-    // ===== Default reviews / rating helpers (Bug 5) =====
-    // Generate realistic deterministic default reviews when product has no reviews_data.
-    // Uses product id as seed so the same product always shows the same reviews across reloads.
+    // ===== Reviews / rating helpers =====
+    // _shvDefaultReviews is now a no-op — fake reviews were removed. Real reviews come from product_reviews table.
     window._shvDefaultReviews = function (productId) {
-      var raw = String(productId || '1').replace(/[^0-9]/g, '');
-      var seed = parseInt(raw || '1', 10) || 1;
-      var names = ['أحمد بن علي', 'سارة محمد', 'يوسف العايب', 'فاطمة الزهراء', 'محمد الأمين', 'خديجة بن سعد', 'عبد الرحمن', 'نور الهدى'];
-      var comments = [
-        'منتج رائع، جودة ممتازة ووصل بسرعة.',
-        'سعر مناسب جداً مقابل الجودة. أنصح به.',
-        'المقاس مضبوط واللون كما في الصورة تماماً.',
-        'خدمة عملاء ممتازة وتوصيل سريع. شكراً!',
-        'المنتج فاق توقعاتي، سأطلب مرة أخرى بالتأكيد.',
-        'جودة عالية وتغليف أنيق. تجربة تسوق ممتازة.',
-        'منتج أصلي ومطابق للوصف. ممتاز!',
-        'وصل في الوقت المحدد والحالة ممتازة. أنصح به.'
-      ];
-      var reviews = [];
-      var count = 3 + (seed % 3); // 3-5 reviews
-      for (var i = 0; i < count; i++) {
-        var idx = (seed + i * 7) % names.length;
-        var cmtIdx = (seed + i * 5) % comments.length;
-        var rating = 4 + ((seed + i) % 2); // 4 or 5 stars
-        var monthOffset = (seed + i * 2) % 6;
-        var d = new Date();
-        d.setMonth(d.getMonth() - monthOffset);
-        reviews.push({
-          name: names[idx],
-          rating: rating,
-          comment: comments[cmtIdx],
-          date: d.toISOString().split('T')[0]
-        });
-      }
-      return reviews;
+      return [];
     };
-    // Compute average rating for a product (real reviews_data wins, else deterministic default 4.5-4.9)
+    // Compute average rating for a product from real reviews only (no fake defaults)
     window._shvProductRating = function (p) {
-      if (!p) return 4.5;
+      if (!p) return 0;
       var rd = Array.isArray(p.reviews_data) ? p.reviews_data : (Array.isArray(p.reviewsData) ? p.reviewsData : []);
-      if (rd.length > 0) {
-        var sum = 0, n = 0;
-        for (var i = 0; i < rd.length; i++) {
-          var v = Number(rd[i].rating);
-          if (v > 0 && v <= 5) { sum += v; n++; }
-        }
-        if (n > 0) return Math.round((sum / n) * 10) / 10;
+      if (rd.length === 0) return 0;
+      var sum = 0, n = 0;
+      for (var i = 0; i < rd.length; i++) {
+        var v = Number(rd[i].rating);
+        if (v > 0 && v <= 5) { sum += v; n++; }
       }
-      var seed = parseInt(String(p.id || '1').replace(/[^0-9]/g, '') || '1', 10) || 1;
-      return 4.5 + (seed % 5) * 0.1; // 4.5, 4.6, 4.7, 4.8, 4.9
+      if (n === 0) return 0;
+      return Math.round((sum / n) * 10) / 10;
     };
-    // Compute review count for a product (real reviews_data wins, else deterministic default 15-50)
+    // Compute review count for a product from real reviews only
     window._shvProductReviewCount = function (p) {
       if (!p) return 0;
       var rd = Array.isArray(p.reviews_data) ? p.reviews_data : (Array.isArray(p.reviewsData) ? p.reviewsData : []);
-      if (rd.length > 0) return rd.length;
-      var seed = parseInt(String(p.id || '1').replace(/[^0-9]/g, '') || '1', 10) || 1;
-      return 15 + (seed % 36); // 15-50
+      return rd.length;
+    };
+    // Submit a customer review to the worker (which inserts into product_reviews table)
+    window._shvSubmitProductReview = async function (storeId, productId, customerName, rating, comment) {
+      var workerUrl = window._SHV_WORKER_URL || 'https://ai-proxy-worker.hatarek708.workers.dev';
+      var res = await fetch(workerUrl + '/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          store_id: storeId,
+          product_id: String(productId),
+          customer_name: customerName,
+          rating: rating,
+          comment: comment
+        })
+      });
+      var data;
+      try { data = await res.json(); } catch(e) { data = {}; }
+      if (!res.ok) {
+        var errMsg = (data && data.error) || 'Failed to submit review';
+        throw new Error(errMsg);
+      }
+      return data;
+    };
+    // Re-fetch a single product's reviews from Supabase and update the product object in-place.
+    // Used after a review submission to refresh the Reviews tab without a full page reload.
+    window._shvRefreshProductReviews = async function (storeId, productId) {
+      try {
+        const { data: reviewRows } = await supabase.from('product_reviews')
+          .select('customer_name, rating, comment, created_at')
+          .eq('store_id', storeId)
+          .eq('product_id', String(productId))
+          .order('created_at', { ascending: false })
+          .limit(50);
+        var mapped = (Array.isArray(reviewRows) ? reviewRows : []).map(function(r) {
+          return {
+            name: r.customer_name || 'Anonymous',
+            rating: Number(r.rating) || 0,
+            comment: r.comment || '',
+            date: r.created_at ? String(r.created_at).split('T')[0] : ''
+          };
+        });
+        return mapped;
+      } catch(e) {
+        return null;
+      }
     };
 
     window.ShvPixels = (function () {
@@ -1986,7 +2092,12 @@
         pd_add_to_cart: 'Add to Cart', pd_wishlist: 'Add to Wishlist',
         pd_description: 'Description', pd_details: 'Details',
         pd_shipping: 'Shipping & Returns', pd_reviews: 'Reviews',
-        pd_reviews_count: 'reviews', pd_based_on: 'Based on', pd_no_reviews: 'No reviews yet. Be the first to share your experience!',
+        pd_reviews_count: 'reviews', pd_based_on: 'Based on', pd_no_reviews: 'No reviews yet. Be the first to review!',
+        rv_write_review: 'Write a Review', rv_your_name: 'Your Name', rv_your_rating: 'Your Rating', rv_your_review: 'Your Review',
+        rv_submit: 'Submit Review', rv_submitting: 'Submitting...', rv_success: 'Thank you! Your review has been submitted and will appear shortly.',
+        rv_error: 'Failed to submit review. Please try again later.', rv_name_required: 'Please enter your name',
+        rv_rating_required: 'Please select a rating', rv_comment_required: 'Please write a review',
+        rv_be_first: 'No reviews yet. Be the first to review!', rv_chars: 'characters', rv_optional: 'optional',
         pd_not_found: 'Product not found.',
         pd_default_desc: 'Premium quality product crafted with attention to detail.',
         pd_default_details: 'Premium quality product crafted with attention to detail. Designed for comfort, style, and durability. The perfect addition to your wardrobe.',
@@ -2112,7 +2223,12 @@
         pd_add_to_cart: 'أضف للسلة', pd_wishlist: 'أضف للمفضلة',
         pd_description: 'الوصف', pd_details: 'التفاصيل',
         pd_shipping: 'الشحن والإرجاع', pd_reviews: 'التقييمات',
-        pd_reviews_count: 'تقييم', pd_based_on: 'بناءً على', pd_no_reviews: 'لا توجد تقييمات بعد. كن أول من يشارك تجربته!',
+        pd_reviews_count: 'تقييم', pd_based_on: 'بناءً على', pd_no_reviews: 'لا توجد تقييمات بعد. كن أول من يقيّم!',
+        rv_write_review: 'اكتب تقييماً', rv_your_name: 'اسمك', rv_your_rating: 'تقييمك', rv_your_review: 'رأيك',
+        rv_submit: 'إرسال التقييم', rv_submitting: 'جاري الإرسال...', rv_success: 'شكراً لك! تم إرسال تقييمك وسيظهر قريباً.',
+        rv_error: 'فشل إرسال التقييم. حاول مرة أخرى لاحقاً.', rv_name_required: 'الرجاء إدخال اسمك',
+        rv_rating_required: 'الرجاء اختيار تقييم', rv_comment_required: 'الرجاء كتابة تقييم',
+        rv_be_first: 'لا توجد تقييمات بعد. كن أول من يقيّم!', rv_chars: 'حرف', rv_optional: 'اختياري',
         pd_not_found: 'المنتج غير موجود.',
         pd_default_desc: 'منتج بجودة عالية مصنوع بعناية فائقة.',
         pd_default_details: 'منتج بجودة عالية مصنوع بعناية فائقة. مصمم للراحة والأناقة والمتانة. الإضافة المثالية لخزانة ملابسك.',
@@ -2281,18 +2397,18 @@
       'In Guezzam':54,'Touggourt':55,'Djanet':56,"El M'Ghair":57,'El Meniaa':58
     };
     function calcShipping(wilaya, subtotal, storeData) {
+      // If no shipping config, shipping is FREE (0 DA) — do NOT use 350 DA default
       if (!storeData || !storeData.shipping || !Array.isArray(storeData.shipping) || storeData.shipping.length === 0) {
-        return subtotal >= 5000 ? 0 : 350;
+        return 0;
       }
       var wilayaId = wilaya ? WILAYA_NAME_TO_ID[wilaya] : null;
-      if (!wilayaId) return subtotal >= 5000 ? 0 : 350;
+      if (!wilayaId) return 0;
       var entry = null;
       for (var i = 0; i < storeData.shipping.length; i++) {
         if (Number(storeData.shipping[i].id) === wilayaId) { entry = storeData.shipping[i]; break; }
       }
-      if (!entry) return subtotal >= 5000 ? 0 : 350;
+      if (!entry) return 0;
       var price = Number(entry.home) || 0;
-      if (subtotal >= 5000) return 0;
       return price;
     }
     window.calcShipping = calcShipping;
@@ -2314,17 +2430,16 @@
       // Wilaya not yet selected
       if (!wilaya) {
         if (!_hasShippingConfig(storeData)) {
-          return '<span style="' + baseStyle + 'background:var(--surface);color:var(--text3);">' + truckSVG + (currentLang === 'ar' ? 'سعر افتراضي: 350 دج (مجاني فوق 5,000 دج)' : 'Default rate: 350 DA (free above 5,000 DA)') + '</span>';
+          return '<span style="' + baseStyle + 'background:rgba(21,128,61,0.08);color:#15803d;">' + truckSVG + (currentLang === 'ar' ? 'الشحن مجاني' : 'Free shipping') + '</span>';
         }
         return '<span style="' + baseStyle + 'background:var(--surface);color:var(--text3);">' + truckSVG + (currentLang === 'ar' ? 'اختر الولاية لعرض سعر الشحن' : 'Select wilaya for shipping cost') + '</span>';
       }
-      // Wilaya selected + free (above 5,000 DA threshold)
+      // Wilaya selected + free (no shipping config OR per-wilaya price is 0)
       if (shipping === 0) {
-        return '<span style="' + baseStyle + 'background:rgba(21,128,61,0.08);color:#15803d;">' + truckSVG + (currentLang === 'ar' ? 'الشحن إلى ' + wilaya + ': مجاني (فوق 5,000 دج)' : 'Shipping to ' + wilaya + ': FREE (above 5,000 DA)') + '</span>';
+        return '<span style="' + baseStyle + 'background:rgba(21,128,61,0.08);color:#15803d;">' + truckSVG + (currentLang === 'ar' ? 'الشحن إلى ' + wilaya + ': مجاني' : 'Shipping to ' + wilaya + ': FREE') + '</span>';
       }
       // Wilaya selected + per-wilaya price
-      var source = _hasShippingConfig(storeData) ? '' : (currentLang === 'ar' ? ' (سعر افتراضي)' : ' (default rate)');
-      return '<span style="' + baseStyle + 'background:rgba(68,114,164,0.08);color:var(--hero-blue);">' + truckSVG + (currentLang === 'ar' ? 'الشحن إلى ' + wilaya + ': ' + formatPrice(shipping) + source : 'Shipping to ' + wilaya + ': ' + formatPrice(shipping) + source) + '</span>';
+      return '<span style="' + baseStyle + 'background:rgba(68,114,164,0.08);color:var(--hero-blue);">' + truckSVG + (currentLang === 'ar' ? 'الشحن إلى ' + wilaya + ': ' + formatPrice(shipping) : 'Shipping to ' + wilaya + ': ' + formatPrice(shipping)) + '</span>';
     }
     window.formatShippingInfoHTML = formatShippingInfoHTML;
 
@@ -2605,32 +2720,34 @@
       var panel = document.getElementById('panel-reviews');
       if (!panel) return;
       var esc = escapeHTML;
-      var rawRevData = (Array.isArray(p.reviewsData) ? p.reviewsData : []);
-      // Bug 5: when reviews_data is empty, fall back to deterministic default reviews (so the tab always looks alive)
-      var revData = (rawRevData.length > 0) ? rawRevData :
-        (typeof window._shvDefaultReviews === 'function' ? window._shvDefaultReviews(p.id) : []);
+      // Real reviews only (no fake fallback). _shvDefaultReviews now returns [].
+      var revData = (Array.isArray(p.reviewsData) ? p.reviewsData : []);
+      if (revData.length === 0 && typeof window._shvDefaultReviews === 'function') {
+        revData = window._shvDefaultReviews(p.id) || [];
+      }
       var revText = p.reviewsText || '';
-      // Use computed rating/count when caller didn't pass them (covers Supabase products missing rating/reviews fields)
       var rating = (typeof avgRating === 'number' && avgRating > 0) ? avgRating :
-        (typeof window._shvProductRating === 'function' ? window._shvProductRating(p) : 4.5);
+        (typeof window._shvProductRating === 'function' ? window._shvProductRating(p) : 0);
       var rCount = (typeof reviewCount === 'number' && reviewCount > 0) ? reviewCount :
         (typeof window._shvProductReviewCount === 'function' ? window._shvProductReviewCount(p) : revData.length);
       var html = '';
 
-      // Summary header
-      html += '<div class="reviews-summary" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;padding:1rem;background:var(--surface);border-radius:4px;">';
-      html += '<div style="font-family:var(--font-serif);font-size:2rem;font-weight:600;color:var(--text);">' + (rating || 0).toFixed(1) + '</div>';
-      html += '<div>';
-      html += '<div class="rating-stars" style="display:inline-flex;gap:1px;">';
-      var full = Math.floor(rating || 0);
-      var half = (rating || 0) - full >= 0.25;
-      for (var i = 0; i < full; i++) html += '<svg fill="currentColor" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--gold);"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
-      if (half) html += '<svg fill="currentColor" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--gold);opacity:0.5;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
-      for (var j = full + (half ? 1 : 0); j < 5; j++) html += '<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--gold);"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
-      html += '</div>';
-      html += '<div style="font-size:0.8125rem;color:var(--text3);margin-top:0.25rem;">' + esc(t('pd_based_on')) + ' ' + (rCount || revData.length || 0) + ' ' + esc(t('pd_reviews_count')) + '</div>';
-      html += '</div>';
-      html += '</div>';
+      // Summary header — only show when there are real reviews
+      if (rCount > 0 || revData.length > 0) {
+        html += '<div class="reviews-summary" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;padding:1rem;background:var(--surface);border-radius:4px;">';
+        html += '<div style="font-family:var(--font-serif);font-size:2rem;font-weight:600;color:var(--text);">' + (rating || 0).toFixed(1) + '</div>';
+        html += '<div>';
+        html += '<div class="rating-stars" style="display:inline-flex;gap:1px;">';
+        var full = Math.floor(rating || 0);
+        var half = (rating || 0) - full >= 0.25;
+        for (var i = 0; i < full; i++) html += '<svg fill="currentColor" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--gold);"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+        if (half) html += '<svg fill="currentColor" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--gold);opacity:0.5;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+        for (var j = full + (half ? 1 : 0); j < 5; j++) html += '<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--gold);"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+        html += '</div>';
+        html += '<div style="font-size:0.8125rem;color:var(--text3);margin-top:0.25rem;">' + esc(t('pd_based_on')) + ' ' + (rCount || revData.length || 0) + ' ' + esc(t('pd_reviews_count')) + '</div>';
+        html += '</div>';
+        html += '</div>';
+      }
 
       // Reviews text block
       if (revText) {
@@ -2665,14 +2782,153 @@
         });
         html += '</div>';
       } else if (!revText) {
-        // No reviews and no reviewsText — show default message
+        // No reviews yet — show prompt message
         html += '<div style="text-align:center;padding:2rem;color:var(--text4);">';
         html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin:0 auto 0.875rem;display:block;color:var(--text3);"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>';
-        html += '<p style="font-size:0.875rem;">' + esc(t('pd_no_reviews')) + '</p>';
+        html += '<p style="font-size:0.875rem;">' + esc(t('rv_be_first')) + '</p>';
         html += '</div>';
       }
 
+      // Review submission form (Zephyr design — clean white card, blue accent, Playfair Display heading)
+      html += '<div class="review-form-card" style="margin-top:' + (revData.length ? '2rem' : '1.5rem') + ';background:var(--white);border:1px solid var(--border-light);border-radius:8px;padding:1.5rem;">';
+      html += '<h4 style="font-family:var(--font-serif);font-size:1.125rem;font-weight:600;color:var(--text);margin-bottom:1rem;">' + esc(t('rv_write_review')) + '</h4>';
+      html += '<div style="display:flex;flex-direction:column;gap:1rem;">';
+      // Name
+      html += '<div>';
+      html += '<label style="display:block;font-size:0.8125rem;font-weight:600;color:var(--text2);margin-bottom:0.375rem;" for="reviewNameInput">' + esc(t('rv_your_name')) + '</label>';
+      html += '<input type="text" id="reviewNameInput" maxlength="100" required style="width:100%;padding:0.625rem 0.75rem;border:1px solid var(--border-light);border-radius:4px;font-size:0.875rem;font-family:inherit;background:var(--white);color:var(--text);outline:none;" placeholder="' + esc(t('rv_your_name')) + '" />';
+      html += '</div>';
+      // Rating (interactive stars)
+      html += '<div>';
+      html += '<label style="display:block;font-size:0.8125rem;font-weight:600;color:var(--text2);margin-bottom:0.375rem;">' + esc(t('rv_your_rating')) + '</label>';
+      html += '<div id="reviewStarInput" style="display:inline-flex;gap:0.25rem;cursor:pointer;" data-rating="0">';
+      for (var sr = 1; sr <= 5; sr++) {
+        html += '<svg data-star="' + sr + '" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:28px;height:28px;color:var(--gold);transition:fill 0.15s;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+      }
+      html += '</div>';
+      html += '</div>';
+      // Comment
+      html += '<div>';
+      html += '<label style="display:block;font-size:0.8125rem;font-weight:600;color:var(--text2);margin-bottom:0.375rem;" for="reviewCommentInput">' + esc(t('rv_your_review')) + '</label>';
+      html += '<textarea id="reviewCommentInput" maxlength="500" required rows="4" style="width:100%;padding:0.625rem 0.75rem;border:1px solid var(--border-light);border-radius:4px;font-size:0.875rem;font-family:inherit;background:var(--white);color:var(--text);outline:none;resize:vertical;" placeholder="' + esc(t('rv_your_review')) + '"></textarea>';
+      html += '<div style="font-size:0.6875rem;color:var(--text4);margin-top:0.25rem;text-align:right;"><span id="reviewCharCount">0</span>/500</div>';
+      html += '</div>';
+      // Submit
+      html += '<div style="display:flex;align-items:center;gap:0.875rem;flex-wrap:wrap;">';
+      html += '<button id="submitReviewBtn" type="button" style="padding:0.625rem 1.5rem;background:var(--hero-blue);color:var(--white);border:none;border-radius:4px;font-size:0.875rem;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity 0.15s;">' + esc(t('rv_submit')) + '</button>';
+      html += '<div id="reviewFormMsg" style="font-size:0.8125rem;color:var(--text3);"></div>';
+      html += '</div>';
+      html += '</div>';
+      html += '</div>';
+
       panel.innerHTML = html;
+
+      // Wire up the form
+      _wireReviewForm(p);
+    }
+
+    // Wire up the review submission form: star rating, char count, submit handler
+    function _wireReviewForm(p) {
+      var starInput = document.getElementById('reviewStarInput');
+      var charInput = document.getElementById('reviewCommentInput');
+      var charCount = document.getElementById('reviewCharCount');
+      var submitBtn = document.getElementById('submitReviewBtn');
+      var msgEl = document.getElementById('reviewFormMsg');
+      if (!starInput || !submitBtn || !p) return;
+
+      var selectedRating = 0;
+      function paintStars(n) {
+        var stars = starInput.querySelectorAll('svg[data-star]');
+        for (var i = 0; i < stars.length; i++) {
+          var sn = Number(stars[i].getAttribute('data-star'));
+          if (sn <= n) {
+            stars[i].setAttribute('fill', 'currentColor');
+            stars[i].setAttribute('stroke', 'none');
+            stars[i].style.opacity = '1';
+          } else {
+            stars[i].setAttribute('fill', 'none');
+            stars[i].setAttribute('stroke', 'currentColor');
+            stars[i].style.opacity = '0.5';
+          }
+        }
+      }
+      starInput.addEventListener('mouseover', function(e) {
+        var t = e.target.closest ? e.target.closest('svg[data-star]') : null;
+        if (t) paintStars(Number(t.getAttribute('data-star')));
+      });
+      starInput.addEventListener('mouseleave', function() { paintStars(selectedRating); });
+      starInput.addEventListener('click', function(e) {
+        var t = e.target.closest ? e.target.closest('svg[data-star]') : null;
+        if (t) { selectedRating = Number(t.getAttribute('data-star')); starInput.setAttribute('data-rating', String(selectedRating)); paintStars(selectedRating); }
+      });
+
+      if (charInput && charCount) {
+        charInput.addEventListener('input', function() { charCount.textContent = String(charInput.value.length); });
+      }
+
+      submitBtn.addEventListener('click', async function() {
+        var nameEl = document.getElementById('reviewNameInput');
+        var commentEl = document.getElementById('reviewCommentInput');
+        var name = (nameEl && nameEl.value || '').trim();
+        var comment = (commentEl && commentEl.value || '').trim();
+        if (!name) { if (msgEl) { msgEl.style.color = '#dc2626'; msgEl.textContent = t('rv_name_required'); } return; }
+        if (selectedRating < 1) { if (msgEl) { msgEl.style.color = '#dc2626'; msgEl.textContent = t('rv_rating_required'); } return; }
+        if (!comment) { if (msgEl) { msgEl.style.color = '#dc2626'; msgEl.textContent = t('rv_comment_required'); } return; }
+
+        var storeId = (window._storeData && window._storeData.id) || window._getStoreId();
+        if (!storeId) { if (msgEl) { msgEl.style.color = '#dc2626'; msgEl.textContent = t('rv_error'); } return; }
+
+        var originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = t('rv_submitting');
+        submitBtn.style.opacity = '0.7';
+        if (msgEl) { msgEl.style.color = 'var(--text3)'; msgEl.textContent = ''; }
+
+        try {
+          await window._shvSubmitProductReview(storeId, p.id, name, selectedRating, comment);
+          if (msgEl) { msgEl.style.color = '#15803d'; msgEl.textContent = t('rv_success'); }
+          if (nameEl) nameEl.value = '';
+          if (commentEl) commentEl.value = '';
+          if (charCount) charCount.textContent = '0';
+          selectedRating = 0;
+          starInput.setAttribute('data-rating', '0');
+          paintStars(0);
+          // Refresh the product's reviews from Supabase and re-render the panel
+          if (typeof window._shvRefreshProductReviews === 'function') {
+            var freshReviews = await window._shvRefreshProductReviews(storeId, p.id);
+            if (Array.isArray(freshReviews)) {
+              // Merge with admin reviews_data (if any) — admin reviews come after customer reviews
+              var adminReviews = Array.isArray(p.reviewsData) ? p.reviewsData.filter(function(r) {
+                // Filter out reviews that look like admin-added (have date strings in YYYY-MM-DD format from product.reviews_data)
+                // We can't easily distinguish, so we just concat freshReviews + adminReviews minus duplicates
+                return true;
+              }) : [];
+              // Simple merge: prefer freshReviews, append adminReviews that aren't in freshReviews
+              var freshSet = {};
+              for (var i = 0; i < freshReviews.length; i++) {
+                var key = (freshReviews[i].name || '') + '|' + (freshReviews[i].comment || '');
+                freshSet[key] = true;
+              }
+              var extra = [];
+              for (var j = 0; j < adminReviews.length; j++) {
+                var k = (adminReviews[j].name || '') + '|' + (adminReviews[j].comment || '');
+                if (!freshSet[k]) extra.push(adminReviews[j]);
+              }
+              p.reviewsData = freshReviews.concat(extra);
+              p.rating = window._shvProductRating(p);
+              p.reviews = window._shvProductReviewCount(p);
+            }
+          }
+          // Re-render the panel with updated data
+          renderReviewsPanel(p, p.rating, p.reviews);
+        } catch(err) {
+          if (msgEl) { msgEl.style.color = '#dc2626'; msgEl.textContent = (err && err.message) ? err.message : t('rv_error'); }
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+          submitBtn.style.opacity = '1';
+        }
+      });
     }
 
     function renderProductPage() {
@@ -2716,10 +2972,11 @@
         '<div class="product-info">' +
           '<div class="cat-label">' + esc(p.category || 'Fashion') + '</div>' +
           '<h1>' + esc(p.name) + '</h1>' +
+          (reviews > 0 ?
           '<div class="rating-row">' +
             '<span class="rating-stars">' + starsHTML + '</span>' +
             '<span class="rating-text">(' + reviews + ' ' + esc(t('pd_reviews_count')) + ')</span>' +
-          '</div>' +
+          '</div>' : '') +
           '<div class="price-row">' +
             '<span class="price-current">' + formatPrice(eff) + '</span>' +
             (hasDiscount ? '<span class="price-old">' + formatPrice(p.price) + '</span>' : '') +
@@ -2727,12 +2984,20 @@
           '</div>' +
           (p.freeShipping === true ? '<div>' + freeShippingBadgeHTML().replace('free-ship-badge"', 'free-ship-badge-inline"') + '</div>' : '') +
           '<p class="desc">' + esc(p.desc || p.shortDesc || t('pd_default_desc')) + '</p>' +
-          (p.colors && p.colors.length ? '<div class="selector"><div class="selector-label"><span><span class="lbl">' + esc(t('pd_color')) + '</span> <span class="val" id="colorName">' + esc(p.colors[0].name || p.colors[0]) + '</span></span></div><div class="color-row">' + p.colors.map(function(c, i) { return '<div class="color-dot' + (i === 0 ? ' selected' : '') + '" style="background:' + esc(c.hex || c) + '" onclick="selectColor(this,' + i + ')" title="' + esc(c.name || c) + '"></div>'; }).join('') + '</div></div>' : '') +
-          (p.sizes && p.sizes.length ? '<div class="selector"><div class="selector-label"><span><span class="lbl">' + esc(t('pd_size')) + '</span> <span class="val" id="sizeVal">' + esc(t('pd_select_size')) + '</span></span><span class="size-guide">' + esc(t('pd_size_guide')) + '</span></div><div class="size-row">' + p.sizes.map(function(s) { return '<button class="size-btn" data-size="' + esc(s) + '" onclick="selectSize(this)">' + esc(s) + '</button>'; }).join('') + '</div></div>' : '') +
-          '<div class="qty-row"><div class="selector-label"><span class="lbl">' + esc(t('pd_quantity')) + '</span></div><div class="qty-control"><button onclick="qtyChange(-1)" aria-label="Decrease"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><span id="qtyVal">1</span><button onclick="qtyChange(1)" aria-label="Increase"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div></div>' +
-          '<div class="action-row">' +
-            '<button class="btn-add-cart" id="addCartBtn" onclick="addFromDetails()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>' + esc(t('pd_add_to_cart')) + '</button>' +
-            '<button class="btn-wishlist" id="wishlistBtn" onclick="toggleWishlist()" aria-label="' + esc(t('pd_wishlist')) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></button>' +
+          '<div class="purchase-card">' +
+            (p.colors && p.colors.length ?
+              '<div class="purchase-card-section"><div class="selector"><div class="selector-label"><span><span class="lbl">' + esc(t('pd_color')) + '</span> <span class="val" id="colorName">' + esc(p.colors[0].name || p.colors[0]) + '</span></span></div><div class="color-row">' + p.colors.map(function(c, i) { return '<div class="color-dot' + (i === 0 ? ' selected' : '') + '" style="background:' + esc(c.hex || c) + '" onclick="selectColor(this,' + i + ')" title="' + esc(c.name || c) + '"></div>'; }).join('') + '</div></div></div>' : '') +
+            ((p.colors && p.colors.length && p.sizes && p.sizes.length) ? '<hr class="purchase-card-divider" />' : '') +
+            (p.sizes && p.sizes.length ?
+              '<div class="purchase-card-section"><div class="selector"><div class="selector-label"><span><span class="lbl">' + esc(t('pd_size')) + '</span> <span class="val" id="sizeVal">' + esc(t('pd_select_size')) + '</span></span><span class="size-guide">' + esc(t('pd_size_guide')) + '</span></div><div class="size-row">' + p.sizes.map(function(s) { return '<button class="size-btn" data-size="' + esc(s) + '" onclick="selectSize(this)">' + esc(s) + '</button>'; }).join('') + '</div></div></div>' : '') +
+            ((p.sizes && p.sizes.length) ? '<hr class="purchase-card-divider" />' : '') +
+            '<div class="purchase-card-section"><div class="qty-row"><div class="selector-label"><span class="lbl">' + esc(t('pd_quantity')) + '</span></div><div class="qty-control"><button onclick="qtyChange(-1)" aria-label="Decrease"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><span id="qtyVal">1</span><button onclick="qtyChange(1)" aria-label="Increase"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div></div></div>' +
+            '<div class="purchase-card-actions">' +
+              '<div class="action-row">' +
+                '<button class="btn-add-cart" id="addCartBtn" onclick="addFromDetails()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>' + esc(t('pd_add_to_cart')) + '</button>' +
+                '<button class="btn-wishlist" id="wishlistBtn" onclick="toggleWishlist()" aria-label="' + esc(t('pd_wishlist')) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></button>' +
+              '</div>' +
+            '</div>' +
           '</div>' +
           buildTrustBadgesHTML() +
           '<div class="direct-order-wrap">' +
