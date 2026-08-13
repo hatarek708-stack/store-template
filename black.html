@@ -4936,6 +4936,15 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             state.color = (state.product.colors && state.product.colors[0]) ? state.product.colors[0].name : 'Default';
           }
 
+          // ── If we have cached store data, render immediately (no flash) ──
+          // Then refresh from Supabase in the background.
+          var _hasCache = !!(window._storeData);
+          if (_hasCache) {
+            render();
+            var _ls0 = document.getElementById('loadingScreen');
+            if (_ls0) { _ls0.style.opacity = '0'; setTimeout(function() { if (_ls0.parentNode) _ls0.parentNode.removeChild(_ls0); }, 300); }
+          }
+
           // ── Wait for Supabase module to be ready ──
           await waitForSupabase();
 
