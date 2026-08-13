@@ -531,6 +531,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           badge: p.discount_price != null && Number(p.discount_price) > 0 ? 'Sale' : '', isNew: false,
           materials: '', sizeFit: '', shipping: '',
           freeShipping: p.free_shipping === true,
+          ttsEnabled: p.tts_enabled === true,
+          ttsFee: Number(p.tts_fee) || 0,
         };
       });
       try { localStorage.setItem(cacheKey, JSON.stringify({ store: storeData, products, version: remoteVer })); } catch {}
@@ -573,6 +575,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 details: Array.isArray(p.details) ? p.details : [],
                 desc: p.description || '',
                 freeShipping: p.free_shipping === true,
+                ttsEnabled: p.tts_enabled === true,
+                ttsFee: Number(p.tts_fee) || 0,
                 rating: window._shvProductRating(pWithReviews),
                 reviews: window._shvProductReviewCount(pWithReviews),
               };
@@ -612,6 +616,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 details: Array.isArray(p.details) ? p.details : [],
                 desc: p.description || '',
                 freeShipping: p.free_shipping === true,
+                ttsEnabled: p.tts_enabled === true,
+                ttsFee: Number(p.tts_fee) || 0,
                 rating: window._shvProductRating(pWithReviews),
                 reviews: window._shvProductReviewCount(pWithReviews),
               };
@@ -4513,19 +4519,88 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             checkoutModal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);display:none;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;';
             document.body.appendChild(checkoutModal);
           }
-          var subtotal = cart.reduce(function(s,i){return s+(i.price*i.qty);},0);
-          var allFree = cart.every(function(it) {
-            if (it.freeShipping === true) return true;
-            if (it.id && NEON_DATA && Array.isArray(NEON_DATA.products)) {
-              var p = NEON_DATA.products.find(function(x){return String(x.id)===String(it.id);});
-              if (p && p.freeShipping === true) return true;
-            }
-            return false;
-          });
           var d = state.checkoutData || {};
           var wilayaOptions = ALGERIAN_WILAYAS.map(function(w) { return '<option value="'+escapeHTML(w)+'"'+(d.wilaya===w?' selected':'')+'>'+escapeHTML(w)+'</option>'; }).join('');
+
+          // ── Compute totals including TTS (Try Two Sizes) ──
+          var subtotal = 0;
+          var allFree = true;
+          var cartTtsItems = []; // items that qualify for TTS
+          cart.forEach(function(item) {
+            subtotal += item.price * item.qty;
+            // Check free shipping
+            var itemFree = item.freeShipping === true;
+            if (!itemFree && item.id && NEON_DATA && Array.isArray(NEON_DATA.products)) {
+              var pFree = NEON_DATA.products.find(function(x){return String(x.id)===String(item.id);});
+              if (pFree && pFree.freeShipping === true) itemFree = true;
+            }
+            if (!itemFree) allFree = false;
+            // Check TTS availability for this item
+            var prod = (item.id && NEON_DATA && Array.isArray(NEON_DATA.products)) ?
+              NEON_DATA.products.find(function(x){return String(x.id)===String(item.id);}) : null;
+            if (prod) {
+              var effUnit = window._effectivePrice ? window._effectivePrice(prod) : prod.price;
+              var ttsAvailable = !!(window._storeData && window._storeData.ttsEnabled === true
+                                    && prod.ttsEnabled === true
+                                    && prod.sizes && prod.sizes.length >= 2
+                                    && effUnit >= (Number(window._storeData.ttsMinPrice) || 0));
+              if (ttsAvailable) {
+                cartTtsItems.push({ item: item, product: prod, effUnit: effUnit });
+              }
+            }
+          });
           var shipping = allFree ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData, d.deliveryType || 'home');
-          var total = subtotal + shipping;
+
+          // TTS fee: sum of fees for items where TTS is enabled
+          var ttsTotalFee = 0;
+          var ttsEnabledItems = [];
+          if (cartTtsItems.length > 0 && state.ttsCart) {
+            cartTtsItems.forEach(function(ct) {
+              var itemKey = String(ct.item.id) + '|' + ct.item.size + '|' + ct.item.color;
+              if (state.ttsCart[itemKey] && state.ttsCart[itemKey].enabled) {
+                var fee = Number(ct.product.ttsFee || (window._storeData && window._storeData.ttsDefaultFee)) || 0;
+                ttsTotalFee += fee;
+                ttsEnabledItems.push({ item: ct.item, backupSize: state.ttsCart[itemKey].backupSize, fee: fee });
+              }
+            });
+          }
+          var total = subtotal + shipping + ttsTotalFee;
+
+          // ── Build TTS section HTML (if any TTS-eligible items exist) ──
+          var ttsSectionHTML = '';
+          if (cartTtsItems.length > 0) {
+            ttsSectionHTML = '<div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;padding:14px;margin-bottom:16px;">' +
+              '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
+                '<span style="font-size:16px;">✨</span>' +
+                '<h4 style="font-size:13px;font-weight:700;color:#5b21b6;margin:0;">' + escapeHTML(t('tts_title') || 'Try Two Sizes') + '</h4>' +
+              '</div>' +
+              '<p style="font-size:11px;color:#6b21a8;margin-bottom:12px;line-height:1.5;">' + escapeHTML(t('tts_desc') || 'Not sure about your size? Add a backup size for a small fee and we will ship both — keep the one that fits.') + '</p>';
+            cartTtsItems.forEach(function(ct) {
+              var itemKey = String(ct.item.id) + '|' + ct.item.size + '|' + ct.item.color;
+              var ttsState = (state.ttsCart && state.ttsCart[itemKey]) || { enabled: false, backupSize: '' };
+              var fee = Number(ct.product.ttsFee || (window._storeData && window._storeData.ttsDefaultFee)) || 0;
+              ttsSectionHTML += '<div style="background:#fff;border:1px solid #ddd6fe;border-radius:6px;padding:10px;margin-bottom:8px;' + (ttsState.enabled ? '' : 'opacity:0.7;') + '">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:' + (ttsState.enabled ? '8px' : '0') + ';">' +
+                  '<div style="flex:1;"><div style="font-size:12px;font-weight:600;color:#333;">' + escapeHTML(ct.item.name) + '</div>' +
+                  '<div style="font-size:10px;color:#888;">' + escapeHTML(t('os_size') || 'Size') + ': ' + escapeHTML(ct.item.size) + ' • ' + escapeHTML(t('tts_fee') || 'Fee') + ': ' + formatProductPrice(fee) + '</div></div>' +
+                  '<button type="button" data-tts-toggle="' + escapeHTML(itemKey) + '" style="padding:4px 10px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;border:none;background:' + (ttsState.enabled ? '#7c3aed' : '#e5e7eb') + ';color:' + (ttsState.enabled ? '#fff' : '#333') + ';">' + (ttsState.enabled ? '✓ Enabled' : (t('tts_add') || 'Add Backup')) + '</button>' +
+                '</div>';
+              if (ttsState.enabled) {
+                ttsSectionHTML += '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+                  ct.product.sizes.map(function(s) {
+                    var isCurrent = (s === ct.item.size);
+                    var isBackup = (s === ttsState.backupSize);
+                    return '<button type="button" data-tts-size="' + escapeHTML(itemKey) + '" data-size="' + escapeHTML(s) + '"' +
+                      (isCurrent ? ' disabled' : '') +
+                      ' style="padding:5px 10px;border:1px solid ' + (isBackup ? '#7c3aed' : '#ddd') + ';border-radius:4px;font-size:11px;cursor:' + (isCurrent ? 'not-allowed' : 'pointer') + ';background:' + (isBackup ? '#7c3aed' : '#fff') + ';color:' + (isBackup ? '#fff' : '#333') + ';' + (isCurrent ? 'opacity:0.5;' : '') + '">' + escapeHTML(s) + (isCurrent ? ' ✓' : '') + '</button>';
+                  }).join('') +
+                '</div>';
+              }
+              ttsSectionHTML += '</div>';
+            });
+            ttsSectionHTML += '</div>';
+          }
+
           checkoutModal.innerHTML =
             '<div style="background:#fff;width:100%;max-width:560px;border-radius:12px;padding:28px;margin:auto;">' +
               '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">' +
@@ -4542,9 +4617,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                   '</div>';
                 }).join('') +
               '</div>' +
+              ttsSectionHTML +
               '<div style="background:#f8f8f8;border-radius:8px;padding:14px;margin-bottom:20px;">' +
                 '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Subtotal</span><span>'+formatProductPrice(subtotal)+'</span></div>' +
                 '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Shipping</span><span>'+(shipping===0?'FREE':formatProductPrice(shipping))+'</span></div>' +
+                (ttsTotalFee > 0 ? '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;color:#7c3aed;"><span>' + escapeHTML(t('tts_fee') || 'TTS Fee') + '</span><span>'+formatProductPrice(ttsTotalFee)+'</span></div>' : '') +
                 '<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;border-top:1px solid #ddd;padding-top:8px;"><span>Total</span><span>'+formatProductPrice(total)+'</span></div>' +
               '</div>' +
               '<form id="checkoutForm" style="display:flex;flex-direction:column;gap:12px;">' +
@@ -4581,6 +4658,32 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             state.checkoutData.wilaya = wilayaSel.value;
             openCheckoutModal();
           });
+
+          // ── TTS toggle buttons ──
+          var ttsToggles = checkoutModal.querySelectorAll('[data-tts-toggle]');
+          ttsToggles.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var key = btn.getAttribute('data-tts-toggle');
+              if (!state.ttsCart) state.ttsCart = {};
+              if (!state.ttsCart[key]) state.ttsCart[key] = { enabled: false, backupSize: '' };
+              state.ttsCart[key].enabled = !state.ttsCart[key].enabled;
+              if (!state.ttsCart[key].enabled) state.ttsCart[key].backupSize = '';
+              openCheckoutModal(); // re-render
+            });
+          });
+          // ── TTS backup size buttons ──
+          var ttsSizeBtns = checkoutModal.querySelectorAll('[data-tts-size]');
+          ttsSizeBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var key = btn.getAttribute('data-tts-size');
+              var sz = btn.getAttribute('data-size');
+              if (!state.ttsCart) state.ttsCart = {};
+              if (!state.ttsCart[key]) state.ttsCart[key] = { enabled: true, backupSize: '' };
+              state.ttsCart[key].backupSize = sz;
+              openCheckoutModal(); // re-render
+            });
+          });
+
           var form = checkoutModal.querySelector('#checkoutForm');
           form.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -4594,6 +4697,27 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             if (!/^0[5-7]\d{8}$/.test(ph)) { showToast(t('of_required') || 'Invalid phone'); return; }
             if (typeof window._shvIsRepeatedDigitsPhone === 'function' && window._shvIsRepeatedDigitsPhone(ph)) { showToast(t('of_required') || 'Invalid phone'); return; }
             if (typeof window._shvCheckRateLimit === 'function') { var _rl = window._shvCheckRateLimit(); if (_rl > 0) { showToast(t('of_required') || 'Wait'); return; } }
+
+            // ── Validate TTS: if enabled, backup size must be selected ──
+            var ttsPayloadItems = [];
+            var ttsTotalFeeCheck = 0;
+            if (cartTtsItems.length > 0 && state.ttsCart) {
+              var ttsError = '';
+              cartTtsItems.forEach(function(ct) {
+                var itemKey = String(ct.item.id) + '|' + ct.item.size + '|' + ct.item.color;
+                if (state.ttsCart[itemKey] && state.ttsCart[itemKey].enabled) {
+                  if (!state.ttsCart[itemKey].backupSize) {
+                    ttsError = t('tts_backup_label') || 'Please select backup size';
+                  } else {
+                    var fee = Number(ct.product.ttsFee || (window._storeData && window._storeData.ttsDefaultFee)) || 0;
+                    ttsTotalFeeCheck += fee;
+                    ttsPayloadItems.push({ itemKey: itemKey, backupSize: state.ttsCart[itemKey].backupSize, fee: fee });
+                  }
+                }
+              });
+              if (ttsError) { showToast(ttsError); return; }
+            }
+
             state.checkoutData = { fullName: nm, phone: ph, wilaya: wl, baladiya: bl, address: ad, notes: nt, deliveryType: (state.checkoutData && state.checkoutData.deliveryType) || 'home' };
             var submitBtn = checkoutModal.querySelector('#checkoutSubmit');
             submitBtn.disabled = true; submitBtn.textContent = '...';
@@ -4602,13 +4726,33 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
               var freshSubtotal = freshCart.reduce(function(s,i){return s+(i.price*i.qty);},0);
               var freshAllFree = freshCart.every(function(it) { return it.freeShipping === true; });
               var freshShipping = freshAllFree ? 0 : calcShipping(wl, freshSubtotal, window._storeData, state.checkoutData.deliveryType);
-              var freshTotal = freshSubtotal + freshShipping;
+              var freshTotal = freshSubtotal + freshShipping + ttsTotalFeeCheck;
+
+              // ── Build items with TTS info ──
+              var items = freshCart.map(function(i) {
+                var itemKey = String(i.id) + '|' + i.size + '|' + i.color;
+                var ttsInfo = null;
+                if (state.ttsCart && state.ttsCart[itemKey] && state.ttsCart[itemKey].enabled) {
+                  ttsInfo = { backup_size: state.ttsCart[itemKey].backupSize, fee: 0 };
+                  // Find the product to get the fee
+                  var prod = NEON_DATA.products.find(function(x){return String(x.id)===String(i.id);});
+                  if (prod) ttsInfo.fee = Number(prod.ttsFee || (window._storeData && window._storeData.ttsDefaultFee)) || 0;
+                }
+                return {
+                  id: i.id, name: i.name, qty: i.qty, unit_price: i.price, line_total: i.price*i.qty,
+                  size: i.size, color: i.color, free_shipping: i.freeShipping === true,
+                  tts_enabled: !!(ttsInfo), tts_backup_size: ttsInfo ? ttsInfo.backup_size : null, tts_fee: ttsInfo ? ttsInfo.fee : 0
+                };
+              });
+
               var payload = {
                 customer: { name: nm, phone: ph, wilaya: wl, commune: bl, address: ad, delivery_type: state.checkoutData.deliveryType, notes: nt },
-                items: freshCart.map(function(i) { return { id: i.id, name: i.name, qty: i.qty, unit_price: i.price, line_total: i.price*i.qty, size: i.size, color: i.color, free_shipping: i.freeShipping === true }; }),
-                pricing: { subtotal: freshSubtotal, shipping_fee: freshShipping, total: freshTotal, currency: 'DZD' },
+                items: items,
+                pricing: { subtotal: freshSubtotal, shipping_fee: freshShipping, tts_fee: ttsTotalFeeCheck, total: freshTotal, currency: 'DZD' },
                 note: nt || null,
-                try_two_sizes: false, tts_backup_size: null
+                try_two_sizes: ttsPayloadItems.length > 0,
+                tts_backup_size: ttsPayloadItems.length === 1 ? ttsPayloadItems[0].backupSize : (ttsPayloadItems.length > 1 ? JSON.stringify(ttsPayloadItems) : null),
+                tts_items: ttsPayloadItems.length > 0 ? ttsPayloadItems : null
               };
               if (typeof window._shvVerifyOrderPrices === 'function') {
                 try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), wl, state.checkoutData.deliveryType); }
@@ -4621,6 +4765,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
               }
               setCart([]);
               syncCart();
+              state.ttsCart = {};
               if (typeof renderCart === 'function') renderCart();
               state.checkoutData = { fullName:'', phone:'', wilaya:'', baladiya:'', address:'', notes:'', deliveryType:'home' };
               showToast(t('of_order_success') || 'Order placed successfully!');
