@@ -3267,6 +3267,7 @@
       var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData, deliveryType);
       // Try Two Sizes (TTS) — only available when store enables it AND product has ≥2 sizes AND price ≥ ttsMinPrice
       var ttsAvailable = !!(window._storeData && window._storeData.ttsEnabled === true
+                          && p.ttsEnabled === true
                           && p.sizes && p.sizes.length >= 2
                           && eff >= (Number(window._storeData.ttsMinPrice) || 0));
       var ttsEnabled = ttsAvailable && state.ttsEnabled === true;
@@ -3627,13 +3628,9 @@
         var activeBtn = doDeliveryTypeEl.querySelector('.delivery-type-btn.active');
         if (activeBtn) state.checkoutData.deliveryType = activeBtn.getAttribute('data-delivery') || 'home';
       }
-      // Read TTS (Try Two Sizes) state from the section's active class + selected backup size
-      var ttsSection = document.getElementById('doTtsSection');
-      if (ttsSection) {
-        state.ttsEnabled = ttsSection.classList.contains('active');
-        var selTtsBtn = ttsSection.querySelector('.tts-size-btn.selected');
-        state.ttsBackupSize = selTtsBtn ? (selTtsBtn.getAttribute('data-tts-size') || '') : (state.ttsBackupSize || '');
-      }
+      // NOTE: Do NOT read TTS state from DOM here — state.ttsEnabled is managed
+      // directly by the TTS toggle handler. Reading from DOM causes a bug where
+      // the old DOM (before re-render) resets state.ttsEnabled to false.
     }
 
     function toggleWishlist() {
@@ -4442,6 +4439,8 @@
                 reviewsText: p.reviewsText || '', reviewsData: p.reviewsData || [],
                 slug: p.slug || '', isNew: false, badge: '',
                 freeShipping: p.freeShipping === true,
+                ttsEnabled: p.ttsEnabled === true,
+                ttsFee: Number(p.ttsFee) || 0,
               };
             });
           }
@@ -4458,6 +4457,8 @@
                   reviewsText: p.reviewsText || '', reviewsData: p.reviewsData || [],
                   slug: p.slug || '', isNew: false, badge: '',
                   freeShipping: p.freeShipping === true,
+                  ttsEnabled: p.ttsEnabled === true,
+                  ttsFee: Number(p.ttsFee) || 0,
                 };
               });
               route();
