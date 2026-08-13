@@ -4784,6 +4784,7 @@
             var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData, deliveryType);
             // Try Two Sizes (TTS) — only available when store enables it AND product has ≥2 sizes AND price ≥ ttsMinPrice
             var ttsAvailable = !!(window._storeData && window._storeData.ttsEnabled === true
+                                && p.ttsEnabled === true
                                 && p.sizes && p.sizes.length >= 2
                                 && effUnit >= (Number(window._storeData.ttsMinPrice) || 0));
             var ttsEnabled = ttsAvailable && state.ttsEnabled === true;
@@ -5117,6 +5118,7 @@
                     var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData, deliveryType);
                     // Try Two Sizes (TTS) — recompute fee + validation in submit handler
                     var ttsAvailable = !!(window._storeData && window._storeData.ttsEnabled === true
+                                        && p.ttsEnabled === true
                                         && p.sizes && p.sizes.length >= 2
                                         && unitPrice >= (Number(window._storeData.ttsMinPrice) || 0));
                     var ttsEnabled = ttsAvailable && state.ttsEnabled === true;
@@ -5186,13 +5188,9 @@
                 var activeBtn = coDeliveryEl.querySelector('.delivery-type-btn.active');
                 if (activeBtn) state.checkoutData.deliveryType = activeBtn.getAttribute('data-delivery') || 'home';
             }
-            // Read TTS (Try Two Sizes) state
-            var coTtsSection = document.getElementById('coTtsSection');
-            if (coTtsSection) {
-                state.ttsEnabled = coTtsSection.classList.contains('active');
-                var selTtsBtn = coTtsSection.querySelector('.tts-size-btn.selected');
-                state.ttsBackupSize = selTtsBtn ? (selTtsBtn.getAttribute('data-tts-size') || '') : (state.ttsBackupSize || '');
-            }
+            // NOTE: Do NOT read TTS state from DOM here — state.ttsEnabled is managed
+            // directly by the TTS toggle handler. Reading from DOM causes a bug where
+            // the old DOM (before re-render) resets state.ttsEnabled to false.
         }
 
         function bindProductPageInteractions() {
@@ -6449,6 +6447,8 @@
                                 reviewsData: p.reviewsData || [],
                                 slug: p.slug || '',
                                 freeShipping: p.freeShipping === true,
+                                ttsEnabled: p.ttsEnabled === true,
+                                ttsFee: Number(p.ttsFee) || 0,
                                 shipping: 'Free shipping on orders above 5,000 DA across Algeria. Delivery in 3-5 business days.',
                             };
                         });
@@ -6483,6 +6483,8 @@
                                     reviewsData: p.reviewsData || [],
                                     slug: p.slug || '',
                                     freeShipping: p.freeShipping === true,
+                                    ttsEnabled: p.ttsEnabled === true,
+                                    ttsFee: Number(p.ttsFee) || 0,
                                     shipping: 'Free shipping on orders above 5,000 DA.',
                                 };
                             });
