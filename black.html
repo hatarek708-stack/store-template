@@ -296,6 +296,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
 </style>
 </head>
 <body>
+<!-- Loading screen — shown until store data is ready (prevents flash of default content) -->
+<div id="loadingScreen" style="position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;z-index:99999;transition:opacity .3s;">
+  <div style="width:40px;height:40px;border:3px solid #eee;border-top-color:#111;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 <div id="app"></div>
 
 <!-- ===== HIDDEN INFRASTRUCTURE for black's backend services ===== -->
@@ -528,7 +533,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           freeShipping: p.free_shipping === true,
         };
       });
-      try { localStorage.setItem(cacheKey, JSON.stringify({ products, version: remoteVer })); } catch {}
+      try { localStorage.setItem(cacheKey, JSON.stringify({ store: storeData, products, version: remoteVer })); } catch {}
       return { store: storeData, products };
     };
 
@@ -4874,6 +4879,12 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
         }
 
         async function init() {
+          // ── Safety timeout: hide loading screen after 5s no matter what ──
+          setTimeout(function() {
+            var _ls = document.getElementById('loadingScreen');
+            if (_ls) { _ls.style.opacity = '0'; setTimeout(function() { if (_ls.parentNode) _ls.parentNode.removeChild(_ls); }, 300); }
+          }, 5000);
+
           // Init cart count from localStorage
           setCart(getCart());
           syncCart();
@@ -4894,12 +4905,36 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             try { currentLang = localStorage.getItem(LANG_KEY) === 'ar' ? 'ar' : 'en'; } catch(e) {}
           }
 
-          // Initial render with fallback data (so user sees something immediately)
-          if (NEON_DATA && NEON_DATA.products && NEON_DATA.products.length) {
+          // ── CRITICAL: Apply cached store settings BEFORE first render ──
+          // This prevents the "flash" where default hero/name shows for 1 second
+          // before Supabase returns the real store customization.
+          // Cache key: shv_store_<storeId> (same as fetchStoreFromFirestore uses)
+          var _preStoreId = window._getStoreId && window._getStoreId();
+          if (_preStoreId) {
+            try {
+              var _cacheKey = 'shv_store_' + _preStoreId.trim();
+              var _cachedRaw = localStorage.getItem(_cacheKey);
+              if (_cachedRaw) {
+                var _cachedParsed = JSON.parse(_cachedRaw);
+                if (_cachedParsed && _cachedParsed.store) {
+                  window._storeData = _cachedParsed.store;
+                }
+                // Also restore cached products if available
+                if (_cachedParsed && _cachedParsed.products && Array.isArray(_cachedParsed.products) && _cachedParsed.products.length > 0) {
+                  NEON_DATA.products = _cachedParsed.products;
+                  state.product = NEON_DATA.products[0];
+                  state.color = (state.product.colors && state.product.colors[0]) ? state.product.colors[0].name : 'Default';
+                  state.selectedSize = (state.product.sizes && state.product.sizes[0]) || null;
+                }
+              }
+            } catch(e) { /* ignore cache errors */ }
+          }
+
+          // Set default product from NEON_DATA if not already set from cache
+          if (!state.product && NEON_DATA && NEON_DATA.products && NEON_DATA.products.length) {
             state.product = NEON_DATA.products[0];
             state.color = (state.product.colors && state.product.colors[0]) ? state.product.colors[0].name : 'Default';
           }
-          render();
 
           // ── Wait for Supabase module to be ready ──
           await waitForSupabase();
@@ -5000,6 +5035,13 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
 
           // Re-render with real data
           render();
+
+          // ── Hide loading screen (with fade) once first real render is done ──
+          var _ls = document.getElementById('loadingScreen');
+          if (_ls) {
+            _ls.style.opacity = '0';
+            setTimeout(function() { if (_ls.parentNode) _ls.parentNode.removeChild(_ls); }, 300);
+          }
 
           // Handle browser back/forward
           window.addEventListener('popstate', function() { render(); });
