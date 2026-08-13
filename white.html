@@ -1989,6 +1989,8 @@
           reviewsData: mergedReviews,
           slug: p.slug || '',
           freeShipping: p.free_shipping === true,
+          ttsEnabled: p.tts_enabled === true,
+          ttsFee: Number(p.tts_fee) || 0,
           // Rating/reviews — computed from real reviews only (no fake defaults)
           rating: window._shvProductRating(pWithReviews),
           reviews: window._shvProductReviewCount(pWithReviews),
@@ -2025,6 +2027,8 @@
                 reviewsData: mergedReviews,
                 slug: p.slug || '',
                 freeShipping: p.free_shipping === true,
+                ttsEnabled: p.tts_enabled === true,
+                ttsFee: Number(p.tts_fee) || 0,
                 rating: window._shvProductRating(pWithReviews),
                 reviews: window._shvProductReviewCount(pWithReviews),
               };
@@ -2055,6 +2059,8 @@
                 reviewsData: mergedReviews,
                 slug: p.slug || '',
                 freeShipping: p.free_shipping === true,
+                ttsEnabled: p.tts_enabled === true,
+                ttsFee: Number(p.tts_fee) || 0,
                 rating: window._shvProductRating(pWithReviews),
                 reviews: window._shvProductReviewCount(pWithReviews),
               };
