@@ -293,6 +293,146 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
 #zoomOverlay .zoom-next{right:24px}
 #zoomOverlay .zoom-prev svg,#zoomOverlay .zoom-next svg{width:20px;height:20px;stroke:#fff}
 
+/* ============ DIRECT ORDER CARD (Product Page) ============ */
+.direct-order-card{background:#fff;border:1px solid #ececec;border-radius:12px;padding:28px;margin-top:32px;max-width:480px}
+.direct-order-card .doc-header{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #f0f0f0}
+.direct-order-card .doc-header svg{width:18px;height:18px;color:#111;flex-shrink:0}
+.direct-order-card .doc-header h3{font-size:15px;font-weight:700;color:#111;letter-spacing:-.01em}
+.direct-order-card .doc-item{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid #f5f5f5}
+.direct-order-card .doc-item-img{width:64px;height:64px;border-radius:8px;overflow:hidden;background:#f3f3f3;flex-shrink:0}
+.direct-order-card .doc-item-img img{width:100%;height:100%;object-fit:cover}
+.direct-order-card .doc-item-info{flex:1;min-width:0}
+.direct-order-card .doc-item-name{font-size:13px;font-weight:600;color:#111;margin-bottom:3px}
+.direct-order-card .doc-item-variant{font-size:11px;color:#888}
+.direct-order-card .doc-item-price{font-size:14px;font-weight:700;color:#111;text-align:right;white-space:nowrap}
+.direct-order-card .doc-item-price-old{font-size:11px;color:#b0b0b0;text-decoration:line-through;font-weight:400;display:block}
+.direct-order-card .doc-qty-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #f5f5f5}
+.direct-order-card .doc-qty-label{font-size:12px;color:#555;font-weight:500}
+.direct-order-card .doc-qty-control{display:flex;align-items:center;gap:0;border:1px solid #e2e2e2;border-radius:999px;overflow:hidden}
+.direct-order-card .doc-qty-control button{width:32px;height:32px;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#111;transition:background .15s}
+.direct-order-card .doc-qty-control button:hover{background:#f5f5f5}
+.direct-order-card .doc-qty-control span{min-width:36px;text-align:center;font-size:13px;font-weight:600;color:#111}
+.direct-order-card .doc-totals{padding:14px 0}
+.direct-order-card .doc-total-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12.5px;color:#666}
+.direct-order-card .doc-total-row.grand{font-size:16px;font-weight:700;color:#111;border-top:1px solid #ececec;margin-top:6px;padding-top:12px}
+.direct-order-card .doc-total-row .free{color:#1e7e34;font-weight:600}
+.direct-order-card .doc-total-row .discount{color:#ef3e36}
+.direct-order-card .doc-submit{width:100%;background:#111;color:#fff;border-radius:999px;padding:14px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
+.direct-order-card .doc-submit:hover{opacity:.85}
+.direct-order-card .doc-submit svg{width:15px;height:15px}
+.direct-order-card .doc-submit:disabled{opacity:.5;cursor:not-allowed}
+.direct-order-card .doc-trust{display:flex;align-items:center;gap:10px;margin-top:14px;padding:12px;background:#fafafa;border-radius:8px}
+.direct-order-card .doc-trust svg{width:18px;height:18px;color:#111;flex-shrink:0}
+.direct-order-card .doc-trust-title{font-size:12px;font-weight:600;color:#111}
+.direct-order-card .doc-trust-sub{font-size:10.5px;color:#888}
+.direct-order-card .doc-terms{font-size:10.5px;color:#999;text-align:center;margin-top:10px;line-height:1.5}
+.direct-order-card .doc-form-section{margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0}
+.direct-order-card .doc-form-section h4{font-size:12px;font-weight:700;color:#111;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
+.direct-order-card .doc-form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.direct-order-card .doc-form-row.single{grid-template-columns:1fr}
+.direct-order-card .doc-input,.direct-order-card .doc-select,.direct-order-card .doc-textarea{width:100%;padding:10px 12px;border:1px solid #e2e2e2;border-radius:8px;font-size:12.5px;font-family:inherit;color:#111;background:#fff;outline:none;transition:border-color .15s}
+.direct-order-card .doc-input:focus,.direct-order-card .doc-select:focus,.direct-order-card .doc-textarea:focus{border-color:#111}
+.direct-order-card .doc-textarea{resize:vertical;min-height:60px}
+.direct-order-card .doc-delivery-types{display:flex;gap:8px;margin-bottom:10px}
+.direct-order-card .doc-delivery-btn{flex:1;padding:10px;border:1px solid #e2e2e2;border-radius:8px;background:#fff;cursor:pointer;font-size:11.5px;color:#555;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.direct-order-card .doc-delivery-btn svg{width:14px;height:14px}
+.direct-order-card .doc-delivery-btn.active{background:#111;color:#fff;border-color:#111}
+.direct-order-card .doc-shipping-info{font-size:11px;color:#666;padding:8px 12px;background:#f8f8f8;border-radius:6px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.direct-order-card .doc-shipping-info svg{width:13px;height:13px;color:#111;flex-shrink:0}
+
+/* TTS section inside direct order card (black.html style — black/white, not purple) */
+.direct-order-card .tts-block{background:#fafafa;border:1px solid #ececec;border-radius:8px;padding:14px;margin:14px 0}
+.direct-order-card .tts-block.active{background:#fff;border-color:#111}
+.direct-order-card .tts-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;cursor:pointer}
+.direct-order-card .tts-header-left{display:flex;align-items:flex-start;gap:10px;flex:1}
+.direct-order-card .tts-header-left svg{width:18px;height:18px;color:#111;flex-shrink:0;margin-top:1px}
+.direct-order-card .tts-title-text{font-size:12.5px;font-weight:700;color:#111}
+.direct-order-card .tts-desc-text{font-size:10.5px;color:#888;margin-top:2px;line-height:1.5}
+.direct-order-card .tts-toggle-switch{width:38px;height:22px;border-radius:999px;background:#d4d4d4;position:relative;flex-shrink:0;transition:background .2s;cursor:pointer}
+.direct-order-card .tts-toggle-switch::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.direct-order-card .tts-block.active .tts-toggle-switch{background:#111}
+.direct-order-card .tts-block.active .tts-toggle-switch::after{left:18px}
+.direct-order-card .tts-body{margin-top:12px;padding-top:12px;border-top:1px solid #ececec;display:none}
+.direct-order-card .tts-block.active .tts-body{display:block}
+.direct-order-card .tts-backup-label{font-size:11px;color:#555;margin-bottom:8px;font-weight:500}
+.direct-order-card .tts-backup-label .req{color:#ef3e36}
+.direct-order-card .tts-size-row{display:flex;gap:8px;flex-wrap:wrap}
+.direct-order-card .tts-size-btn{padding:7px 14px;border:1px solid #e2e2e2;border-radius:999px;background:#fff;color:#111;font-size:11.5px;cursor:pointer;transition:all .15s;font-weight:500}
+.direct-order-card .tts-size-btn:hover:not(:disabled){border-color:#111}
+.direct-order-card .tts-size-btn.selected{background:#111;color:#fff;border-color:#111}
+.direct-order-card .tts-size-btn:disabled{opacity:.35;cursor:not-allowed;background:#f5f5f5}
+.direct-order-card .tts-fee-note{font-size:11px;color:#666;margin-top:10px;padding:8px 10px;background:#f8f8f8;border-radius:6px}
+.direct-order-card .tts-fee-note strong{color:#111;font-weight:700}
+
+/* ============ CART PAGE (Checkout) ============ */
+.cart-page{max-width:1100px;margin:0 auto;padding:32px 24px}
+.cart-page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+.cart-page-header h1{font-size:28px;font-weight:800;letter-spacing:-.02em;color:#111}
+.cart-page-header .back-link{font-size:12.5px;color:#555;cursor:pointer;display:flex;align-items:center;gap:6px}
+.cart-page-header .back-link:hover{color:#111}
+.cart-page-grid{display:grid;grid-template-columns:1fr 380px;gap:32px;align-items:start}
+.cart-items-col{display:flex;flex-direction:column;gap:14px}
+.cart-item-row{display:flex;gap:16px;background:#fff;border:1px solid #ececec;border-radius:12px;padding:16px;position:relative}
+.cart-item-row img{width:80px;height:80px;border-radius:8px;object-fit:cover;background:#f3f3f3;flex-shrink:0}
+.cart-item-info{flex:1;min-width:0}
+.cart-item-name{font-size:14px;font-weight:600;color:#111;margin-bottom:4px}
+.cart-item-variant{font-size:12px;color:#888;margin-bottom:10px}
+.cart-item-bottom{display:flex;align-items:center;justify-content:space-between}
+.cart-item-qty{display:flex;align-items:center;border:1px solid #e2e2e2;border-radius:999px;overflow:hidden}
+.cart-item-qty button{width:30px;height:30px;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#111}
+.cart-item-qty button:hover{background:#f5f5f5}
+.cart-item-qty span{min-width:32px;text-align:center;font-size:12.5px;font-weight:600}
+.cart-item-price{font-size:14px;font-weight:700;color:#111}
+.cart-item-remove{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;background:#fff;border:1px solid #ececec;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#999}
+.cart-item-remove:hover{background:#ef3e36;color:#fff;border-color:#ef3e36}
+.cart-item-remove svg{width:13px;height:13px}
+.cart-empty-state{text-align:center;padding:80px 20px;background:#fff;border:1px solid #ececec;border-radius:12px}
+.cart-empty-state svg{width:64px;height:64px;color:#d4d4d4;margin:0 auto 16px;display:block}
+.cart-empty-state h3{font-size:18px;font-weight:700;color:#111;margin-bottom:6px}
+.cart-empty-state p{font-size:13px;color:#888;margin-bottom:20px}
+.cart-summary-card{background:#fff;border:1px solid #ececec;border-radius:12px;padding:24px;position:sticky;top:20px}
+.cart-summary-card h3{font-size:15px;font-weight:700;color:#111;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #f0f0f0}
+.cart-summary-card .summary-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#666}
+.cart-summary-card .summary-row.grand{font-size:18px;font-weight:800;color:#111;border-top:1px solid #ececec;margin-top:8px;padding-top:14px}
+.cart-summary-card .summary-row .free{color:#1e7e34;font-weight:600}
+.cart-summary-card .summary-row .discount{color:#ef3e36}
+.cart-summary-card .summary-form{margin-top:20px;padding-top:20px;border-top:1px solid #f0f0f0;display:flex;flex-direction:column;gap:10px}
+.cart-summary-card .summary-form h4{font-size:11px;font-weight:700;color:#111;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.cart-summary-card .summary-input,.cart-summary-card .summary-select,.cart-summary-card .summary-textarea{width:100%;padding:10px 12px;border:1px solid #e2e2e2;border-radius:8px;font-size:12.5px;font-family:inherit;color:#111;outline:none}
+.cart-summary-card .summary-input:focus,.cart-summary-card .summary-select:focus,.cart-summary-card .summary-textarea:focus{border-color:#111}
+.cart-summary-card .summary-textarea{resize:vertical;min-height:50px}
+.cart-summary-card .summary-delivery-row{display:flex;gap:8px}
+.cart-summary-card .summary-delivery-btn{flex:1;padding:9px;border:1px solid #e2e2e2;border-radius:8px;background:#fff;cursor:pointer;font-size:11px;color:#555;display:flex;align-items:center;justify-content:center;gap:5px}
+.cart-summary-card .summary-delivery-btn svg{width:13px;height:13px}
+.cart-summary-card .summary-delivery-btn.active{background:#111;color:#fff;border-color:#111}
+.cart-summary-card .summary-place-order{width:100%;background:#111;color:#fff;border-radius:999px;padding:14px;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
+.cart-summary-card .summary-place-order:hover{opacity:.85}
+.cart-summary-card .summary-place-order:disabled{opacity:.5;cursor:not-allowed}
+.cart-summary-card .summary-trust{display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px;background:#fafafa;border-radius:8px}
+.cart-summary-card .summary-trust svg{width:16px;height:16px;color:#111;flex-shrink:0}
+.cart-summary-card .summary-trust-title{font-size:11px;font-weight:600;color:#111}
+.cart-summary-card .summary-trust-sub{font-size:10px;color:#888}
+.cart-summary-card .summary-tts{background:#fafafa;border:1px solid #ececec;border-radius:8px;padding:12px;margin-top:10px}
+.cart-summary-card .summary-tts.active{background:#fff;border-color:#111}
+.cart-summary-card .summary-tts-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;cursor:pointer}
+.cart-summary-card .summary-tts-left{display:flex;gap:8px;flex:1}
+.cart-summary-card .summary-tts-left svg{width:15px;height:15px;color:#111;flex-shrink:0;margin-top:1px}
+.cart-summary-card .summary-tts-name{font-size:11.5px;font-weight:600;color:#111}
+.cart-summary-card .summary-tts-fee{font-size:10.5px;color:#888}
+.cart-summary-card .summary-tts-toggle{width:32px;height:18px;border-radius:999px;background:#d4d4d4;position:relative;flex-shrink:0;transition:background .2s;cursor:pointer}
+.cart-summary-card .summary-tts-toggle::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.cart-summary-card .summary-tts.active .summary-tts-toggle{background:#111}
+.cart-summary-card .summary-tts.active .summary-tts-toggle::after{left:16px}
+.cart-summary-card .summary-tts-body{margin-top:10px;padding-top:10px;border-top:1px solid #ececec;display:none}
+.cart-summary-card .summary-tts.active .summary-tts-body{display:block}
+.cart-summary-card .summary-tts-sizes{display:flex;gap:6px;flex-wrap:wrap}
+.cart-summary-card .summary-tts-size-btn{padding:5px 10px;border:1px solid #e2e2e2;border-radius:999px;background:#fff;color:#111;font-size:10.5px;cursor:pointer;font-weight:500}
+.cart-summary-card .summary-tts-size-btn.selected{background:#111;color:#fff;border-color:#111}
+.cart-summary-card .summary-tts-size-btn:disabled{opacity:.35;cursor:not-allowed;background:#f5f5f5}
+@media(max-width:900px){
+  .cart-page-grid{grid-template-columns:1fr}
+  .cart-summary-card{position:static}
+}
 </style>
 </head>
 <body>
@@ -3622,7 +3762,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             var checkoutBtn = document.getElementById('cartCheckoutBtn');
             if (checkoutBtn) checkoutBtn.addEventListener('click', function () {
                 closeCart();
-                navigate('checkout', {});
+                location.hash = '#/cart';
                 setTimeout(function () {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 }, 100);
@@ -4288,6 +4428,314 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
         }
 
         /* ---------- 9. PRODUCT VIEW (dynamic — uses ACTUAL product data) ---------- */
+        // ── Direct Order Card (inline order form on product page, black.html style) ──
+        function directOrderCardHTML(P) {
+          var p = state.product;
+          if (!p) return '';
+          var qty = state.qty || 1;
+          var effUnit = window._effectivePrice ? window._effectivePrice(p) : p.price;
+          var subtotal = effUnit * qty;
+          var hasDiscount = p.originalPrice && p.originalPrice > effUnit;
+          var savings = hasDiscount ? (p.originalPrice - effUnit) * qty : 0;
+          var d = state.checkoutData || {};
+          var deliveryType = d.deliveryType || 'home';
+          var isFreeShipping = (p.freeShipping === true);
+          var shipping = isFreeShipping ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData, deliveryType);
+
+          // TTS availability check
+          var ttsAvailable = !!(window._storeData && window._storeData.ttsEnabled === true
+                                && p.ttsEnabled === true
+                                && p.sizes && p.sizes.length >= 2
+                                && effUnit >= (Number(window._storeData.ttsMinPrice) || 0));
+          var ttsState = state.ttsCart && state.ttsCart['direct'] ? state.ttsCart['direct'] : { enabled: false, backupSize: '' };
+          var ttsEnabled = ttsAvailable && ttsState.enabled;
+          var ttsFee = ttsEnabled ? (Number(p.ttsFee || (window._storeData && window._storeData.ttsDefaultFee)) || 0) : 0;
+          var ttsBackupSize = ttsEnabled ? (ttsState.backupSize || '') : '';
+          var total = subtotal + shipping + ttsFee;
+
+          var wilayaOptions = ALGERIAN_WILAYAS.map(function(w) { return '<option value="'+escapeHTML(w)+'"'+(d.wilaya===w?' selected':'')+'>'+escapeHTML(w)+'</option>'; }).join('');
+
+          // TTS block HTML (black.html style — black/white toggle)
+          var ttsBlock = '';
+          if (ttsAvailable) {
+            ttsBlock = '<div class="tts-block'+(ttsEnabled?' active':'')+'" id="docTtsBlock">'+
+              '<div class="tts-header" data-tts-toggle="direct">'+
+                '<div class="tts-header-left">'+
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 12h18M3 17h18"/></svg>'+
+                  '<div>'+
+                    '<div class="tts-title-text">'+escapeHTML(t('tts_title') || 'Try Two Sizes')+'</div>'+
+                    '<div class="tts-desc-text">'+escapeHTML(t('tts_desc') || 'Not sure about your size? Add a backup size for a small fee.')+'</div>'+
+                  '</div>'+
+                '</div>'+
+                '<div class="tts-toggle-switch" role="switch" aria-checked="'+(ttsEnabled?'true':'false')+'"></div>'+
+              '</div>'+
+              '<div class="tts-body">'+
+                '<div class="tts-backup-label">'+escapeHTML(t('tts_backup_label') || 'Backup Size')+' <span class="req">*</span></div>'+
+                '<div class="tts-size-row">'+
+                  p.sizes.map(function(s) {
+                    var isCurrent = (s === state.selectedSize);
+                    var isBackup = (s === ttsBackupSize);
+                    return '<button type="button" class="tts-size-btn'+(isBackup?' selected':'')+'" data-tts-size="direct" data-size="'+escapeHTML(s)+'"'+(isCurrent?' disabled':'')+'>'+
+                      escapeHTML(s)+(isCurrent?' ✓':'')+'</button>';
+                  }).join('')+
+                '</div>'+
+                '<div class="tts-fee-note">'+escapeHTML(t('tts_fee') || 'Fee')+' — <strong>'+formatProductPrice(ttsFee)+'</strong></div>'+
+              '</div>'+
+            '</div>';
+          }
+
+          return '<div class="direct-order-card" id="directOrderCard">'+
+            '<div class="doc-header">'+
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'+
+              '<h3>'+escapeHTML(t('os_title') || 'Order Summary')+'</h3>'+
+            '</div>'+
+
+            // Product item summary
+            '<div class="doc-item">'+
+              '<div class="doc-item-img"><img src="'+((p.images&&p.images[0])?p.images[0]:p.image)+'" alt="'+escapeHTML(p.name)+'"></div>'+
+              '<div class="doc-item-info">'+
+                '<div class="doc-item-name">'+escapeHTML(p.name)+'</div>'+
+                '<div class="doc-item-variant">'+escapeHTML(t('os_color') || 'Color')+': '+escapeHTML(state.color || 'Default')+' • '+escapeHTML(t('os_size') || 'Size')+': '+escapeHTML(state.selectedSize || '—')+'</div>'+
+              '</div>'+
+              '<div class="doc-item-price">'+
+                formatProductPrice(effUnit)+
+                (hasDiscount ? '<span class="doc-item-price-old">'+formatProductPrice(p.originalPrice)+'</span>' : '')+
+              '</div>'+
+            '</div>'+
+
+            // Quantity
+            '<div class="doc-qty-row">'+
+              '<span class="doc-qty-label">'+escapeHTML(t('pd_quantity') || 'Quantity')+'</span>'+
+              '<div class="doc-qty-control">'+
+                '<button type="button" data-qty="-1">−</button>'+
+                '<span>'+qty+'</span>'+
+                '<button type="button" data-qty="1">+</button>'+
+              '</div>'+
+            '</div>'+
+
+            // TTS block
+            ttsBlock+
+
+            // Totals
+            '<div class="doc-totals">'+
+              '<div class="doc-total-row"><span>'+escapeHTML(t('os_subtotal') || 'Subtotal')+'</span><span>'+formatProductPrice(subtotal)+'</span></div>'+
+              '<div class="doc-total-row"><span>'+escapeHTML(t('os_shipping') || 'Shipping')+'</span><span>'+(shipping===0?'<span class="free">'+escapeHTML(t('os_free') || 'FREE')+'</span>':formatProductPrice(shipping))+'</span></div>'+
+              (savings > 0 ? '<div class="doc-total-row"><span class="discount">'+escapeHTML(t('os_discount') || 'Discount')+'</span><span class="discount">−'+formatProductPrice(savings)+'</span></div>' : '')+
+              (ttsEnabled ? '<div class="doc-total-row"><span>'+escapeHTML(t('tts_fee') || 'TTS Fee')+(ttsBackupSize?' ('+escapeHTML(ttsBackupSize)+')':'')+'</span><span>'+formatProductPrice(ttsFee)+'</span></div>' : '')+
+              '<div class="doc-total-row grand"><span>'+escapeHTML(t('os_total') || 'Total')+'</span><span>'+formatProductPrice(total)+'</span></div>'+
+            '</div>'+
+
+            // Form
+            '<div class="doc-form-section">'+
+              '<h4>'+escapeHTML(t('of_personal_info') || 'Personal Information')+'</h4>'+
+              '<div class="doc-form-row">'+
+                '<input type="text" class="doc-input" id="docName" placeholder="'+escapeHTML(t('of_full_name_ph') || 'Full Name *')+'" maxlength="100" value="'+escapeHTML(d.fullName||'')+'">'+
+                '<input type="tel" class="doc-input" id="docPhone" placeholder="'+escapeHTML(t('of_phone_ph') || 'Phone *')+'" maxlength="15" value="'+escapeHTML(d.phone||'')+'">'+
+              '</div>'+
+              '<h4 style="margin-top:14px">'+escapeHTML(t('of_delivery') || 'Delivery Address')+'</h4>'+
+              '<div class="doc-form-row">'+
+                '<select class="doc-select" id="docWilaya"><option value="">'+escapeHTML(t('of_wilaya_ph') || 'Select Wilaya *')+'</option>'+wilayaOptions+'</select>'+
+                '<input type="text" class="doc-input" id="docBaladiya" placeholder="'+escapeHTML(t('of_baladiya_ph') || 'Baladiya *')+'" maxlength="100" value="'+escapeHTML(d.baladiya||'')+'">'+
+              '</div>'+
+              '<div class="doc-delivery-types">'+
+                '<button type="button" class="doc-delivery-btn'+(deliveryType==='home'?' active':'')+'" data-delivery="home">'+I.truck+'<span>'+escapeHTML(t('delivery_home') || 'Home')+'</span></button>'+
+                '<button type="button" class="doc-delivery-btn'+(deliveryType==='office'?' active':'')+'" data-delivery="office">'+I.shield+'<span>'+escapeHTML(t('delivery_office') || 'Office')+'</span></button>'+
+              '</div>'+
+              '<div class="doc-shipping-info" id="docShippingInfo">'+(isFreeShipping?'<span>✓ '+escapeHTML(t('tag_free_shipping') || 'Free Shipping')+'</span>':(d.wilaya?'<span>→ '+escapeHTML(d.wilaya)+': '+formatProductPrice(shipping)+'</span>':'<span>'+escapeHTML('Select wilaya for shipping cost')+'</span>'))+'</div>'+
+              '<textarea class="doc-textarea" id="docAddress" placeholder="'+escapeHTML(t('of_address_ph') || 'Detailed Address *')+'" maxlength="300">'+escapeHTML(d.address||'')+'</textarea>'+
+              '<textarea class="doc-textarea" id="docNotes" placeholder="'+escapeHTML(t('of_notes_ph') || 'Additional Notes (Optional)')+'" maxlength="500" style="margin-top:8px;min-height:40px">'+escapeHTML(d.notes||'')+'</textarea>'+
+            '</div>'+
+
+            // Submit
+            '<button type="button" class="doc-submit" id="docSubmit">'+I.cart+' '+escapeHTML(t('of_submit') || 'Confirm Order')+'</button>'+
+            '<p class="doc-terms">'+escapeHTML(t('os_terms') || 'By clicking checkout, you agree to our Terms & Conditions.')+'</p>'+
+
+            // Trust
+            '<div class="doc-trust">'+
+              I.shield+
+              '<div>'+
+                '<div class="doc-trust-title">'+escapeHTML(t('os_trust_title') || '100% Secure Guarantee')+'</div>'+
+                '<div class="doc-trust-sub">'+escapeHTML(t('os_trust_sub') || 'Safe delivery guaranteed')+'</div>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
+        }
+
+        // ── Cart Page (checkout page with cart items, black.html style) ──
+        function cartView() {
+          var cart = getCart();
+          var announce = announceBar(DATA.announce.product);
+          var hdr = header();
+
+          if (!cart.length) {
+            return announce + hdr +
+              '<div class="cart-page">'+
+                '<div class="cart-page-header">'+
+                  '<h1>'+escapeHTML(t('cart_title') || 'Your Cart')+'</h1>'+
+                  '<a class="back-link" data-go="home">'+I.chevL+' '+escapeHTML(t('checkout_continue') || 'Continue Shopping')+'</a>'+
+                '</div>'+
+                '<div class="cart-empty-state">'+
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>'+
+                  '<h3>'+escapeHTML(t('cart_empty') || 'Your cart is empty')+'</h3>'+
+                  '<p>'+escapeHTML(t('cart_empty_desc') || 'Add some products to get started')+'</p>'+
+                  '<button class="btn btn-black" data-go="home" style="padding:12px 28px;font-size:12px;">'+escapeHTML(t('checkout_continue') || 'Continue Shopping')+'</button>'+
+                '</div>'+
+              '</div>'+
+              footer(DATA.footer.product);
+          }
+
+          var subtotal = cart.reduce(function(s,i){return s+(i.price*i.qty);},0);
+          var allFree = cart.every(function(it) {
+            if (it.freeShipping === true) return true;
+            if (it.id && NEON_DATA && Array.isArray(NEON_DATA.products)) {
+              var p = NEON_DATA.products.find(function(x){return String(x.id)===String(it.id);});
+              if (p && p.freeShipping === true) return true;
+            }
+            return false;
+          });
+
+          // Find TTS-eligible items in cart
+          var cartTtsItems = [];
+          cart.forEach(function(item) {
+            var prod = (item.id && NEON_DATA && Array.isArray(NEON_DATA.products)) ?
+              NEON_DATA.products.find(function(x){return String(x.id)===String(item.id);}) : null;
+            if (prod) {
+              var effUnit = window._effectivePrice ? window._effectivePrice(prod) : prod.price;
+              var ttsAvailable = !!(window._storeData && window._storeData.ttsEnabled === true
+                                    && prod.ttsEnabled === true
+                                    && prod.sizes && prod.sizes.length >= 2
+                                    && effUnit >= (Number(window._storeData.ttsMinPrice) || 0));
+              if (ttsAvailable) {
+                cartTtsItems.push({ item: item, product: prod, effUnit: effUnit });
+              }
+            }
+          });
+
+          var d = state.checkoutData || {};
+          var deliveryType = d.deliveryType || 'home';
+          var shipping = allFree ? 0 : calcShipping(d.wilaya || '', subtotal, window._storeData, deliveryType);
+
+          // Compute TTS fees
+          var ttsTotalFee = 0;
+          var ttsPayloadItems = [];
+          if (cartTtsItems.length > 0 && state.ttsCart) {
+            cartTtsItems.forEach(function(ct) {
+              var itemKey = String(ct.item.id) + '|' + ct.item.size + '|' + ct.item.color;
+              if (state.ttsCart[itemKey] && state.ttsCart[itemKey].enabled && state.ttsCart[itemKey].backupSize) {
+                var fee = Number(ct.product.ttsFee || (window._storeData && window._storeData.ttsDefaultFee)) || 0;
+                ttsTotalFee += fee;
+                ttsPayloadItems.push({ itemKey: itemKey, backupSize: state.ttsCart[itemKey].backupSize, fee: fee, item: ct.item });
+              }
+            });
+          }
+          var total = subtotal + shipping + ttsTotalFee;
+
+          var wilayaOptions = ALGERIAN_WILAYAS.map(function(w) { return '<option value="'+escapeHTML(w)+'"'+(d.wilaya===w?' selected':'')+'>'+escapeHTML(w)+'</option>'; }).join('');
+
+          // TTS section HTML for cart items
+          var cartTtsHTML = '';
+          if (cartTtsItems.length > 0) {
+            cartTtsHTML = '<h4 style="margin-top:16px">'+escapeHTML(t('tts_title') || 'Try Two Sizes')+'</h4>';
+            cartTtsItems.forEach(function(ct) {
+              var itemKey = String(ct.item.id) + '|' + ct.item.size + '|' + ct.item.color;
+              var ttsState = (state.ttsCart && state.ttsCart[itemKey]) || { enabled: false, backupSize: '' };
+              var fee = Number(ct.product.ttsFee || (window._storeData && window._storeData.ttsDefaultFee)) || 0;
+              cartTtsHTML += '<div class="summary-tts'+(ttsState.enabled?' active':'')+'">'+
+                '<div class="summary-tts-header" data-tts-toggle="'+escapeHTML(itemKey)+'">'+
+                  '<div class="summary-tts-left">'+
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 12h18M3 17h18"/></svg>'+
+                    '<div>'+
+                      '<div class="summary-tts-name">'+escapeHTML(ct.item.name)+'</div>'+
+                      '<div class="summary-tts-fee">'+escapeHTML(t('os_size') || 'Size')+': '+escapeHTML(ct.item.size)+' • '+escapeHTML(t('tts_fee') || 'Fee')+': '+formatProductPrice(fee)+'</div>'+
+                    '</div>'+
+                  '</div>'+
+                  '<div class="summary-tts-toggle" role="switch" aria-checked="'+(ttsState.enabled?'true':'false')+'"></div>'+
+                '</div>';
+              if (ttsState.enabled) {
+                cartTtsHTML += '<div class="summary-tts-body">'+
+                  '<div class="summary-tts-sizes">'+
+                    ct.product.sizes.map(function(s) {
+                      var isCurrent = (s === ct.item.size);
+                      var isBackup = (s === ttsState.backupSize);
+                      return '<button type="button" class="summary-tts-size-btn'+(isBackup?' selected':'')+'" data-tts-size="'+escapeHTML(itemKey)+'" data-size="'+escapeHTML(s)+'"'+(isCurrent?' disabled':'')+'>'+
+                        escapeHTML(s)+(isCurrent?' ✓':'')+'</button>';
+                    }).join('')+
+                  '</div>'+
+                '</div>';
+              }
+              cartTtsHTML += '</div>';
+            });
+          }
+
+          // Cart items HTML
+          var itemsHTML = cart.map(function(item, idx) {
+            return '<div class="cart-item-row" data-cart-idx="'+idx+'">'+
+              '<img src="'+item.image+'" alt="'+escapeHTML(item.name)+'">'+
+              '<div class="cart-item-info">'+
+                '<div class="cart-item-name">'+escapeHTML(item.name)+'</div>'+
+                '<div class="cart-item-variant">'+escapeHTML(item.color)+' • '+escapeHTML(item.size)+'</div>'+
+                '<div class="cart-item-bottom">'+
+                  '<div class="cart-item-qty">'+
+                    '<button data-cart-action="dec" data-idx="'+idx+'" aria-label="Decrease">−</button>'+
+                    '<span>'+item.qty+'</span>'+
+                    '<button data-cart-action="inc" data-idx="'+idx+'" aria-label="Increase">+</button>'+
+                  '</div>'+
+                  '<span class="cart-item-price">'+formatProductPrice(item.price*item.qty)+'</span>'+
+                '</div>'+
+              '</div>'+
+              '<button class="cart-item-remove" data-cart-action="rm" data-idx="'+idx+'" aria-label="Remove">'+I.x.replace('fill="currentColor"','fill="none" stroke="currentColor" stroke-width="2"')+'</button>'+
+            '</div>';
+          }).join('');
+
+          return announce + hdr +
+            '<div class="cart-page">'+
+              '<div class="cart-page-header">'+
+                '<h1>'+escapeHTML(t('checkout_title') || 'Checkout')+'</h1>'+
+                '<a class="back-link" data-go="home">'+I.chevL+' '+escapeHTML(t('checkout_continue') || 'Continue Shopping')+'</a>'+
+              '</div>'+
+              '<div class="cart-page-grid">'+
+                // Left: cart items
+                '<div class="cart-items-col">'+itemsHTML+'</div>'+
+                // Right: summary + form
+                '<div class="cart-summary-card">'+
+                  '<h3>'+escapeHTML(t('checkout_summary') || 'Order Summary')+'</h3>'+
+                  '<div class="summary-row"><span>'+escapeHTML(t('cart_subtotal') || 'Subtotal')+'</span><span>'+formatProductPrice(subtotal)+'</span></div>'+
+                  '<div class="summary-row"><span>'+escapeHTML(t('cart_shipping') || 'Shipping')+'</span><span>'+(shipping===0?'<span class="free">'+escapeHTML(t('cart_free') || 'FREE')+'</span>':formatProductPrice(shipping))+'</span></div>'+
+                  (ttsTotalFee > 0 ? '<div class="summary-row"><span>'+escapeHTML(t('tts_fee') || 'TTS Fee')+'</span><span>'+formatProductPrice(ttsTotalFee)+'</span></div>' : '')+
+                  '<div class="summary-row grand"><span>'+escapeHTML(t('cart_total') || 'Total')+'</span><span>'+formatProductPrice(total)+'</span></div>'+
+
+                  // Form
+                  '<form class="summary-form" id="cartPageForm">'+
+                    '<h4>'+escapeHTML(t('of_personal_info') || 'Personal Information')+'</h4>'+
+                    '<input type="text" class="summary-input" id="cpName" placeholder="'+escapeHTML(t('of_full_name_ph') || 'Full Name *')+'" maxlength="100" value="'+escapeHTML(d.fullName||'')+'">'+
+                    '<input type="tel" class="summary-input" id="cpPhone" placeholder="'+escapeHTML(t('of_phone_ph') || 'Phone *')+'" maxlength="15" value="'+escapeHTML(d.phone||'')+'">'+
+                    '<h4 style="margin-top:14px">'+escapeHTML(t('of_delivery') || 'Delivery Address')+'</h4>'+
+                    '<select class="summary-select" id="cpWilaya"><option value="">'+escapeHTML(t('of_wilaya_ph') || 'Select Wilaya *')+'</option>'+wilayaOptions+'</select>'+
+                    '<input type="text" class="summary-input" id="cpBaladiya" placeholder="'+escapeHTML(t('of_baladiya_ph') || 'Baladiya *')+'" maxlength="100" value="'+escapeHTML(d.baladiya||'')+'">'+
+                    '<div class="summary-delivery-row">'+
+                      '<button type="button" class="summary-delivery-btn'+(deliveryType==='home'?' active':'')+'" data-delivery="home">'+I.truck+'<span>'+escapeHTML(t('delivery_home') || 'Home')+'</span></button>'+
+                      '<button type="button" class="summary-delivery-btn'+(deliveryType==='office'?' active':'')+'" data-delivery="office">'+I.shield+'<span>'+escapeHTML(t('delivery_office') || 'Office')+'</span></button>'+
+                    '</div>'+
+                    '<textarea class="summary-textarea" id="cpAddress" placeholder="'+escapeHTML(t('of_address_ph') || 'Detailed Address *')+'" maxlength="300">'+escapeHTML(d.address||'')+'</textarea>'+
+                    '<textarea class="summary-textarea" id="cpNotes" placeholder="'+escapeHTML(t('of_notes_ph') || 'Additional Notes')+'" maxlength="500" style="min-height:40px">'+escapeHTML(d.notes||'')+'</textarea>'+
+                    cartTtsHTML+
+                    '<button type="submit" class="summary-place-order" id="cpSubmit">'+I.cart+' '+escapeHTML(t('checkout_place_order') || 'Place Order')+'</button>'+
+                  '</form>'+
+
+                  // Trust
+                  '<div class="summary-trust">'+
+                    I.shield+
+                    '<div>'+
+                      '<div class="summary-trust-title">'+escapeHTML(t('os_trust_title') || '100% Secure')+'</div>'+
+                      '<div class="summary-trust-sub">'+escapeHTML(t('os_trust_sub') || 'Safe delivery guaranteed')+'</div>'+
+                    '</div>'+
+                  '</div>'+
+                '</div>'+
+              '</div>'+
+            '</div>'+
+            footer(DATA.footer.product);
+        }
+
         function descBody() {
           var P = DATA.product;
           if (state.tab === 'description') {
@@ -4367,6 +4815,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 '</div>'+
               '</div>'+
             '</div>'+
+            // ── Direct Order Card (inline order form on product page) ──
+            directOrderCardHTML(P)+
             '<div class="desc-sec">'+
               '<div><div class="tabs">'+
                 '<button class="tab'+(state.tab==='description'?' active':'')+'" data-tab="description">Description</button>'+
@@ -4420,9 +4870,17 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
 
         /* ---------- 11. ROUTER ---------- */
         var app = document.getElementById('app');
-        function page() { return (location.hash || '').indexOf('product') > -1 ? 'product' : 'home'; }
+        function page() {
+          var h = location.hash || '';
+          if (h.indexOf('product') > -1) return 'product';
+          if (h.indexOf('cart') > -1) return 'cart';
+          return 'home';
+        }
         function render(scrollTop) {
-          app.innerHTML = page() === 'product' ? productView() : homeView();
+          var p = page();
+          if (p === 'product') app.innerHTML = productView();
+          else if (p === 'cart') app.innerHTML = cartView();
+          else app.innerHTML = homeView();
           if (scrollTop !== false) window.scrollTo(0, 0);
           if (window.lucide) lucide.createIcons();
         }
@@ -4838,14 +5296,19 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           if (ttsToggle) {
             e.preventDefault();
             e.stopPropagation();
+            // Save form state before re-render (if on product page with direct order card)
+            if (document.getElementById('docName')) saveDirectOrderFormState();
+            if (document.getElementById('cpName')) saveCartPageFormState();
             var ttsKey = ttsToggle.getAttribute('data-tts-toggle');
             if (!state.ttsCart) state.ttsCart = {};
             if (!state.ttsCart[ttsKey]) state.ttsCart[ttsKey] = { enabled: false, backupSize: '' };
             state.ttsCart[ttsKey].enabled = !state.ttsCart[ttsKey].enabled;
             if (!state.ttsCart[ttsKey].enabled) state.ttsCart[ttsKey].backupSize = '';
-            // Re-render checkout modal if open
+            // Re-render: checkout modal if open, otherwise re-render page
             if (checkoutModal && checkoutModal.style.display === 'flex') {
               openCheckoutModal();
+            } else {
+              render(false);
             }
             return;
           }
@@ -4855,14 +5318,19 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           if (ttsSizeBtn) {
             e.preventDefault();
             e.stopPropagation();
+            // Save form state before re-render
+            if (document.getElementById('docName')) saveDirectOrderFormState();
+            if (document.getElementById('cpName')) saveCartPageFormState();
             var ttsSizeKey = ttsSizeBtn.getAttribute('data-tts-size');
             var ttsSizeVal = ttsSizeBtn.getAttribute('data-size');
             if (!state.ttsCart) state.ttsCart = {};
             if (!state.ttsCart[ttsSizeKey]) state.ttsCart[ttsSizeKey] = { enabled: true, backupSize: '' };
             state.ttsCart[ttsSizeKey].backupSize = ttsSizeVal;
-            // Re-render checkout modal if open
+            // Re-render: checkout modal if open, otherwise re-render page
             if (checkoutModal && checkoutModal.style.display === 'flex') {
               openCheckoutModal();
+            } else {
+              render(false);
             }
             return;
           }
@@ -4987,6 +5455,47 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
+          // ── Cart page actions (qty inc/dec/remove on cart page) ──
+          var cartAction = e.target.closest('[data-cart-action]');
+          if (cartAction) {
+            e.preventDefault();
+            e.stopPropagation();
+            var idx = parseInt(cartAction.dataset.idx, 10);
+            var action = cartAction.dataset.cartAction;
+            var c = getCart();
+            if (!c[idx]) return;
+            if (action === 'inc') c[idx].qty++;
+            else if (action === 'dec') { if (c[idx].qty > 1) c[idx].qty--; else c.splice(idx, 1); }
+            else if (action === 'rm') c.splice(idx, 1);
+            setCart(c);
+            syncCart();
+            render(false);
+            return;
+          }
+
+          // ── Delivery type buttons (both direct order card & cart page) ──
+          var deliveryBtn = e.target.closest('[data-delivery]');
+          if (deliveryBtn && (deliveryBtn.classList.contains('doc-delivery-btn') || deliveryBtn.classList.contains('summary-delivery-btn'))) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!state.checkoutData) state.checkoutData = {};
+            state.checkoutData.deliveryType = deliveryBtn.dataset.delivery;
+            render(false);
+            return;
+          }
+
+          // ── Direct order card submit button ──
+          var docSubmit = e.target.closest('#docSubmit');
+          if (docSubmit) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleDirectOrderSubmit();
+            return;
+          }
+
+          // ── Direct order card wilaya change ──
+          // (handled by change event, not click)
+
           var searchOpen = e.target.closest('[data-search-open]');
           if (searchOpen) {
             e.preventDefault();
@@ -5004,7 +5513,249 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
         document.addEventListener('submit', function(e) {
           var f = e.target.closest('.news-form');
           if (f) { e.preventDefault(); f.querySelector('input').value = ''; showToast('Subscribed!'); }
+          // Cart page form submit
+          var cartForm = e.target.closest('#cartPageForm');
+          if (cartForm) {
+            e.preventDefault();
+            handleCartPageSubmit();
+          }
         });
+
+        // ── Handle wilaya change in direct order card & cart page (re-render to update shipping) ──
+        document.addEventListener('change', function(e) {
+          var docWilaya = e.target.closest('#docWilaya');
+          if (docWilaya) {
+            saveDirectOrderFormState();
+            if (!state.checkoutData) state.checkoutData = {};
+            state.checkoutData.wilaya = docWilaya.value;
+            render(false);
+            return;
+          }
+          var cpWilaya = e.target.closest('#cpWilaya');
+          if (cpWilaya) {
+            saveCartPageFormState();
+            if (!state.checkoutData) state.checkoutData = {};
+            state.checkoutData.wilaya = cpWilaya.value;
+            render(false);
+            return;
+          }
+        });
+
+        // ── Save form state before re-render (to preserve user input) ──
+        function saveDirectOrderFormState() {
+          if (!state.checkoutData) state.checkoutData = {};
+          var nm = document.getElementById('docName');
+          var ph = document.getElementById('docPhone');
+          var wl = document.getElementById('docWilaya');
+          var bl = document.getElementById('docBaladiya');
+          var ad = document.getElementById('docAddress');
+          var nt = document.getElementById('docNotes');
+          if (nm) state.checkoutData.fullName = nm.value;
+          if (ph) state.checkoutData.phone = ph.value;
+          if (wl) state.checkoutData.wilaya = wl.value;
+          if (bl) state.checkoutData.baladiya = bl.value;
+          if (ad) state.checkoutData.address = ad.value;
+          if (nt) state.checkoutData.notes = nt.value;
+        }
+        function saveCartPageFormState() {
+          if (!state.checkoutData) state.checkoutData = {};
+          var nm = document.getElementById('cpName');
+          var ph = document.getElementById('cpPhone');
+          var wl = document.getElementById('cpWilaya');
+          var bl = document.getElementById('cpBaladiya');
+          var ad = document.getElementById('cpAddress');
+          var nt = document.getElementById('cpNotes');
+          if (nm) state.checkoutData.fullName = nm.value;
+          if (ph) state.checkoutData.phone = ph.value;
+          if (wl) state.checkoutData.wilaya = wl.value;
+          if (bl) state.checkoutData.baladiya = bl.value;
+          if (ad) state.checkoutData.address = ad.value;
+          if (nt) state.checkoutData.notes = nt.value;
+        }
+
+        // ── Cart page form submit handler ──
+        async function handleCartPageSubmit() {
+          var cart = getCart();
+          if (!cart.length) { showToast(t('toast_cart_empty') || 'Cart is empty'); return; }
+          // Read form values
+          var nm = (document.getElementById('cpName')?.value || '').trim();
+          var ph = (document.getElementById('cpPhone')?.value || '').trim();
+          var wl = (document.getElementById('cpWilaya')?.value || '');
+          var bl = (document.getElementById('cpBaladiya')?.value || '').trim();
+          var ad = (document.getElementById('cpAddress')?.value || '').trim();
+          var nt = (document.getElementById('cpNotes')?.value || '').trim();
+          if (!nm || !ph || !wl || !bl || !ad) { showToast(t('of_required') || 'Please fill all fields'); return; }
+          if (!/^0[5-7]\d{8}$/.test(ph)) { showToast(t('of_required') || 'Invalid phone'); return; }
+          if (typeof window._shvIsRepeatedDigitsPhone === 'function' && window._shvIsRepeatedDigitsPhone(ph)) { showToast(t('of_required') || 'Invalid phone'); return; }
+          if (typeof window._shvCheckRateLimit === 'function') { var _rl = window._shvCheckRateLimit(); if (_rl > 0) { showToast(t('of_required') || 'Wait'); return; } }
+          state.checkoutData = { fullName: nm, phone: ph, wilaya: wl, baladiya: bl, address: ad, notes: nt, deliveryType: (state.checkoutData && state.checkoutData.deliveryType) || 'home' };
+
+          // Validate TTS backup sizes
+          var cartTtsItems = [];
+          cart.forEach(function(item) {
+            var prod = (item.id && NEON_DATA && Array.isArray(NEON_DATA.products)) ?
+              NEON_DATA.products.find(function(x){return String(x.id)===String(item.id);}) : null;
+            if (prod) {
+              var effUnit = window._effectivePrice ? window._effectivePrice(prod) : prod.price;
+              var ttsAvailable = !!(window._storeData && window._storeData.ttsEnabled === true
+                                    && prod.ttsEnabled === true
+                                    && prod.sizes && prod.sizes.length >= 2
+                                    && effUnit >= (Number(window._storeData.ttsMinPrice) || 0));
+              if (ttsAvailable) cartTtsItems.push({ item: item, product: prod, effUnit: effUnit });
+            }
+          });
+          var ttsTotalFee = 0;
+          var ttsPayloadItems = [];
+          var ttsError = '';
+          if (cartTtsItems.length > 0 && state.ttsCart) {
+            cartTtsItems.forEach(function(ct) {
+              var itemKey = String(ct.item.id) + '|' + ct.item.size + '|' + ct.item.color;
+              if (state.ttsCart[itemKey] && state.ttsCart[itemKey].enabled) {
+                if (!state.ttsCart[itemKey].backupSize) {
+                  ttsError = t('tts_backup_label') || 'Please select backup size';
+                } else {
+                  var fee = Number(ct.product.ttsFee || (window._storeData && window._storeData.ttsDefaultFee)) || 0;
+                  ttsTotalFee += fee;
+                  ttsPayloadItems.push({ itemKey: itemKey, backupSize: state.ttsCart[itemKey].backupSize, fee: fee });
+                }
+              }
+            });
+          }
+          if (ttsError) { showToast(ttsError); return; }
+
+          var submitBtn = document.getElementById('cpSubmit');
+          if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '...'; }
+          try {
+            var freshSubtotal = cart.reduce(function(s,i){return s+(i.price*i.qty);},0);
+            var freshAllFree = cart.every(function(it) { return it.freeShipping === true; });
+            var freshShipping = freshAllFree ? 0 : calcShipping(wl, freshSubtotal, window._storeData, state.checkoutData.deliveryType);
+            var freshTotal = freshSubtotal + freshShipping + ttsTotalFee;
+
+            var items = cart.map(function(i) {
+              var itemKey = String(i.id) + '|' + i.size + '|' + i.color;
+              var ttsInfo = null;
+              if (state.ttsCart && state.ttsCart[itemKey] && state.ttsCart[itemKey].enabled && state.ttsCart[itemKey].backupSize) {
+                var prod = NEON_DATA.products.find(function(x){return String(x.id)===String(i.id);});
+                var fee = 0;
+                if (prod) fee = Number(prod.ttsFee || (window._storeData && window._storeData.ttsDefaultFee)) || 0;
+                ttsInfo = { backup_size: state.ttsCart[itemKey].backupSize, fee: fee };
+              }
+              return {
+                id: i.id, name: i.name, qty: i.qty, unit_price: i.price, line_total: i.price*i.qty,
+                size: i.size, color: i.color, free_shipping: i.freeShipping === true,
+                tts_enabled: !!(ttsInfo), tts_backup_size: ttsInfo ? ttsInfo.backup_size : null, tts_fee: ttsInfo ? ttsInfo.fee : 0
+              };
+            });
+
+            var payload = {
+              customer: { name: nm, phone: ph, wilaya: wl, commune: bl, address: ad, delivery_type: state.checkoutData.deliveryType, notes: nt },
+              items: items,
+              pricing: { subtotal: freshSubtotal, shipping_fee: freshShipping, tts_fee: ttsTotalFee, total: freshTotal, currency: 'DZD' },
+              note: nt || null,
+              try_two_sizes: ttsPayloadItems.length > 0,
+              tts_backup_size: ttsPayloadItems.length === 1 ? ttsPayloadItems[0].backupSize : (ttsPayloadItems.length > 1 ? JSON.stringify(ttsPayloadItems) : null),
+              tts_items: ttsPayloadItems.length > 0 ? ttsPayloadItems : null
+            };
+            if (typeof window._shvVerifyOrderPrices === 'function') {
+              try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), wl, state.checkoutData.deliveryType); }
+              catch(verr) { showToast(t('of_required') + ': ' + (verr.message||'')); if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = t('checkout_place_order') || 'Place Order'; } return; }
+            }
+            if (typeof window.saveOrderToFirestore === 'function') {
+              await window.saveOrderToFirestore(payload);
+              if (typeof window._shvStampSubmit === 'function') window._shvStampSubmit();
+              if (typeof window.ShvPixels === 'object') window.ShvPixels.track('Purchase', { value: payload.pricing.total, currency: 'DZD', num_items: cart.reduce(function(s,i){return s+i.qty;},0) });
+            }
+            setCart([]);
+            syncCart();
+            state.ttsCart = {};
+            state.checkoutData = { fullName:'', phone:'', wilaya:'', baladiya:'', address:'', notes:'', deliveryType:'home' };
+            showToast(t('of_order_success') || 'Order placed successfully!');
+            setTimeout(function() { location.hash = '#/'; }, 1500);
+          } catch(err) {
+            showToast(t('of_required') + ': ' + (err.message||''));
+            console.error('Cart page submit error:', err);
+          } finally {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = t('checkout_place_order') || 'Place Order'; }
+          }
+        }
+
+        // ── Direct order card submit handler (on product page) ──
+        async function handleDirectOrderSubmit() {
+          var p = state.product;
+          if (!p) return;
+          if (!state.selectedSize && p.sizes && p.sizes.length > 0) {
+            showToast(t('toast_select_size') || 'Please select a size');
+            return;
+          }
+          var nm = (document.getElementById('docName')?.value || '').trim();
+          var ph = (document.getElementById('docPhone')?.value || '').trim();
+          var wl = (document.getElementById('docWilaya')?.value || '');
+          var bl = (document.getElementById('docBaladiya')?.value || '').trim();
+          var ad = (document.getElementById('docAddress')?.value || '').trim();
+          var nt = (document.getElementById('docNotes')?.value || '').trim();
+          if (!nm || !ph || !wl || !bl || !ad) { showToast(t('of_required') || 'Please fill all fields'); return; }
+          if (!/^0[5-7]\d{8}$/.test(ph)) { showToast(t('of_required') || 'Invalid phone'); return; }
+          if (typeof window._shvIsRepeatedDigitsPhone === 'function' && window._shvIsRepeatedDigitsPhone(ph)) { showToast(t('of_required') || 'Invalid phone'); return; }
+          if (typeof window._shvCheckRateLimit === 'function') { var _rl = window._shvCheckRateLimit(); if (_rl > 0) { showToast(t('of_required') || 'Wait'); return; } }
+          state.checkoutData = { fullName: nm, phone: ph, wilaya: wl, baladiya: bl, address: ad, notes: nt, deliveryType: (state.checkoutData && state.checkoutData.deliveryType) || 'home' };
+
+          var qty = state.qty || 1;
+          var unitPrice = window._effectivePrice ? window._effectivePrice(p) : (p.discountPrice || p.price);
+          var subtotal = unitPrice * qty;
+          var deliveryType = state.checkoutData.deliveryType;
+          var isFreeShipping = (p.freeShipping === true);
+          var shipping = isFreeShipping ? 0 : calcShipping(wl, subtotal, window._storeData, deliveryType);
+
+          // TTS validation
+          var ttsAvailable = !!(window._storeData && window._storeData.ttsEnabled === true
+                                && p.ttsEnabled === true
+                                && p.sizes && p.sizes.length >= 2
+                                && unitPrice >= (Number(window._storeData.ttsMinPrice) || 0));
+          var ttsState = state.ttsCart && state.ttsCart['direct'] ? state.ttsCart['direct'] : { enabled: false, backupSize: '' };
+          var ttsEnabled = ttsAvailable && ttsState.enabled;
+          var ttsFee = 0;
+          var ttsBackupSize = '';
+          if (ttsEnabled) {
+            if (!ttsState.backupSize) {
+              showToast(t('tts_backup_label') || 'Please select backup size');
+              return;
+            }
+            ttsFee = Number(p.ttsFee || (window._storeData && window._storeData.ttsDefaultFee)) || 0;
+            ttsBackupSize = ttsState.backupSize;
+          }
+          var total = subtotal + shipping + ttsFee;
+
+          var submitBtn = document.getElementById('docSubmit');
+          if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '...'; }
+          try {
+            var payload = {
+              customer: { name: nm, phone: ph, wilaya: wl, commune: bl, address: ad, delivery_type: deliveryType, notes: nt },
+              items: [{ id: p.id, name: p.name, qty: qty, unit_price: unitPrice, line_total: subtotal, size: state.selectedSize, color: state.color, free_shipping: isFreeShipping, tts_enabled: ttsEnabled, tts_backup_size: ttsEnabled ? ttsBackupSize : null, tts_fee: ttsEnabled ? ttsFee : 0 }],
+              pricing: { subtotal: subtotal, shipping_fee: shipping, tts_fee: ttsFee, total: total, currency: 'DZD' },
+              note: nt || null,
+              try_two_sizes: ttsEnabled,
+              tts_backup_size: ttsEnabled ? ttsBackupSize : null
+            };
+            if (typeof window._shvVerifyOrderPrices === 'function') {
+              try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), wl, deliveryType); }
+              catch(verr) { showToast(t('of_required') + ': ' + (verr.message||'')); if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = t('of_submit') || 'Confirm Order'; } return; }
+            }
+            if (typeof window.saveOrderToFirestore === 'function') {
+              await window.saveOrderToFirestore(payload);
+              if (typeof window._shvStampSubmit === 'function') window._shvStampSubmit();
+              if (typeof window.ShvPixels === 'object') window.ShvPixels.track('Purchase', { content_ids: [String(p.id)], value: total, currency: 'DZD', num_items: qty });
+            }
+            state.checkoutData = { fullName:'', phone:'', wilaya:'', baladiya:'', address:'', notes:'', deliveryType:'home' };
+            if (state.ttsCart) delete state.ttsCart['direct'];
+            showToast(t('of_order_success') || 'Order placed successfully!');
+            setTimeout(function() { location.hash = '#/'; }, 1500);
+          } catch(err) {
+            showToast(t('of_required') + ': ' + (err.message||''));
+            console.error('Direct order error:', err);
+          } finally {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = t('of_submit') || 'Confirm Order'; }
+          }
+        }
 
         window.addEventListener('hashchange', function() { render(); });
 
