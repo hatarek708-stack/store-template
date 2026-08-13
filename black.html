@@ -4659,30 +4659,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             openCheckoutModal();
           });
 
-          // ── TTS toggle buttons ──
-          var ttsToggles = checkoutModal.querySelectorAll('[data-tts-toggle]');
-          ttsToggles.forEach(function(btn) {
-            btn.addEventListener('click', function() {
-              var key = btn.getAttribute('data-tts-toggle');
-              if (!state.ttsCart) state.ttsCart = {};
-              if (!state.ttsCart[key]) state.ttsCart[key] = { enabled: false, backupSize: '' };
-              state.ttsCart[key].enabled = !state.ttsCart[key].enabled;
-              if (!state.ttsCart[key].enabled) state.ttsCart[key].backupSize = '';
-              openCheckoutModal(); // re-render
-            });
-          });
-          // ── TTS backup size buttons ──
-          var ttsSizeBtns = checkoutModal.querySelectorAll('[data-tts-size]');
-          ttsSizeBtns.forEach(function(btn) {
-            btn.addEventListener('click', function() {
-              var key = btn.getAttribute('data-tts-size');
-              var sz = btn.getAttribute('data-size');
-              if (!state.ttsCart) state.ttsCart = {};
-              if (!state.ttsCart[key]) state.ttsCart[key] = { enabled: true, backupSize: '' };
-              state.ttsCart[key].backupSize = sz;
-              openCheckoutModal(); // re-render
-            });
-          });
+          // ── TTS toggle buttons: handled via global delegation (see document click handler) ──
+          // No direct listeners here — they break on re-render. Global delegation is more reliable.
 
           var form = checkoutModal.querySelector('#checkoutForm');
           form.addEventListener('submit', async function(e) {
@@ -4833,10 +4811,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
-          // Size selector (NEW)
+          // Size selector (NEW) — but SKIP if it's a TTS backup size button (has data-tts-size)
           var sb = e.target.closest('[data-size]');
-          if (sb) {
+          if (sb && !sb.hasAttribute('data-tts-size')) {
             e.preventDefault();
+            e.stopPropagation();
             state.selectedSize = sb.dataset.size;
             var sizeBtns = document.querySelectorAll('.size-btn');
             sizeBtns.forEach(function(s) {
@@ -4851,6 +4830,40 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             sb.style.borderColor = '#111';
             var sv = document.getElementById('sizeValue');
             if (sv) sv.textContent = state.selectedSize;
+            return;
+          }
+
+          // ── TTS toggle (Try Two Sizes enable/disable per cart item) ──
+          var ttsToggle = e.target.closest('[data-tts-toggle]');
+          if (ttsToggle) {
+            e.preventDefault();
+            e.stopPropagation();
+            var ttsKey = ttsToggle.getAttribute('data-tts-toggle');
+            if (!state.ttsCart) state.ttsCart = {};
+            if (!state.ttsCart[ttsKey]) state.ttsCart[ttsKey] = { enabled: false, backupSize: '' };
+            state.ttsCart[ttsKey].enabled = !state.ttsCart[ttsKey].enabled;
+            if (!state.ttsCart[ttsKey].enabled) state.ttsCart[ttsKey].backupSize = '';
+            // Re-render checkout modal if open
+            if (checkoutModal && checkoutModal.style.display === 'flex') {
+              openCheckoutModal();
+            }
+            return;
+          }
+
+          // ── TTS backup size selection ──
+          var ttsSizeBtn = e.target.closest('[data-tts-size]');
+          if (ttsSizeBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var ttsSizeKey = ttsSizeBtn.getAttribute('data-tts-size');
+            var ttsSizeVal = ttsSizeBtn.getAttribute('data-size');
+            if (!state.ttsCart) state.ttsCart = {};
+            if (!state.ttsCart[ttsSizeKey]) state.ttsCart[ttsSizeKey] = { enabled: true, backupSize: '' };
+            state.ttsCart[ttsSizeKey].backupSize = ttsSizeVal;
+            // Re-render checkout modal if open
+            if (checkoutModal && checkoutModal.style.display === 'flex') {
+              openCheckoutModal();
+            }
             return;
           }
 
