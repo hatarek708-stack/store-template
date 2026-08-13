@@ -3867,27 +3867,22 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
     
 
         /* =====================================================================
-           ADAPTER LAYER + BLACK-UPDATE FRONTEND VIEWS
+           ADAPTER LAYER + BLACK-UPDATE FRONTEND VIEWS (v2 — full integration)
            =====================================================================
-           The following code runs INSIDE the same IIFE as black's services,
-           so it has access to: state, NEON_DATA, getCart, setCart, addToCart,
+           This code runs INSIDE the same IIFE as black's services, so it has
+           access to: state, NEON_DATA, getCart, setCart, addToCart,
            showToast, formatPrice, escapeHTML, calcShipping, t, I18N, etc.
 
            Strategy:
-           - Neutralize black's render and bind functions (they reference black's DOM)
-           - Add black-update's view functions (homeView, productView, etc.) verbatim
-           - Add a DATA adapter that maps NEON_DATA to black-update's DATA format
-           - Add event delegation wired to black's services
-           - Add new init() and route() functions
+           - Neutralize black's render/bind functions (they reference black's DOM)
+           - Add black-update's view functions (homeView, productView, etc.)
+             — but DYNAMIC: read store data + product data from Supabase
+           - Adapter maps NEON_DATA → black-update's view format
+           - Event delegation wired to black's services
+           - New init() that loads store + products from Supabase
            ===================================================================== */
 
         /* ---------- 1. NEUTRALIZE black's UI-specific functions ---------- */
-        // These functions generate HTML for black's DOM structure (page-home,
-        // homeProductsGrid, cartBtn, etc.) which does not exist in black-update.
-        // We override them with no-ops to prevent errors, then provide our own
-        // versions via black-update's view functions below.
-        var _origRenderHome = renderHome;
-        var _origRenderProductPage = renderProductPage;
         renderHome = function() {};
         renderProductPage = function() {};
         renderCategoriesPage = function() {};
@@ -3905,23 +3900,16 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
         bindProductPageInteractions = function() {};
         bindProductCardActions = function() {};
         bindTabs = function() {};
-        // bindGlobalClicks is neutralized — we provide our own event delegation
         bindGlobalClicks = function() {};
         bindMobileNav = function() {};
-        // bindCart is neutralized — it tries to bind to #cartBtn which doesn't exist
-        // in black-update. We provide our own cart binding via event delegation
-        // (data-cart-open on the header cart item, and #cartClose/#cartOverlay below).
         bindCart = function() {
-            // Bind cart overlay and close button (these elements exist in our hidden infrastructure)
             var overlay = document.getElementById('cartOverlay');
             var closeBtn = document.getElementById('cartClose');
             if (overlay) overlay.addEventListener('click', closeCart);
             if (closeBtn) closeBtn.addEventListener('click', closeCart);
         };
-        // bindZoomViewer and bindLanguageToggle are kept functional because they
-        // bind to #zoomOverlay (exists) and #langToggle (safely checks for null).
 
-        /* ---------- 2. BLACK-UPDATE'S ICONS (from black-update.html, verbatim) ---------- */
+        /* ---------- 2. BLACK-UPDATE'S ICONS (verbatim) ---------- */
         var I = {
           search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>',
           bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
@@ -3937,7 +3925,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           fb:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 22v-8h2.7l.4-3.2h-3.1V8.7c0-.9.3-1.6 1.6-1.6h1.6V4.2c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.5-4 4.2v2.5H7.6V14h2.7v8z"/></svg>',
           ig:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none"/></svg>',
           yt:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12s0-3.3-.4-4.9c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.3c-.9.2-1.6.9-1.8 1.8C2 8.7 2 12 2 12s0 3.3.4 4.9c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.3c-.9-.2 1.6-.9 1.8-1.8.4-1.6.4-4.9.4-4.9z" opacity="0"/><rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9.5v5l4.5-2.5z" fill="#0c0c0c"/></svg>',
-          x:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.8 3h2.9l-6.4 7.3L21.8 21h-5.9l-4.6-6-5.3 6H3.1l6.9-7.8L2.5 3h6l4.2 5.5zm-1 16.2h1.6L7.6 4.7H5.9z"/></svg>'
+          x:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.8 3h2.9l-6.4 7.3L21.8 21h-5.9l-4.6-6-5.3 6H3.1l6.9-7.8L2.5 3h6l4.2 5.5zm-1 16.2h1.6L7.6 4.7H5.9z"/></svg>',
+          tt:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg>'
         };
         var starSVG = function(s) { return '<svg viewBox="0 0 24 24" width="'+s+'" height="'+s+'" fill="currentColor"><path d="M12 2.8l2.8 6 6.6.6-5 4.4 1.5 6.5-5.9-3.4-5.9 3.4 1.5-6.5-5-4.4 6.6-.6z"/></svg>'; };
         function stars(rating, size, color) {
@@ -3949,19 +3938,68 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           return '<span class="stars">' + h + '</span>';
         }
 
-        /* ---------- 3. BLACK-UPDATE'S IMAGE URLs (kept for fallback/announce) ---------- */
-        var IMG = {
-          hero:'https://image.qwenlm.ai/public_source/7a243234-720b-423d-8aed-3773e60c48ad/120903948-7c12-437f-9461-e57fc6e2de43.png',
-          store:'https://image.qwenlm.ai/public_source/7a243234-720b-423d-8aed-3773e60c48ad/1f5c6cbc2-edfa-4b6c-a6ee-770b2786ee96.png',
-          news:'https://image.qwenlm.ai/public_source/7a243234-720b-423d-8aed-3773e60c48ad/15b6ab216-1412-41a5-8b6a-c5eb9ab07f9f.png',
-          lifestyle:'https://image.qwenlm.ai/public_source/7a243234-720b-423d-8aed-3773e60c48ad/1051004d9-0768-4967-a949-10079cc8cf49.png'
+        /* ---------- 3. FALLBACK IMAGE URLs (used ONLY when no Supabase data) ---------- */
+        var FALLBACK_IMG = {
+          hero:'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&h=600&fit=crop',
+          store:'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop',
+          news:'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1920&h=600&fit=crop',
+          lifestyle:'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop',
+          product:'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=900&h=1100&fit=crop'
         };
 
-        /* ---------- 4. DATA ADAPTER (maps NEON_DATA → black-update's DATA format) ---------- */
-        // black-update's view functions read from DATA.homeProducts, DATA.product,
-        // DATA.related, DATA.collections, DATA.reviewsList, etc.
-        // We provide these as getters that read from NEON_DATA (black's data source),
-        // so the frontend displays black's products while keeping black-update's UI.
+        /* ---------- 4. STORE DATA HELPERS (read from window._storeData) ---------- */
+        function getStoreName() {
+          var sd = window._storeData || {};
+          return sd.name || sd.title || 'Jolt';
+        }
+        function getStoreLogo() {
+          var sd = window._storeData || {};
+          return sd.name || 'Jolt';
+        }
+        function getHeroImage() {
+          var sd = window._storeData || {};
+          if (sd.coverImage && /^https:\/\//i.test(sd.coverImage)) return sd.coverImage;
+          return FALLBACK_IMG.hero;
+        }
+        function getHeroTitle() {
+          var sd = window._storeData || {};
+          if (sd.heroTitle1 || sd.heroTitle2) {
+            var t1 = sd.heroTitle1 || '';
+            var t2 = sd.heroTitle2 || '';
+            return (t1 + ' ' + t2).trim() || 'Jolt Sport Project';
+          }
+          return (sd.title || 'Jolt Sport Project');
+        }
+        function getHeroSubtitle() {
+          var sd = window._storeData || {};
+          return sd.heroDesc || 'Introducing our latest collection designed specifically for outdoor enthusiasts. Features a range of high-performance outerwear with a range of bold and vibrant colors and patterns to choose from.';
+        }
+        function getHeroButton() {
+          var sd = window._storeData || {};
+          return sd.heroBtn || 'Shop Now';
+        }
+        function getSocialLinks() {
+          var sd = window._storeData || {};
+          var links = [];
+          if (sd.facebook) links.push({ key:'fb', label:'facebook', href: sd.facebook, icon: I.fb });
+          if (sd.instagram) links.push({ key:'ig', label:'instagram', href: sd.instagram, icon: I.ig });
+          if (sd.tiktok) links.push({ key:'tt', label:'tiktok', href: sd.tiktok, icon: I.tt });
+          // Always include X as fallback if no social links
+          if (links.length === 0) {
+            links.push({ key:'x', label:'x', href:'#', icon: I.x });
+          }
+          return links;
+        }
+
+        /* ---------- 5. PRICE FORMATTER (uses black's formatDA → DA/dj) ---------- */
+        function formatProductPrice(n) {
+          // Use black's formatDA which respects language (DA in EN, dj in AR)
+          if (typeof formatDA === 'function') return formatDA(n);
+          if (typeof formatPrice === 'function') return formatPrice(n);
+          return Number(n).toLocaleString('en-US') + ' DA';
+        }
+
+        /* ---------- 6. DATA ADAPTER (maps NEON_DATA + store → view format) ---------- */
         var DATA = {
           announce: {
             home: { text: 'New Season Coming! Discount 10% for all products! Check out now.', pill: 'GO AS' },
@@ -3969,17 +4007,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           },
           get homeProducts() {
             if (!NEON_DATA || !NEON_DATA.products || !NEON_DATA.products.length) {
-              // Fallback to original black-update products if NEON_DATA is empty
-              return [
-                {id:'h1',name:'Carabiner Set',price:12,img:IMG.hero,wished:false},
-                {id:'h2',name:'Jaq Bag',price:32,img:IMG.hero},
-                {id:'h3',name:'Nanga Sandal',price:89,img:IMG.hero,badge:'Limited'},
-                {id:'h4',name:'Ponca Thermos',price:13,img:IMG.hero},
-                {id:'h5',name:'Kamenoko Liner',price:120,img:IMG.hero},
-                {id:'h6',name:'P.S Cap',price:49,img:IMG.hero,badge:'Limited',wished:true},
-                {id:'h7',name:'Carabiner Set',price:139,img:IMG.hero},
-                {id:'h8',name:'Beanie',price:29,img:IMG.hero}
-              ];
+              return [];
             }
             return NEON_DATA.products.map(function(p) {
               var eff = (typeof window._effectivePrice === 'function') ? window._effectivePrice(p) : p.price;
@@ -3993,20 +4021,21 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 id: String(p.id),
                 name: p.name || 'Product',
                 price: eff,
-                img: (p.images && p.images[0]) ? p.images[0] : (p.image || IMG.hero),
+                img: (p.images && p.images[0]) ? p.images[0] : (p.image || FALLBACK_IMG.product),
                 wished: !!(state.wish && state.wish[p.id]),
-                badge: badge
+                badge: badge,
+                freeShipping: p.freeShipping === true
               };
             });
           },
           get collections() {
             var defaultCols = [
-              {name:'Footwear',img:IMG.hero,h:250},
-              {name:'Headwear',img:IMG.hero,h:410,extra:true},
-              {name:'Jacket',img:IMG.hero,h:410},
-              {name:'Bags',img:IMG.hero,h:250},
-              {name:'Accessories',img:IMG.hero,h:250},
-              {name:'Bottoms',img:IMG.hero,h:410}
+              {name:'Footwear',img:FALLBACK_IMG.product,h:250},
+              {name:'Headwear',img:FALLBACK_IMG.product,h:410,extra:true},
+              {name:'Jacket',img:FALLBACK_IMG.product,h:410},
+              {name:'Bags',img:FALLBACK_IMG.product,h:250},
+              {name:'Accessories',img:FALLBACK_IMG.product,h:250},
+              {name:'Bottoms',img:FALLBACK_IMG.product,h:410}
             ];
             if (!NEON_DATA || !NEON_DATA.categories || !NEON_DATA.categories.length) {
               return defaultCols;
@@ -4014,24 +4043,23 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             var cols = NEON_DATA.categories.map(function(c, i) {
               return {
                 name: c.name,
-                img: c.image || IMG.hero,
+                img: c.image || FALLBACK_IMG.product,
                 h: (i % 3 === 1 || i % 3 === 2) ? 410 : 250,
                 extra: (i === 1)
               };
             });
-            // Pad to at least 6 items (homeView expects c[0]..c[5])
             var idx = 0;
-            while (cols.length < 6) {
+            while (cols.length < 6 && NEON_DATA.categories.length > 0) {
               var src = NEON_DATA.categories[idx % NEON_DATA.categories.length];
               cols.push({
                 name: src.name + ' ' + (cols.length + 1),
-                img: src.image || IMG.hero,
+                img: src.image || FALLBACK_IMG.product,
                 h: (cols.length % 3 === 1 || cols.length % 3 === 2) ? 410 : 250,
                 extra: false
               });
               idx++;
             }
-            return cols;
+            return cols.length >= 6 ? cols : defaultCols;
           },
           get product() {
             var p = state.product;
@@ -4040,45 +4068,55 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
               state.product = p;
             }
             if (!p) {
-              // Ultimate fallback — black-update's original product
               return {
-                name: 'Jolt Sport Backpack', rating: 4.5, reviews: 128, price: 32, oldPrice: 40,
-                desc: 'Durable, lightweight backpack designed for daily use and outdoor adventures.',
-                colors: [{name:'Deep Blue',hex:'#2b3f5c'},{name:'Black',hex:'#141414'},{name:'Gray',hex:'#9a9a9a'}],
-                thumbs: [IMG.hero, IMG.hero, IMG.hero, IMG.hero],
-                bullets: ['Water-resistant polyester fabric','Spacious main compartment','Padded shoulder straps for extra comfort','Multiple pockets for organization','Ideal for sports, travel, or everyday use']
+                name: 'Product', rating: 4.5, reviews: 0, price: 0, oldPrice: 0,
+                desc: '', colors: [{name:'Default', hex:'#333'}],
+                thumbs: [FALLBACK_IMG.product], bullets: [],
+                sizes: [], details: [], materials: '', sizeFit: '', shippingReturns: '',
+                shortDesc: '', reviewsText: '', reviewsData: [],
+                freeShipping: false, discountPrice: null, originalPrice: null
               };
             }
             var eff = (typeof window._effectivePrice === 'function') ? window._effectivePrice(p) : p.price;
+            var hasDiscount = p.originalPrice && p.originalPrice > eff;
             var rating = (typeof p.rating === 'number' && p.rating > 0) ? p.rating :
-                         (typeof window._shvProductRating === 'function' ? window._shvProductRating(p) : 4.5);
+                         (typeof window._shvProductRating === 'function' ? window._shvProductRating(p) : 0);
             var reviews = (typeof p.reviews === 'number' && p.reviews > 0) ? p.reviews :
                           (typeof window._shvProductReviewCount === 'function' ? window._shvProductReviewCount(p) : 0);
             var colors = (p.colors && p.colors.length) ? p.colors.map(function(c) {
+              if (typeof c === 'string') return { name: c, hex: c };
               return { name: c.name || c.hex || 'Color', hex: c.hex || c.name || '#333' };
             }) : [{name:'Default', hex:'#333'}];
-            var thumbs = (p.images && p.images.length) ? p.images : [p.image || IMG.hero];
-            var bullets = (p.details && p.details.length) ? p.details : ['Quality product'];
+            var thumbs = (p.images && p.images.length) ? p.images : [p.image || FALLBACK_IMG.product];
+            var bullets = (p.details && p.details.length) ? p.details : [];
             return {
               name: p.name,
               rating: rating,
               reviews: reviews,
               price: eff,
-              oldPrice: (p.originalPrice && p.originalPrice > eff) ? p.originalPrice : p.price,
+              oldPrice: hasDiscount ? p.originalPrice : null,
               desc: p.shortDesc || p.desc || '',
               colors: colors,
               thumbs: thumbs,
-              bullets: bullets
+              bullets: bullets,
+              sizes: p.sizes || [],
+              details: p.details || [],
+              materials: p.materials || '',
+              sizeFit: p.sizeFit || '',
+              shippingReturns: p.shippingReturns || '',
+              shortDesc: p.shortDesc || p.desc || '',
+              reviewsText: p.reviewsText || '',
+              reviewsData: p.reviewsData || [],
+              freeShipping: p.freeShipping === true,
+              discountPrice: p.discountPrice || null,
+              originalPrice: p.originalPrice || null,
+              _raw: p
             };
           },
           get reviewsList() {
             var p = state.product;
             if (!p || !p.reviewsData || !p.reviewsData.length) {
-              return [
-                {stars:5, date:'2 days ago', title:'Great quality!', text:'Perfect size and very comfortable. I use it every day for work and the gym.', author:'Yassine B.'},
-                {stars:5, date:'1 week ago', title:'Love it!', text:'The fabric is water resistant just as described and the color looks even better in person.', author:'Sara M.'},
-                {stars:4, date:'3 weeks ago', title:'Very good', text:'Comfortable straps and plenty of pockets for organization. Great value for the price.', author:'Omar K.'}
-              ];
+              return [];
             }
             return p.reviewsData.map(function(r) {
               var comment = r.comment || '';
@@ -4091,7 +4129,24 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
               };
             });
           },
-          get bars() { return [[5,85],[4,10],[3,3],[2,1],[1,1]]; },
+          get bars() {
+            // Calculate bars from real reviews
+            var p = state.product;
+            if (p && p.reviewsData && p.reviewsData.length) {
+              var counts = [0,0,0,0,0,0]; // index 1-5
+              p.reviewsData.forEach(function(r) {
+                var v = Math.floor(Number(r.rating) || 0);
+                if (v >= 1 && v <= 5) counts[v]++;
+              });
+              var total = p.reviewsData.length;
+              if (total > 0) {
+                return [[5, Math.round(counts[5]/total*100)], [4, Math.round(counts[4]/total*100)],
+                        [3, Math.round(counts[3]/total*100)], [2, Math.round(counts[2]/total*100)],
+                        [1, Math.round(counts[1]/total*100)]];
+              }
+            }
+            return [[5,85],[4,10],[3,3],[2,1],[1,1]];
+          },
           get related() {
             var p = state.product;
             if (!p || !NEON_DATA || !NEON_DATA.getRelatedProducts) return [];
@@ -4102,7 +4157,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 id: String(rp.id),
                 name: rp.name,
                 price: eff,
-                img: (rp.images && rp.images[0]) ? rp.images[0] : (rp.image || IMG.hero)
+                img: (rp.images && rp.images[0]) ? rp.images[0] : (rp.image || FALLBACK_IMG.product)
               };
             });
           },
@@ -4111,7 +4166,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
               cats:['Jackets','Shirts','Knit','T-shirts','Bottoms','Accessories'],
               care:['FAQ','Shipping','Order Status','Return & Exchange'],
               comp:['Privacy','Guides','Term of Conditions'],
-              copy:'© 2023 Jolt Studio, Inc - All Rights Reserved',
+              copy:'© 2025 Jolt Studio, Inc - All Rights Reserved',
               call:'Call Us On +12 332478'
             },
             product: {
@@ -4124,11 +4179,13 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           }
         };
 
-        /* ---------- 5. BLACK-UPDATE'S VIEW FUNCTIONS (verbatim from black-update.html) ---------- */
+        /* ---------- 7. VIEW FUNCTIONS (dynamic — read from store data + products) ---------- */
         function announceBar(v) { return '<div class="announce"><span>'+v.text+'</span><button class="pill" data-go="product">'+v.pill+'</button></div>'; }
+
         function header() {
+          var logoText = escapeHTML(getStoreLogo());
           return '<header class="header"><div class="container header-in">'+
-            '<a class="logo" href="#/" data-go="home">Jolt</a>'+
+            '<a class="logo" href="#/" data-go="home">'+logoText+'</a>'+
             '<nav class="nav"><a href="#" data-noop>Categories</a><a href="#" data-noop>Collections</a><a href="#" data-noop>Store</a><a href="#" data-noop>Blog</a><a href="#" data-noop>Find Store</a></nav>'+
             '<div class="h-right">'+
               '<span class="h-item" data-search-open>'+I.search+'Search</span>'+
@@ -4136,48 +4193,62 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
               '<span class="h-item" data-noop>'+I.user+'Login</span>'+
             '</div></div></header>';
         }
+
         function productCard(p, showAdd) {
-          return '<div class="p-card" data-product-id="'+p.id+'">'+
+          var freeShipBadge = p.freeShipping ? '<span class="badge" style="background:#e6f4ea;color:#1e7e34;top:36px;">Free Ship</span>' : '';
+          return '<div class="p-card" data-product-id="'+escapeHTML(p.id)+'">'+
             '<div class="p-img" data-go="product">'+
               '<img src="'+p.img+'" alt="'+escapeHTML(p.name)+'" loading="lazy">'+
               (p.badge?'<span class="badge">'+escapeHTML(p.badge)+'</span>':'')+
-              '<button class="heart'+(state.wish[p.id]?' active':'')+'" data-wish="'+p.id+'" aria-label="wishlist">'+I.heart+'</button>'+
+              freeShipBadge+
+              '<button class="heart'+(state.wish[p.id]?' active':'')+'" data-wish="'+escapeHTML(p.id)+'" aria-label="wishlist">'+I.heart+'</button>'+
             '</div>'+
             '<div class="p-name">'+escapeHTML(p.name)+'</div>'+
-            '<div class="p-row"><span class="p-price">$'+p.price.toFixed(2)+'</span>'+
+            '<div class="p-row"><span class="p-price">'+formatProductPrice(p.price)+'</span>'+
             (showAdd?'<button class="p-add" data-add aria-label="add to cart">'+I.bag+'</button>':'')+
             '</div></div>';
         }
+
         function newsletter() {
-          return '<section class="news" style="background-image:url('+IMG.news+')"><div class="news-in">'+
+          return '<section class="news" style="background-image:url('+FALLBACK_IMG.news+')"><div class="news-in">'+
             '<h2>Sign Up to Our Newsletter</h2>'+
             '<p>Get the Latest Beauty Secrets and Trends, Sign Up for Our Newsletter and Stay Informed About All Things Beauty</p>'+
             '<form class="news-form"><input class="news-input" type="email" placeholder="Your Email" required><button class="btn btn-white" type="submit">Submit</button></form>'+
             '</div></section>';
         }
+
         function footer(d) {
           var col = function(t, items) { return '<div class="f-col"><h4>'+t+'</h4>'+items.map(function(x){return '<a href="#" data-noop>'+x+'</a>';}).join('')+'</div>'; };
+          var socialLinks = getSocialLinks();
+          var socialHTML = socialLinks.map(function(s) {
+            return '<a href="'+escapeHTML(s.href)+'" '+(s.href==='#'?'data-noop':'target="_blank" rel="noopener"')+' aria-label="'+s.label+'">'+s.icon+'</a>';
+          }).join('');
+          var storeName = escapeHTML(getStoreName());
           return '<footer class="footer"><div class="container">'+
             '<div class="f-grid">'+
-              '<div class="f-brand"><span class="logo">Jolt</span><p>Experience the Great Outdoors in Style with Jolt\'s. Shop now and gear up for adventure in Jolt!</p></div>'+
+              '<div class="f-brand"><span class="logo">'+storeName+'</span><p>Experience the Great Outdoors in Style with '+storeName+'. Shop now and gear up for adventure!</p></div>'+
               col('Categories',d.cats)+col('Customer Care',d.care)+col('Company',d.comp)+
-              '<div class="f-social"><a href="#" data-noop aria-label="facebook">'+I.fb+'</a><a href="#" data-noop aria-label="instagram">'+I.ig+'</a><a href="#" data-noop aria-label="youtube">'+I.yt+'</a><a href="#" data-noop aria-label="x">'+I.x+'</a></div>'+
+              '<div class="f-social">'+socialHTML+'</div>'+
             '</div>'+
             '<div class="f-bottom"><div class="f-bottom-in"><span>'+d.copy+'</span><div class="f-right"><span>'+d.call+'</span><span>USD $ | English</span></div></div></div>'+
             '</div></footer>';
         }
 
-        /* ---------- 6. HOME VIEW (from black-update.html, verbatim) ---------- */
+        /* ---------- 8. HOME VIEW (dynamic) ---------- */
         function homeView() {
           var c = DATA.collections;
           var collCard = function(x) { return '<div class="coll-card" style="height:'+x.h+'px"><img src="'+x.img+'" alt="'+escapeHTML(x.name)+'" loading="lazy"><div class="coll-in"><h3>'+escapeHTML(x.name)+'</h3>'+
             (x.extra?'<p>Check out our cool headwear collections. Get Disc 10% on New Season</p><button class="btn btn-white">Discover</button>':'')+
             '</div></div>'; };
+          var heroImg = getHeroImage();
+          var heroTitle = escapeHTML(getHeroTitle());
+          var heroSub = escapeHTML(getHeroSubtitle());
+          var heroBtn = escapeHTML(getHeroButton());
           return announceBar(DATA.announce.home)+header()+
-          '<section class="hero" style="background-image:url('+IMG.hero+')"><div class="hero-in">'+
-            '<h1>Jolt Sport Project</h1>'+
-            '<p>Introducing our latest collection designed specifically for outdoor enthusiasts. Features a range of high-performance outerwear with a range of bold and vibrant colors and patterns to choose from.</p>'+
-            '<button class="btn btn-white" data-go="product">Shop Now</button>'+
+          '<section class="hero" style="background-image:url('+heroImg+')"><div class="hero-in">'+
+            '<h1>'+heroTitle+'</h1>'+
+            '<p>'+heroSub+'</p>'+
+            '<button class="btn btn-white" data-go="product">'+heroBtn+'</button>'+
           '</div></section>'+
           '<section class="section" id="new-arrivals"><div class="container">'+
             '<h2 class="sec-title">New Arrivals</h2>'+
@@ -4186,9 +4257,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             '<button class="btn btn-black see-all">See All</button>'+
           '</div></section>'+
           '<section class="container"><div class="tokyo">'+
-            '<div class="tokyo-img"><img src="'+IMG.store+'" alt="Jolt Tokyo store" loading="lazy"></div>'+
-            '<div><h2>Find Your Perfect Look at Jolt\'s Stylish New on Tokyo</h2>'+
-            '<p>Welcome to the newest Jolt outlet in Shibuya, Japan! Step into our stylish and trendy store and discover the latest in fashion and apparel. Come and experience the unique and vibrant atmosphere.</p>'+
+            '<div class="tokyo-img"><img src="'+FALLBACK_IMG.store+'" alt="Store" loading="lazy"></div>'+
+            '<div><h2>Find Your Perfect Look at '+escapeHTML(getStoreName())+'\'s Stylish New Store</h2>'+
+            '<p>Welcome to the newest outlet! Step into our stylish and trendy store and discover the latest in fashion and apparel. Come and experience the unique and vibrant atmosphere.</p>'+
             '<div class="sale-l">Come and Enjoy Sale!</div>'+
             '<div class="sale-n">50%</div>'+
             '<button class="btn btn-black">See On Maps</button></div>'+
@@ -4205,46 +4276,83 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           newsletter()+footer(DATA.footer.home);
         }
 
-        /* ---------- 7. PRODUCT VIEW (from black-update.html, verbatim) ---------- */
+        /* ---------- 9. PRODUCT VIEW (dynamic — uses ACTUAL product data) ---------- */
         function descBody() {
           var P = DATA.product;
-          if (state.tab === 'description') return '<p>The Jolt Sport Backpack is built for those who live on the move. With a spacious main compartment, multiple pockets, and water-resistant fabric, it keeps your gear organized and protected wherever you go.</p><ul>'+P.bullets.map(function(b){return '<li>'+b+'</li>';}).join('')+'</ul>';
-          if (state.tab === 'features') return '<ul>'+P.bullets.map(function(b){return '<li>'+b+'</li>';}).join('')+'</ul>';
-          return '<p>We offer free shipping on orders over $50. If you are not completely satisfied, enjoy a 30-day return with a money-back guarantee. Secure payment, 100% protected.</p>';
+          if (state.tab === 'description') {
+            // Use ACTUAL product description + details
+            var desc = P.desc || P.shortDesc || '';
+            var html = '';
+            if (desc) html += '<p>'+escapeHTML(desc)+'</p>';
+            if (P.bullets && P.bullets.length) {
+              html += '<ul>'+P.bullets.map(function(b){return '<li>'+escapeHTML(b)+'</li>';}).join('')+'</ul>';
+            }
+            if (!html) html = '<p>No description available.</p>';
+            return html;
+          }
+          if (state.tab === 'features') {
+            // Show details as features list
+            if (P.details && P.details.length) {
+              return '<ul>'+P.details.map(function(b){return '<li>'+escapeHTML(b)+'</li>';}).join('')+'</ul>';
+            }
+            if (P.materials) return '<p>'+escapeHTML(P.materials)+'</p>';
+            return '<p>Features not specified.</p>';
+          }
+          // Shipping & Returns — use ACTUAL product shippingReturns
+          var shipText = P.shippingReturns || 'Free shipping on orders over 5,000 DA. If you are not completely satisfied, enjoy a 30-day return with a money-back guarantee. Secure payment, 100% protected.';
+          return '<p>'+escapeHTML(shipText)+'</p>';
         }
+
         function reviewCard() {
-          var r = DATA.reviewsList[state.review];
+          var list = DATA.reviewsList;
+          if (!list.length) {
+            return '<div class="rev-top"><span class="rev-date">No reviews yet</span></div>'+
+              '<div class="rev-title">Be the first to review!</div>'+
+              '<p class="rev-text">Share your thoughts about this product.</p>';
+          }
+          var r = list[state.review] || list[0];
           return '<div class="rev-top">'+stars(r.stars,12,'#111')+'<span class="rev-date">'+escapeHTML(r.date)+'</span></div>'+
             '<div class="rev-title">'+escapeHTML(r.title)+'</div><p class="rev-text">'+escapeHTML(r.text)+'</p><div class="rev-author">'+escapeHTML(r.author)+'</div>';
         }
+
         function productView() {
           var P = DATA.product;
+          var hasDiscount = P.oldPrice && P.oldPrice > P.price;
+          var discountPct = hasDiscount ? Math.round(((P.oldPrice - P.price) / P.oldPrice) * 100) : 0;
+          // Free shipping badge
+          var freeShipBadge = P.freeShipping ? '<span class="badge" style="background:#e6f4ea;color:#1e7e34;top:36px;left:10px;">Free Ship</span>' : '';
           return announceBar(DATA.announce.product)+header()+
           '<div class="container">'+
-            '<div class="crumb"><a href="#/" data-go="home">Home</a><span class="sep">&gt;</span><a href="#" data-noop>Accessories</a><span class="sep">&gt;</span><a href="#" data-noop>Backpacks</a><span class="sep">&gt;</span><span class="cur">'+escapeHTML(P.name)+'</span></div>'+
+            '<div class="crumb"><a href="#/" data-go="home">Home</a><span class="sep">&gt;</span><a href="#" data-noop>Products</a><span class="sep">&gt;</span><span class="cur">'+escapeHTML(P.name)+'</span></div>'+
             '<div class="pdp">'+
               '<div class="gallery">'+
                 '<div class="thumbs">'+P.thumbs.map(function(t,i){return '<button class="thumb'+(i===state.thumb?' sel':'')+'" data-thumb="'+i+'"><img src="'+t+'" alt="view '+(i+1)+'"></button>';}).join('')+
-                '<button class="thumb-more" data-thumbnext aria-label="more views">'+I.chevD+'</button></div>'+
+                (P.thumbs.length > 1 ? '<button class="thumb-more" data-thumbnext aria-label="more views">'+I.chevD+'</button>' : '')+'</div>'+
                 '<div class="main-img"><img id="mainImg" src="'+P.thumbs[state.thumb]+'" alt="'+escapeHTML(P.name)+'">'+
-                '<span class="disc">-20%</span>'+
+                (hasDiscount ? '<span class="disc">-'+discountPct+'%</span>' : '')+
+                freeShipBadge+
                 '<button class="heart-circle'+(state.wish['main']?' active':'')+'" data-wish="main" aria-label="wishlist">'+I.heart+'</button></div>'+
               '</div>'+
               '<div class="info">'+
                 '<h1>'+escapeHTML(P.name)+'</h1>'+
-                '<div class="rate-row">'+stars(P.rating,15,'#f59e0b')+'<span class="rate-count">('+P.reviews+' reviews)</span></div>'+
-                '<div class="price-row"><span class="price">$'+P.price.toFixed(2)+'</span>'+(P.oldPrice && P.oldPrice > P.price ? '<span class="price-old">$'+P.oldPrice.toFixed(2)+'</span>' : '')+'</div>'+
-                '<p class="p-desc">'+escapeHTML(P.desc)+'</p>'+
-                '<div class="opt">Color: &nbsp;<span id="colorName">'+escapeHTML(state.color)+'</span></div>'+
-                '<div class="swatches">'+P.colors.map(function(c,i){return '<button class="swatch'+(c.name===state.color?' sel':'')+'" data-swatch="'+escapeHTML(c.name)+'" data-index="'+i+'" style="background:'+c.hex+'" aria-label="'+escapeHTML(c.name)+'"></button>';}).join('')+'</div>'+
+                (P.reviews > 0 ? '<div class="rate-row">'+stars(P.rating,15,'#f59e0b')+'<span class="rate-count">('+P.reviews+' reviews)</span></div>' : '')+
+                '<div class="price-row"><span class="price">'+formatProductPrice(P.price)+'</span>'+(hasDiscount ? '<span class="price-old">'+formatProductPrice(P.oldPrice)+'</span>' : '')+'</div>'+
+                (P.desc ? '<p class="p-desc">'+escapeHTML(P.desc)+'</p>' : '')+
+                (P.colors && P.colors.length > 0 ? '<div class="opt">Color: &nbsp;<span id="colorName">'+escapeHTML(state.color)+'</span></div>' : '')+
+                (P.colors && P.colors.length > 0 ?
+                  '<div class="swatches">'+P.colors.map(function(c,i){return '<button class="swatch'+(c.name===state.color?' sel':'')+'" data-swatch="'+escapeHTML(c.name)+'" data-index="'+i+'" style="background:'+c.hex+'" aria-label="'+escapeHTML(c.name)+'"></button>';}).join('')+'</div>'
+                : '')+
+                // Size selector (NEW — black-update didn't have this, but it's REQUIRED for order)
+                (P.sizes && P.sizes.length > 0 ?
+                  '<div class="opt">Size: &nbsp;<span id="sizeValue">'+escapeHTML(state.selectedSize || 'Select size')+'</span></div>'+
+                  '<div class="swatches" style="gap:8px;">'+P.sizes.map(function(s){return '<button class="qty-btn size-btn'+(state.selectedSize===s?' sel':'')+'" data-size="'+escapeHTML(s)+'" style="width:auto;padding:8px 14px;font-size:12px;'+(state.selectedSize===s?'background:#111;color:#fff;border-color:#111;':'')+'">'+escapeHTML(s)+'</button>';}).join('')+'</div>'
+                : '')+
                 '<div class="opt">Quantity:</div>'+
                 '<div class="qty-row"><button class="qty-btn" data-qty="-1">\u2212</button><span class="qty-val" id="qtyVal">'+state.qty+'</span><button class="qty-btn" data-qty="1">+</button></div>'+
                 '<button class="add-cart" data-addcart>Add to Cart '+I.cart+'</button>'+
                 '<button class="buy-now" data-buynow>Buy Now</button>'+
                 '<div class="perks">'+
-                  '<div class="perk">'+I.truck+'<div><b>Free Shipping</b><span>on orders over $50</span></div></div>'+
-                  '<div class="perk">'+I.ret+'<div><b>30-Day Return</b><span>Money back guarantee</span></div></div>'+
-                  '<div class="perk">'+I.shield+'<div><b>Secure Payment</b><span>100% protected</span></div></div>'+
+                  buildPerksHTML()+
                 '</div>'+
               '</div>'+
             '</div>'+
@@ -4254,24 +4362,52 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 '<button class="tab'+(state.tab==='features'?' active':'')+'" data-tab="features">Features</button>'+
                 '<button class="tab'+(state.tab==='shipping'?' active':'')+'" data-tab="shipping">Shipping & Returns</button>'+
               '</div><div class="desc-body" id="descBody">'+descBody()+'</div></div>'+
-              '<img class="desc-img" src="'+IMG.lifestyle+'" alt="'+escapeHTML(P.name)+' in the mountains" loading="lazy">'+
+              '<img class="desc-img" src="'+(P.thumbs[1] || P.thumbs[0] || FALLBACK_IMG.lifestyle)+'" alt="'+escapeHTML(P.name)+'" loading="lazy">'+
             '</div>'+
+            (DATA.reviewsList.length > 0 || P.reviewsText ?
             '<div class="reviews">'+
-              '<div class="rev-head"><h2>Customer Reviews <span>('+P.reviews+')</span></h2><a href="#" class="view-all" data-noop>View All</a></div>'+
+              '<div class="rev-head"><h2>Customer Reviews <span>('+P.reviews+')</span></h2></div>'+
               '<div class="rev-grid">'+
-                '<div class="rev-score"><div class="big">'+P.rating.toFixed(1)+'</div>'+stars(P.rating,16,'#f59e0b')+'<div class="sub">Based on '+P.reviews+' reviews</div></div>'+
+                '<div class="rev-score"><div class="big">'+(P.rating || 0).toFixed(1)+'</div>'+stars(P.rating,16,'#f59e0b')+'<div class="sub">Based on '+P.reviews+' reviews</div></div>'+
                 '<div class="bars">'+DATA.bars.map(function(b){return '<div class="bar-row"><span class="n">'+b[0]+'</span><span class="star-i">'+starSVG(10)+'</span><div class="bar-track"><div class="bar-fill" style="width:'+b[1]+'%"></div></div><span class="bar-pct">'+b[1]+'%</span></div>';}).join('')+'</div>'+
                 '<div class="rev-card" id="revCard">'+reviewCard()+'</div>'+
-                '<div class="rev-nav"><button class="rev-arrow" data-rev="-1" aria-label="previous">'+I.chevL+'</button><button class="rev-arrow" data-rev="1" aria-label="next">'+I.chevR+'</button></div>'+
+                (DATA.reviewsList.length > 1 ? '<div class="rev-nav"><button class="rev-arrow" data-rev="-1" aria-label="previous">'+I.chevL+'</button><button class="rev-arrow" data-rev="1" aria-label="next">'+I.chevR+'</button></div>' : '')+
               '</div>'+
-            '</div>'+
+            '</div>' : '')+
+            (DATA.related.length > 0 ?
             '<div class="related"><h2>You Might Also Like</h2>'+
-            '<div class="rel-grid">'+DATA.related.map(function(p){return productCard(p,false);}).join('')+'</div></div>'+
+            '<div class="rel-grid">'+DATA.related.map(function(p){return productCard(p,false);}).join('')+'</div></div>' : '')+
           '</div>'+
           newsletter()+footer(DATA.footer.product);
         }
 
-        /* ---------- 8. ROUTER (black-update's hash routing, enhanced) ---------- */
+        /* ---------- 10. TRUST PERKS (uses store settings) ---------- */
+        function buildPerksHTML() {
+          var sd = window._storeData || {};
+          var hide = sd.hideTrustIcons || {};
+          var txt = sd.trustIconsText || {};
+          var perks = [
+            { key: 'free_shipping', hidden: !!hide.free_shipping,
+              title: txt.free_shipping_title || t('trust_free_title') || 'Free Shipping',
+              desc: txt.free_shipping_desc || t('trust_free_desc') || 'on orders over 5,000 DA',
+              icon: I.truck },
+            { key: 'easy_returns', hidden: !!hide.easy_returns,
+              title: txt.easy_returns_title || t('trust_returns_title') || '30-Day Return',
+              desc: txt.easy_returns_desc || t('trust_returns_desc') || 'Money back guarantee',
+              icon: I.ret },
+            { key: 'secure_payment', hidden: !!hide.secure_payment,
+              title: txt.secure_payment_title || t('trust_secure_title') || 'Secure Payment',
+              desc: txt.secure_payment_desc || t('trust_secure_desc') || '100% protected',
+              icon: I.shield }
+          ];
+          var visible = perks.filter(function(p) { return !p.hidden; });
+          if (!visible.length) return '';
+          return visible.map(function(p) {
+            return '<div class="perk">'+p.icon+'<div><b>'+escapeHTML(p.title)+'</b><span>'+escapeHTML(p.desc)+'</span></div></div>';
+          }).join('');
+        }
+
+        /* ---------- 11. ROUTER ---------- */
         var app = document.getElementById('app');
         function page() { return (location.hash || '').indexOf('product') > -1 ? 'product' : 'home'; }
         function render(scrollTop) {
@@ -4279,12 +4415,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           if (scrollTop !== false) window.scrollTo(0, 0);
           if (window.lucide) lucide.createIcons();
         }
-
-        // Override route() from black to use black-update's hash routing
-        function route() {
-          render(true);
-        }
-
+        function route() { render(true); }
         function syncCart() {
           var total = getCart().reduce(function(s, i) { return s + i.qty; }, 0);
           state.cart = total;
@@ -4292,13 +4423,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           for (var i = 0; i < els.length; i++) els[i].textContent = total;
         }
 
-        /* ---------- 9. NAVIGATION HELPER ---------- */
+        /* ---------- 12. NAVIGATION HELPER ---------- */
         function navigateToProduct(product) {
           if (!product) return;
           state.product = product;
           state.selectedColor = 0;
-          // Auto-select first size (black-update's PDP doesn't have size buttons,
-          // but black's addToCart requires a size. We pick the first one automatically.)
           state.selectedSize = (product.sizes && product.sizes.length) ? product.sizes[0] : null;
           state.quantity = 1;
           state.qty = 1;
@@ -4308,12 +4437,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           state.currentImage = 0;
           state.review = 0;
           state.wishlist = false;
-          // Pixel: ViewContent
           if (typeof window.ShvPixels === 'object') window.ShvPixels.track('ViewContent', { content_ids: [String(product.id)], content_name: product.name, value: window._effectivePrice ? window._effectivePrice(product) : product.price, currency: 'DZD' });
           location.hash = '#/product';
         }
 
-        /* ---------- 10. SEARCH OVERLAY (uses black's search logic) ---------- */
+        /* ---------- 13. SEARCH OVERLAY ---------- */
         var searchOverlay = null;
         function openSearchOverlay() {
           if (!searchOverlay) {
@@ -4345,10 +4473,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 return '<div class="p-card" data-product-id="'+p.id+'" style="cursor:pointer;">' +
                   '<div class="p-img" data-go="product"><img src="'+((p.images&&p.images[0])?p.images[0]:p.image)+'" alt="'+escapeHTML(p.name)+'" loading="lazy"></div>' +
                   '<div class="p-name">'+escapeHTML(p.name)+'</div>' +
-                  '<div class="p-row"><span class="p-price">$'+eff.toFixed(2)+'</span></div>' +
+                  '<div class="p-row"><span class="p-price">'+formatProductPrice(eff)+'</span></div>' +
                 '</div>';
               }).join('');
-              // Bind click on results
               var cards = resultsEl.querySelectorAll('[data-go="product"]');
               cards.forEach(function(card) {
                 card.addEventListener('click', function() {
@@ -4369,19 +4496,12 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           if (searchOverlay) searchOverlay.style.display = 'none';
           document.body.style.overflow = '';
         }
-        // ESC key closes search overlay and checkout modal
-        document.addEventListener('keydown', function(e) {
-          if (e.key === 'Escape') {
-            if (searchOverlay && searchOverlay.style.display === 'flex') closeSearchOverlay();
-            if (checkoutModal && checkoutModal.style.display === 'flex') closeCheckoutModal();
-          }
-        });
 
-        /* ---------- 11. CHECKOUT MODAL (uses black's order submission logic) ---------- */
+        /* ---------- 14. CHECKOUT MODAL ---------- */
         var checkoutModal = null;
         function openCheckoutModal() {
           var cart = getCart();
-          if (!cart.length) { showToast(t('toast_cart_empty')); return; }
+          if (!cart.length) { showToast(t('toast_cart_empty') || 'Cart is empty'); return; }
           if (!checkoutModal) {
             checkoutModal = document.createElement('div');
             checkoutModal.id = 'checkoutModal';
@@ -4389,7 +4509,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             document.body.appendChild(checkoutModal);
           }
           var subtotal = cart.reduce(function(s,i){return s+(i.price*i.qty);},0);
-          // Check free shipping
           var allFree = cart.every(function(it) {
             if (it.freeShipping === true) return true;
             if (it.id && NEON_DATA && Array.isArray(NEON_DATA.products)) {
@@ -4413,15 +4532,15 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                   return '<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #eee;">' +
                     '<img src="'+item.image+'" alt="'+escapeHTML(item.name)+'" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">' +
                     '<div style="flex:1;"><div style="font-size:13px;font-weight:600;">'+escapeHTML(item.name)+'</div>' +
-                    '<div style="font-size:11px;color:#888;">'+escapeHTML(item.color)+' / '+escapeHTML(item.size)+' × '+item.qty+'</div></div>' +
-                    '<div style="font-size:13px;font-weight:700;">'+formatPrice(item.price*item.qty)+'</div>' +
+                    '<div style="font-size:11px;color:#888;">'+escapeHTML(item.color)+' / '+escapeHTML(item.size)+' x '+item.qty+'</div></div>' +
+                    '<div style="font-size:13px;font-weight:700;">'+formatProductPrice(item.price*item.qty)+'</div>' +
                   '</div>';
                 }).join('') +
               '</div>' +
               '<div style="background:#f8f8f8;border-radius:8px;padding:14px;margin-bottom:20px;">' +
-                '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Subtotal</span><span>'+formatPrice(subtotal)+'</span></div>' +
-                '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Shipping</span><span>'+(shipping===0?'FREE':formatPrice(shipping))+'</span></div>' +
-                '<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;border-top:1px solid #ddd;padding-top:8px;"><span>Total</span><span>'+formatPrice(total)+'</span></div>' +
+                '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Subtotal</span><span>'+formatProductPrice(subtotal)+'</span></div>' +
+                '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Shipping</span><span>'+(shipping===0?'FREE':formatProductPrice(shipping))+'</span></div>' +
+                '<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;border-top:1px solid #ddd;padding-top:8px;"><span>Total</span><span>'+formatProductPrice(total)+'</span></div>' +
               '</div>' +
               '<form id="checkoutForm" style="display:flex;flex-direction:column;gap:12px;">' +
                 '<input type="text" id="ckName" placeholder="Full Name *" maxlength="100" style="padding:10px 14px;border:1px solid #e2e2e2;border-radius:8px;font-size:14px;font-family:inherit;" value="'+escapeHTML(d.fullName||'')+'">' +
@@ -4439,10 +4558,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             '</div>';
           checkoutModal.style.display = 'flex';
           document.body.style.overflow = 'hidden';
-          // Bind close
           checkoutModal.querySelector('#checkoutClose').addEventListener('click', closeCheckoutModal);
           checkoutModal.addEventListener('click', function(e) { if (e.target === checkoutModal) closeCheckoutModal(); });
-          // Delivery type buttons
           var dtBtns = checkoutModal.querySelectorAll('.delivery-type-btn');
           dtBtns.forEach(function(btn) {
             btn.addEventListener('click', function() {
@@ -4450,17 +4567,15 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
               btn.style.background = '#111'; btn.style.color = '#fff';
               if (!state.checkoutData) state.checkoutData = {};
               state.checkoutData.deliveryType = btn.getAttribute('data-delivery');
-              openCheckoutModal(); // re-render with new shipping
+              openCheckoutModal();
             });
           });
-          // Wilaya change → re-render
           var wilayaSel = checkoutModal.querySelector('#ckWilaya');
           wilayaSel.addEventListener('change', function() {
             if (!state.checkoutData) state.checkoutData = {};
             state.checkoutData.wilaya = wilayaSel.value;
-            openCheckoutModal(); // re-render
+            openCheckoutModal();
           });
-          // Form submit
           var form = checkoutModal.querySelector('#checkoutForm');
           form.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -4470,10 +4585,10 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             var bl = checkoutModal.querySelector('#ckBaladiya').value.trim();
             var ad = checkoutModal.querySelector('#ckAddress').value.trim();
             var nt = checkoutModal.querySelector('#ckNotes').value.trim();
-            if (!nm || !ph || !wl || !bl || !ad) { showToast(t('of_required')); return; }
-            if (!/^0[5-7]\d{8}$/.test(ph)) { showToast(t('of_required')); return; }
-            if (typeof window._shvIsRepeatedDigitsPhone === 'function' && window._shvIsRepeatedDigitsPhone(ph)) { showToast(t('of_required')); return; }
-            if (typeof window._shvCheckRateLimit === 'function') { var _rl = window._shvCheckRateLimit(); if (_rl > 0) { showToast(t('of_required')); return; } }
+            if (!nm || !ph || !wl || !bl || !ad) { showToast(t('of_required') || 'Please fill all fields'); return; }
+            if (!/^0[5-7]\d{8}$/.test(ph)) { showToast(t('of_required') || 'Invalid phone'); return; }
+            if (typeof window._shvIsRepeatedDigitsPhone === 'function' && window._shvIsRepeatedDigitsPhone(ph)) { showToast(t('of_required') || 'Invalid phone'); return; }
+            if (typeof window._shvCheckRateLimit === 'function') { var _rl = window._shvCheckRateLimit(); if (_rl > 0) { showToast(t('of_required') || 'Wait'); return; } }
             state.checkoutData = { fullName: nm, phone: ph, wilaya: wl, baladiya: bl, address: ad, notes: nt, deliveryType: (state.checkoutData && state.checkoutData.deliveryType) || 'home' };
             var submitBtn = checkoutModal.querySelector('#checkoutSubmit');
             submitBtn.disabled = true; submitBtn.textContent = '...';
@@ -4499,7 +4614,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 if (typeof window._shvStampSubmit === 'function') window._shvStampSubmit();
                 if (typeof window.ShvPixels === 'object') window.ShvPixels.track('Purchase', { value: payload.pricing.total, currency: 'DZD', num_items: freshCart.reduce(function(s,i){return s+i.qty;},0) });
               }
-              // Clear cart
               setCart([]);
               syncCart();
               if (typeof renderCart === 'function') renderCart();
@@ -4520,38 +4634,30 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           document.body.style.overflow = '';
         }
 
-        /* ---------- 12. EVENT DELEGATION (wired to black's services) ---------- */
+        /* ---------- 15. EVENT DELEGATION ---------- */
         document.addEventListener('click', function(e) {
           var noop = e.target.closest('[data-noop]'); if (noop) { e.preventDefault(); return; }
 
-          // Wishlist toggle — persists to localStorage (black's storage logic)
           var wish = e.target.closest('[data-wish]');
           if (wish) {
-            e.preventDefault();
-            e.stopPropagation();
+            e.preventDefault(); e.stopPropagation();
             var id = wish.dataset.wish;
             state.wish = state.wish || {};
             state.wish[id] = !state.wish[id];
             wish.classList.toggle('active', !!state.wish[id]);
             try { localStorage.setItem('jolt_wish', JSON.stringify(state.wish)); } catch(err) {}
-            showToast(state.wish[id] ? t('toast_added_wishlist') : t('toast_removed_wishlist'));
-            if (typeof window.ShvPixels === 'object' && state.wish[id] && id !== 'main') {
-              // Pixel tracking for wishlist add
-            }
+            showToast(state.wish[id] ? (t('toast_added_wishlist') || 'Added to wishlist') : (t('toast_removed_wishlist') || 'Removed from wishlist'));
             return;
           }
 
-          // Quick add to cart (small + button on product cards) — uses black's addToCart
           var add = e.target.closest('[data-add]');
           if (add) {
-            e.preventDefault();
-            e.stopPropagation();
+            e.preventDefault(); e.stopPropagation();
             var card = add.closest('[data-product-id]');
             var productId = card ? card.getAttribute('data-product-id') : null;
             var product = null;
             if (productId) product = NEON_DATA.getProductById(productId);
             if (!product) {
-              // Fallback: find by name
               var nameEl = card && card.querySelector('.p-name');
               var name = nameEl && nameEl.textContent;
               if (name) product = NEON_DATA.products.find(function(p) { return p.name === name; });
@@ -4565,7 +4671,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
-          // Swatch selection — syncs with state.selectedColor (for black's services)
           var sw = e.target.closest('[data-swatch]');
           if (sw) {
             e.preventDefault();
@@ -4578,7 +4683,27 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
-          // Quantity buttons — syncs with state.quantity
+          // Size selector (NEW)
+          var sb = e.target.closest('[data-size]');
+          if (sb) {
+            e.preventDefault();
+            state.selectedSize = sb.dataset.size;
+            var sizeBtns = document.querySelectorAll('.size-btn');
+            sizeBtns.forEach(function(s) {
+              s.classList.remove('sel');
+              s.style.background = '#fff';
+              s.style.color = '#111';
+              s.style.borderColor = '#e2e2e2';
+            });
+            sb.classList.add('sel');
+            sb.style.background = '#111';
+            sb.style.color = '#fff';
+            sb.style.borderColor = '#111';
+            var sv = document.getElementById('sizeValue');
+            if (sv) sv.textContent = state.selectedSize;
+            return;
+          }
+
           var qb = e.target.closest('[data-qty]');
           if (qb) {
             e.preventDefault();
@@ -4589,14 +4714,13 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
-          // Add to cart (big button on PDP) — requires size selection (black's logic)
           var ac = e.target.closest('[data-addcart]');
           if (ac) {
             e.preventDefault();
             var p = state.product;
             if (p) {
               if (!state.selectedSize && p.sizes && p.sizes.length > 0) {
-                showToast(t('toast_select_size'));
+                showToast(t('toast_select_size') || 'Please select a size');
                 return;
               }
               var size2 = state.selectedSize || (p.sizes && p.sizes[0]) || 'One Size';
@@ -4607,14 +4731,13 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
-          // Buy Now — adds to cart and opens checkout
           var bn = e.target.closest('[data-buynow]');
           if (bn) {
             e.preventDefault();
             var bp = state.product;
             if (bp) {
               if (!state.selectedSize && bp.sizes && bp.sizes.length > 0) {
-                showToast(t('toast_select_size'));
+                showToast(t('toast_select_size') || 'Please select a size');
                 return;
               }
               var bsize = state.selectedSize || (bp.sizes && bp.sizes[0]) || 'One Size';
@@ -4626,7 +4749,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
-          // Tab switching
           var tb = e.target.closest('[data-tab]');
           if (tb) {
             e.preventDefault();
@@ -4638,7 +4760,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
-          // Thumbnail selection — syncs with state.currentImage
           var th = e.target.closest('[data-thumb]');
           if (th) {
             e.preventDefault();
@@ -4651,7 +4772,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
-          // Thumbnail next (cycler)
           var tn = e.target.closest('[data-thumbnext]');
           if (tn) {
             e.preventDefault();
@@ -4665,7 +4785,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
-          // Review navigation
           var rv = e.target.closest('[data-rev]');
           if (rv) {
             e.preventDefault();
@@ -4678,12 +4797,10 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
-          // Navigation (data-go) — sets product before navigating to PDP
           var go = e.target.closest('[data-go]');
           if (go) {
             e.preventDefault();
             if (go.dataset.go === 'product') {
-              // Find which product was clicked
               var goCard = go.closest('[data-product-id]');
               var goProductId = goCard ? goCard.getAttribute('data-product-id') : null;
               var goProduct = null;
@@ -4700,7 +4817,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
-          // Cart button (open cart drawer)
           var cartOpen = e.target.closest('[data-cart-open]');
           if (cartOpen) {
             e.preventDefault();
@@ -4708,7 +4824,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
-          // Search button (open search overlay)
           var searchOpen = e.target.closest('[data-search-open]');
           if (searchOpen) {
             e.preventDefault();
@@ -4716,7 +4831,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return;
           }
 
-          // Main image click → open zoom viewer (black's zoom feature)
           var mainImg = e.target.closest('#mainImg');
           if (mainImg && typeof openZoomViewer === 'function') {
             openZoomViewer(state.currentImage || 0);
@@ -4724,24 +4838,47 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           }
         });
 
-        // Newsletter form submit
         document.addEventListener('submit', function(e) {
           var f = e.target.closest('.news-form');
           if (f) { e.preventDefault(); f.querySelector('input').value = ''; showToast('Subscribed!'); }
         });
 
-        // Hash change → re-render
         window.addEventListener('hashchange', function() { render(); });
 
-        /* ---------- 13. NEW INIT FUNCTION ---------- */
+        // ESC key closes overlays
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') {
+            if (searchOverlay && searchOverlay.style.display === 'flex') closeSearchOverlay();
+            if (checkoutModal && checkoutModal.style.display === 'flex') closeCheckoutModal();
+          }
+        });
+
+        /* ---------- 16. NEW INIT FUNCTION (loads store + products from Supabase) ---------- */
+        // Wait for Supabase module to be ready (it's loaded async as type="module")
+        function waitForSupabase(timeout) {
+          timeout = timeout || 8000;
+          return new Promise(function(resolve) {
+            if (typeof window.fetchStoreFromFirestore === 'function') return resolve(true);
+            var start = Date.now();
+            var interval = setInterval(function() {
+              if (typeof window.fetchStoreFromFirestore === 'function') {
+                clearInterval(interval);
+                resolve(true);
+              } else if (Date.now() - start > timeout) {
+                clearInterval(interval);
+                console.warn('Supabase module not loaded after', timeout, 'ms — using fallback data');
+                resolve(false);
+              }
+            }, 100);
+          });
+        }
+
         async function init() {
-          // Init cart count from localStorage (black's cart system)
+          // Init cart count from localStorage
           setCart(getCart());
           syncCart();
 
-          // Bind cart drawer + zoom viewer + language toggle (black's bind functions,
-          // which bind to #cartBtn, #zoomOverlay etc. — these elements exist as
-          // hidden infrastructure we added to the body)
+          // Bind cart drawer + zoom viewer + language toggle
           bindCart();
           bindZoomViewer();
           bindLanguageToggle();
@@ -4752,16 +4889,20 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             state.wish = savedWish || {};
           } catch(e) { state.wish = {}; }
 
-          // Set default product
+          // Set default language
+          if (typeof currentLang !== 'undefined') {
+            try { currentLang = localStorage.getItem(LANG_KEY) === 'ar' ? 'ar' : 'en'; } catch(e) {}
+          }
+
+          // Initial render with fallback data (so user sees something immediately)
           if (NEON_DATA && NEON_DATA.products && NEON_DATA.products.length) {
             state.product = NEON_DATA.products[0];
             state.color = (state.product.colors && state.product.colors[0]) ? state.product.colors[0].name : 'Default';
           }
+          render();
 
-          // Apply saved language
-          if (typeof currentLang !== 'undefined') {
-            try { currentLang = localStorage.getItem(LANG_KEY) === 'ar' ? 'ar' : 'en'; } catch(e) {}
-          }
+          // ── Wait for Supabase module to be ready ──
+          await waitForSupabase();
 
           // ── Load store data from Supabase ──
           var storeId = window._getStoreId && window._getStoreId();
@@ -4771,6 +4912,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
               if (result.store) {
                 window._storeData = result.store;
                 if (typeof window.ShvPixels === 'object') window.ShvPixels.init(result.store);
+                // Update document title with store name
+                if (result.store.name) document.title = result.store.name;
               }
               if (result.products && result.products.length > 0) {
                 NEON_DATA.products = result.products.map(function(p, i) {
@@ -4782,8 +4925,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                     price: p.price || 0,
                     discountPrice: p.discountPrice || null,
                     originalPrice: p.originalPrice || null,
-                    rating: (typeof window._shvProductRating === 'function') ? window._shvProductRating(p) : (p.rating || 4.8),
-                    reviews: (typeof window._shvProductReviewCount === 'function') ? window._shvProductReviewCount(p) : (p.reviews || 100),
+                    rating: (typeof window._shvProductRating === 'function') ? window._shvProductRating(p) : (p.rating || 0),
+                    reviews: (typeof window._shvProductReviewCount === 'function') ? window._shvProductReviewCount(p) : (p.reviews || 0),
                     badge: p.badge || '',
                     isNew: p.isNew || false,
                     images: p.images && p.images.length > 0 ? p.images : [p.image || ''],
@@ -4793,15 +4936,17 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                     desc: p.desc || '',
                     colors: p.colors || [],
                     sizes: p.sizes || [],
-                    details: Array.isArray(p.details) ? p.details : (p.details ? [String(p.details)] : ['Quality product']),
-                    materials: p.materials || 'Premium materials.',
-                    sizeFit: p.sizeFit || 'Standard fit.',
-                    shipping: p.shipping || 'Free shipping on orders above 5,000 DA.',
+                    details: Array.isArray(p.details) ? p.details : (p.details ? [String(p.details)] : []),
+                    materials: p.materials || '',
+                    sizeFit: p.sizeFit || '',
+                    shipping: p.shipping || '',
                     shippingReturns: p.shippingReturns || '',
                     reviewsText: p.reviewsText || '',
                     reviewsData: Array.isArray(p.reviewsData) ? p.reviewsData : [],
                     slug: p.slug || '',
-                    freeShipping: p.freeShipping === true
+                    freeShipping: p.freeShipping === true,
+                    ttsEnabled: p.ttsEnabled === true,
+                    ttsFee: p.ttsFee || 0
                   };
                 });
                 // Build categories from products
@@ -4812,13 +4957,13 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                   }
                 });
                 NEON_DATA.categories = Object.values(catMap);
-                // Update default product
                 if (NEON_DATA.products.length) {
                   state.product = NEON_DATA.products[0];
                   state.color = (state.product.colors && state.product.colors[0]) ? state.product.colors[0].name : 'Default';
+                  state.selectedSize = (state.product.sizes && state.product.sizes[0]) || null;
                 }
               }
-              // Realtime subscription
+              // Realtime subscription for live updates
               if (typeof window.subscribeToStoreProducts === 'function') {
                 window.subscribeToStoreProducts(storeId, function(products) {
                   if (!products || !products.length) return;
@@ -4827,31 +4972,33 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                       id: p.id || (i + 1), name: p.name || '', category: p.category || 'general',
                       categoryLabel: p.category || 'General', price: p.price || 0,
                       discountPrice: p.discountPrice || null, originalPrice: p.originalPrice || null,
-                      rating: (typeof window._shvProductRating === 'function') ? window._shvProductRating(p) : (p.rating || 4.8),
-                      reviews: (typeof window._shvProductReviewCount === 'function') ? window._shvProductReviewCount(p) : (p.reviews || 100),
+                      rating: (typeof window._shvProductRating === 'function') ? window._shvProductRating(p) : (p.rating || 0),
+                      reviews: (typeof window._shvProductReviewCount === 'function') ? window._shvProductReviewCount(p) : (p.reviews || 0),
                       badge: p.badge || '', isNew: false,
                       images: p.images && p.images.length > 0 ? p.images : [p.image || ''],
                       image: p.image || '', shortDesc: p.desc || '', desc: p.desc || '',
                       colors: p.colors || [], sizes: p.sizes || [],
                       details: Array.isArray(p.details) ? p.details : ['Quality product'],
-                      materials: 'Premium materials.', sizeFit: 'Standard fit.',
-                      shipping: 'Free shipping on orders above 5,000 DA.',
+                      materials: '', sizeFit: '', shipping: '',
+                      shippingReturns: p.shippingReturns || '',
+                      reviewsText: p.reviewsText || '',
                       reviewsData: Array.isArray(p.reviewsData) ? p.reviewsData : [],
-                      slug: p.slug || '', freeShipping: p.freeShipping === true
+                      slug: p.slug || '', freeShipping: p.freeShipping === true,
+                      ttsEnabled: p.ttsEnabled === true, ttsFee: p.ttsFee || 0
                     };
                   });
                   render(false);
                 });
               }
             } catch(e) {
-              console.warn('Supabase load failed, using fallback NEON_DATA:', e);
+              console.warn('Supabase load failed, using fallback data:', e);
             }
           }
 
           // Pixel: PageView
           if (typeof window.ShvPixels === 'object') window.ShvPixels.track('PageView');
 
-          // Initial render
+          // Re-render with real data
           render();
 
           // Handle browser back/forward
