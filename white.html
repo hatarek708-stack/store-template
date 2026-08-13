@@ -1452,6 +1452,12 @@
 </head>
 <body>
 
+  <!-- Loading screen — shown until store data is ready (prevents flash of default content) -->
+  <div id="loadingScreen" style="position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;z-index:99999;transition:opacity .3s;">
+    <div style="width:40px;height:40px;border:3px solid #eee;border-top-color:#111;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+  </div>
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
   <!-- HEADER -->
   <header class="site-header transparent" id="siteHeader">
     <div class="header-inner">
@@ -4456,7 +4462,20 @@
 
       if (typeof window.ShvPixels === 'object') window.ShvPixels.track('PageView');
       route();
+
+      // ── Hide loading screen (with fade) once first real render is done ──
+      var _ls = document.getElementById('loadingScreen');
+      if (_ls) {
+        _ls.style.opacity = '0';
+        setTimeout(function() { if (_ls.parentNode) _ls.parentNode.removeChild(_ls); }, 300);
+      }
     }
+
+    // Safety timeout: hide loading screen after 5s no matter what
+    setTimeout(function() {
+      var _ls = document.getElementById('loadingScreen');
+      if (_ls) { _ls.style.opacity = '0'; setTimeout(function() { if (_ls.parentNode) _ls.parentNode.removeChild(_ls); }, 300); }
+    }, 5000);
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
