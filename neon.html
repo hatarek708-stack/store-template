@@ -2989,6 +2989,8 @@
           reviewsData: mergedReviews,
           shipping: '',
           freeShipping: p.free_shipping === true,
+          ttsEnabled: p.tts_enabled === true,
+          ttsFee: Number(p.tts_fee) || 0,
         };
       });
       try { localStorage.setItem(cacheKey, JSON.stringify({ products, version: remoteVer })); } catch {}
@@ -3027,6 +3029,8 @@
                 reviewsText: p.reviews_text || '',
                 reviewsData: mergedReviews,
                 freeShipping: p.free_shipping === true,
+                ttsEnabled: p.tts_enabled === true,
+                ttsFee: Number(p.tts_fee) || 0,
                 rating: window._shvProductRating(pWithReviews),
                 reviews: window._shvProductReviewCount(pWithReviews),
               };
@@ -3062,6 +3066,8 @@
                 reviewsText: p.reviews_text || '',
                 reviewsData: mergedReviews,
                 freeShipping: p.free_shipping === true,
+                ttsEnabled: p.tts_enabled === true,
+                ttsFee: Number(p.tts_fee) || 0,
                 rating: window._shvProductRating(pWithReviews),
                 reviews: window._shvProductReviewCount(pWithReviews),
               };
