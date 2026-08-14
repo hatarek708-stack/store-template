@@ -902,12 +902,16 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
         const storedTemplate = (store.template || store.theme || '').toLowerCase();
         const onStoreDomain = window.location.hostname.endsWith('shopevelo.me');
         if (!onStoreDomain) {
-          if (storedTemplate === 'noir' && !window.location.pathname.toLowerCase().includes('black')) {
+          // ✨ إصلاح: إضافة فرع neon المفقود — كل قالب يجب أن يعرف كيف
+          // يُحوِّل للقالبين الآخرين (noir/black, neon/neon, zephyr/white).
+          const tplMap = { noir: 'black.html', neon: 'neon.html', zephyr: 'white.html' };
+          const target = tplMap[storedTemplate];
+          const currentFile = window.location.pathname.split('/').pop().toLowerCase();
+          if (target && target.toLowerCase() !== currentFile) {
             localStorage.setItem(flagKey, '1');
-            const url = new URL(window.location.href); url.pathname = url.pathname.replace(/\/[^\/]*$/, '/black.html'); window.location.replace(url.toString());
-          } else if (storedTemplate === 'zephyr' && !window.location.pathname.toLowerCase().includes('white')) {
-            localStorage.setItem(flagKey, '1');
-            const url = new URL(window.location.href); url.pathname = url.pathname.replace(/\/[^\/]*$/, '/white.html'); window.location.replace(url.toString());
+            const url = new URL(window.location.href);
+            url.pathname = url.pathname.replace(/\/[^\/]*$/, '/' + target);
+            window.location.replace(url.toString());
           }
         }
       } catch (e) {}

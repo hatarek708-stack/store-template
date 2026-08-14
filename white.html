@@ -2201,8 +2201,17 @@
         const tpl = (store.template || store.theme || '').toLowerCase();
         const onDomain = window.location.hostname.endsWith('shopevelo.me');
         if (!onDomain) {
-          if (tpl === 'noir' && !window.location.pathname.toLowerCase().includes('black')) { localStorage.setItem(flagKey,'1'); const u=new URL(window.location.href); u.pathname=u.pathname.replace(/\/[^\/]*$/,'/black.html'); window.location.replace(u.toString()); }
-          else if (tpl === 'neon' && !window.location.pathname.toLowerCase().includes('neon')) { localStorage.setItem(flagKey,'1'); const u=new URL(window.location.href); u.pathname=u.pathname.replace(/\/[^\/]*$/,'/neon.html'); window.location.replace(u.toString()); }
+          // ✨ إصلاح: إضافة فرع zephyr المفقود سابقًا — كل قالب يعرف كيف
+          // يُحوِّل للقالبين الآخرين (noir/black, neon/neon, zephyr/white).
+          const tplMap = { noir: 'black.html', neon: 'neon.html', zephyr: 'white.html' };
+          const target = tplMap[tpl];
+          const currentFile = window.location.pathname.split('/').pop().toLowerCase();
+          if (target && target.toLowerCase() !== currentFile) {
+            localStorage.setItem(flagKey, '1');
+            const u = new URL(window.location.href);
+            u.pathname = u.pathname.replace(/\/[^\/]*$/, '/' + target);
+            window.location.replace(u.toString());
+          }
         }
       } catch(e) {}
     })();
