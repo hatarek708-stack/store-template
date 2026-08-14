@@ -2131,6 +2131,8 @@
         [dir="rtl"] .cart-total-row { flex-direction: row; }
         [dir="rtl"] .cart-header h3 { flex-direction: row; }
     </style>
+    <!-- ✨ shared theme-router — موحَّد لكل القوالب (يصلح bug الـ neon المفقود) -->
+    <script src="/shared/theme-router.js"></script>
 </head>
 <body>
     <!-- Loading screen — shown until store data is ready (prevents flash of default content) -->
@@ -3200,30 +3202,15 @@
       return { init: init, track: track };
     })();
 
-    // Template redirect
+    // ✨ Template redirect — استخدم shared/theme-router.js الموحَّد
     (async function templateRedirect() {
       const storeId = window._getStoreId();
       if (!storeId) return;
-      const flagKey = '_tpl_redirect_neon_' + storeId;
-      if (localStorage.getItem(flagKey)) return;
       try {
         const { store } = await window.fetchStoreFromFirestore(storeId);
         if (!store) return;
-        const storedTemplate = (store.template || store.theme || '').toLowerCase();
-        const onStoreDomain = window.location.hostname.endsWith('shopevelo.me');
-        if (!onStoreDomain) {
-          // ✨ إصلاح: إضافة فرع neon المفقود سابقًا — كل قالب يعرف كيف
-          // يُحوِّل للقالبين الآخرين (noir/black, neon/neon, zephyr/white).
-          const tplMap = { noir: 'black.html', neon: 'neon.html', zephyr: 'white.html' };
-          const target = tplMap[storedTemplate];
-          const currentFile = window.location.pathname.split('/').pop().toLowerCase();
-          if (target && target.toLowerCase() !== currentFile) {
-            localStorage.setItem(flagKey, '1');
-            const url = new URL(window.location.href);
-            url.pathname = url.pathname.replace(/\/[^\/]*$/, '/' + target);
-            window.location.replace(url.toString());
-          }
-        }
+        // shvRedirectToTheme يتعامل مع كل الفروع (noir/neon/zephyr) + منع loop
+        window.shvRedirectToTheme(store.template || store.theme || '');
       } catch (e) {}
     })();
     </script>

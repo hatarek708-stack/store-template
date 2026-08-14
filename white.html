@@ -1449,6 +1449,8 @@
     [dir="rtl"] .reviews-summary{flex-direction:row-reverse;}
     [dir="rtl"] .review-card > div:first-child{flex-direction:row-reverse;}
   </style>
+  <!-- ✨ shared theme-router — موحَّد لكل القوالب (يصلح bug الـ neon المفقود) -->
+  <script src="/shared/theme-router.js"></script>
 </head>
 <body>
 
@@ -2190,30 +2192,16 @@
       return { init: init, track: track };
     })();
 
+    // ✨ Template redirect — استخدم shared/theme-router.js الموحَّد
     (async function templateRedirect() {
       const storeId = window._getStoreId();
       if (!storeId) return;
-      const flagKey = '_tpl_redirect_zephyr_' + storeId;
-      if (localStorage.getItem(flagKey)) return;
       try {
         const { store } = await window.fetchStoreFromFirestore(storeId);
         if (!store) return;
-        const tpl = (store.template || store.theme || '').toLowerCase();
-        const onDomain = window.location.hostname.endsWith('shopevelo.me');
-        if (!onDomain) {
-          // ✨ إصلاح: إضافة فرع zephyr المفقود سابقًا — كل قالب يعرف كيف
-          // يُحوِّل للقالبين الآخرين (noir/black, neon/neon, zephyr/white).
-          const tplMap = { noir: 'black.html', neon: 'neon.html', zephyr: 'white.html' };
-          const target = tplMap[tpl];
-          const currentFile = window.location.pathname.split('/').pop().toLowerCase();
-          if (target && target.toLowerCase() !== currentFile) {
-            localStorage.setItem(flagKey, '1');
-            const u = new URL(window.location.href);
-            u.pathname = u.pathname.replace(/\/[^\/]*$/, '/' + target);
-            window.location.replace(u.toString());
-          }
-        }
-      } catch(e) {}
+        // shvRedirectToTheme يتعامل مع كل الفروع (noir/neon/zephyr) + منع loop
+        window.shvRedirectToTheme(store.template || store.theme || '');
+      } catch (e) {}
     })();
   </script>
 
