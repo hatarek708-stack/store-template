@@ -3,7 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jolt</title>
+<title>NOIR — Premium Fashion Store</title>
+<meta name="description" content="NOIR — Premium fashion store. Curated pieces, premium quality, delivered to your door across Algeria.">
+<meta name="theme-color" content="#0f172a">
+<link rel="canonical" href="">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="NOIR — Premium Fashion Store">
+<meta property="og:description" content="Premium fashion store. Curated pieces, premium quality, delivered to your door across Algeria.">
+<meta property="og:site_name" content="NOIR">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NOIR — Premium Fashion Store">
+<meta name="twitter:description" content="Premium fashion store. Curated pieces, premium quality, delivered to your door across Algeria.">
+
+<!-- Prevent caching of old version -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="version" content="noir-v3">
+
+<!-- Force fresh load: redirect to URL with version param if missing -->
+<script>
+(function() {
+    try {
+        var VERSION = 'noir-v3';
+        var url = new URL(window.location.href);
+        if (url.searchParams.get('cv') !== VERSION) {
+            url.searchParams.set('cv', VERSION);
+            window.location.replace(url.toString());
+        }
+    } catch (e) {
+        console.error('Cache bust failed:', e);
+    }
+})();
+</script>
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/600.css">
@@ -775,7 +812,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
     };
 
     // Security utils
-    window._shvEscapeHtml = function(str) { return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); };
     window._shvCheckRateLimit = function() { var last = parseInt(localStorage.getItem('shv_last_submit_ts') || '0', 10); var diff = Date.now() - last; if (diff < 45000) return Math.ceil((45000 - diff) / 1000); return 0; };
     window._shvStampSubmit = function() { localStorage.setItem('shv_last_submit_ts', String(Date.now())); };
     window._SHV_PAGE_LOAD_TS = Date.now();
@@ -793,10 +829,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
     };
 
     // ===== Reviews / rating helpers =====
-    // _shvDefaultReviews is now a no-op — fake reviews were removed. Real reviews come from product_reviews table.
-    window._shvDefaultReviews = function (productId) {
-      return [];
-    };
     // Compute average rating for a product from real reviews only (no fake defaults)
     window._shvProductRating = function (p) {
       if (!p) return 0;
@@ -860,9 +892,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
         return null;
       }
     };
-    window._firebaseReady = true;
-    if (window._onFirebaseReady) window._onFirebaseReady();
-
     // ShvPixels module
     window.ShvPixels = (function () {
       var inited = false, ids = {};
@@ -1925,11 +1954,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             var panel = document.getElementById('panel-reviews');
             if (!panel) return;
             var esc = escapeHTML;
-            // Real reviews only (no fake fallback). _shvDefaultReviews now returns [].
-            var revData = (Array.isArray(p.reviewsData) ? p.reviewsData : []);
-            if (revData.length === 0 && typeof window._shvDefaultReviews === 'function') {
-                revData = window._shvDefaultReviews(p.id) || [];
-            }
+                        var revData = (Array.isArray(p.reviewsData) ? p.reviewsData : []);
+            // (removed dead _shvDefaultReviews fallback call)
             var revText = p.reviewsText || '';
             var rating = (typeof avgRating === 'number' && avgRating > 0) ? avgRating :
                 (typeof window._shvProductRating === 'function' ? window._shvProductRating(p) : 0);

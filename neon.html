@@ -3085,7 +3085,6 @@
     };
 
     // Security utils
-    window._shvEscapeHtml = function(str) { return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); };
     window._shvCheckRateLimit = function() { var last = parseInt(localStorage.getItem('shv_last_submit_ts') || '0', 10); var diff = Date.now() - last; if (diff < 45000) return Math.ceil((45000 - diff) / 1000); return 0; };
     window._shvStampSubmit = function() { localStorage.setItem('shv_last_submit_ts', String(Date.now())); };
     window._SHV_PAGE_LOAD_TS = Date.now();
@@ -3103,10 +3102,6 @@
     };
 
     // ===== Reviews / rating helpers =====
-    // _shvDefaultReviews is now a no-op — fake reviews were removed. Real reviews come from product_reviews table.
-    window._shvDefaultReviews = function (productId) {
-      return [];
-    };
     // Compute average rating for a product from real reviews only (no fake defaults)
     window._shvProductRating = function (p) {
       if (!p) return 0;
@@ -3170,9 +3165,6 @@
         return null;
       }
     };
-    window._firebaseReady = true;
-    if (window._onFirebaseReady) window._onFirebaseReady();
-
     // ShvPixels module
     window.ShvPixels = (function () {
       var inited = false, ids = {};
@@ -4173,11 +4165,8 @@
             var panel = document.getElementById('panel-reviews');
             if (!panel || !p) return;
             var esc = escapeHTML;
-            // Real reviews only (no fake fallback). _shvDefaultReviews now returns [].
-            var revData = (Array.isArray(p.reviewsData) ? p.reviewsData : []);
-            if (revData.length === 0 && typeof window._shvDefaultReviews === 'function') {
-                revData = window._shvDefaultReviews(p.id) || [];
-            }
+                        var revData = (Array.isArray(p.reviewsData) ? p.reviewsData : []);
+            // (removed dead _shvDefaultReviews fallback call)
             var revText = p.reviewsText || '';
             var rating = (typeof avgRating === 'number' && avgRating > 0) ? avgRating :
                 (typeof window._shvProductRating === 'function' ? window._shvProductRating(p) : 0);
