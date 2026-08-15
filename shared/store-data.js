@@ -150,6 +150,11 @@
 
   // ===== ShvPixels (CAPI + browser pixels) =====
   // IIFE متطابق عبر القوالب الثلاثة — منقول كما هو مع توحيد تسمية المتغيرات الداخلية
+  //
+  // 🔒 PRIVACY: لا تُرسَل أي بيانات PII (email/phone) عبر هذا المسار.
+  //    فقط: event name, value, currency, content_ids, content_name, num_items.
+  //    الـ Worker يحصل على CAPI tokens من store_finance (server-side) — لا تصل للمتصفح.
+  //    client_ip + client_user_agent يُرسِلهم الـ Worker إلى FB/TT (مشتقّة من الـ request).
   window.ShvPixels = (function () {
     var inited = false, ids = {};
     function _genEventId() { return Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 9); }
@@ -158,16 +163,74 @@
     function initTikTok(id) { if (!id || window.ttq) return; !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e]=+new Date;ttq._o=ttq._o||{};ttq._o[e]=n||{};var o=d.createElement("script");o.type="text/javascript";o.async=!0;o.src=i+"?sdkid="+e+"&lib="+t;var a=d.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};ttq.load(id);ttq.page()}(window,document,'ttq'); }
     function initSnapchat(id) { if (!id || window.snaptr) return; (function(e,t,n){if(e.snaptr)return;var a=e.snaptr=function(){a.handleRequest?a.handleRequest.apply(a,arguments):a.queue.push(arguments)};a.queue=[];var s='script';var r=t.createElement(s);r.async=true;r.src=n;var u=t.getElementsByTagName(s)[0];u.parentNode.insertBefore(r,u)})(window,document,'https://sc-static.net/scevent.min.js'); window.snaptr('init', id); }
     function initGoogle(id) { if (!id || window.gtag) return; window.dataLayer=window.dataLayer||[]; window.gtag=function(){window.dataLayer.push(arguments)}; loadScript('https://www.googletagmanager.com/gtag/js?id='+id); window.gtag('js',new Date()); window.gtag('config',id); }
+
+    /**
+     * إرسال الحدث إلى CAPI Worker (server-side Conversions API).
+     *
+     * 🔒 الـ Worker هو الذي يحمل CAPI tokens من store_finance — لا تُمرَّر
+     *    tokens من المتصفح أبداً. فقط نبعت له: store_id, event_name, event_id,
+     *    params (value/currency/content_ids/content_name/num_items), page_url.
+     *
+     * 🔁 deduplication: نفس event_id يُستخدم في browser pixel و CAPI —
+     *    هذا يتيح لـ FB/TT دمج الحدثين (browser + server) كحدث واحد.
+     *
+     * 🔥 fire-and-forget: sendBeacon / fetch keepalive — لا ننتظر الرد.
+     */
     function _sendServerEvent(event, params, eventId) {
-      var workerUrl = ids.capiWorkerUrl; if (!workerUrl) return;
-      var hasFb = !!ids.fb, hasTt = !!ids.tiktok; if (!hasFb && !hasTt) return;
-      var body = { store_id: ids.storeId, event: event, event_id: eventId, page_url: window.location.href, params: params };
-      if (hasFb) body.fb_pixel_id = ids.fb; if (hasTt) body.tt_pixel_id = ids.tiktok;
+      // capiWorkerUrl هو الـ base URL للـ Worker (بدون /capi/event).
+      // نُلحق المسار يدوياً — متوافق مع الـ worker المنشور.
+      var baseUrl = ids.capiWorkerUrl;
+      if (!baseUrl) return; // CAPI غير مفعّل — صمت
+      // نزّل trailing slash ثم أضف /capi/event
+      var workerUrl = baseUrl.replace(/\/+$/, '') + '/capi/event';
+
+      // فقط لو يوجد pixel ID لـ FB أو TikTok — لا داعي لإزعاج الـ Worker بلا فائدة
+      var hasFb = !!ids.fb, hasTt = !!ids.tiktok;
+      if (!hasFb && !hasTt) return;
+
+      var body = {
+        store_id: ids.storeId,
+        event: event,
+        event_id: eventId,
+        page_url: window.location.href,
+        // params يحتوي فقط على: value, currency, content_ids, content_name, num_items
+        // لا نرسل أي PII من المتصفح. الـ Worker يضيف client_ip + user_agent من request.
+        params: {
+          value: params.value,
+          currency: params.currency || 'DZD',
+          content_ids: params.content_ids,
+          content_name: params.content_name,
+          num_items: params.num_items
+        },
+        // pixel IDs — الـ Worker يتحقق منها ضد DB (anti-spoofing)
+        fb_pixel_id: hasFb ? ids.fb : undefined,
+        tt_pixel_id: hasTt ? ids.tiktok : undefined
+      };
       try {
         var blob = new Blob([JSON.stringify(body)], { type: 'application/json' });
-        if (navigator.sendBeacon) navigator.sendBeacon(workerUrl, blob);
-        else fetch(workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true }).catch(function () {});
-      } catch (e) {}
+        if (navigator.sendBeacon) {
+          var ok = navigator.sendBeacon(workerUrl, blob);
+          // sendBeacon may return false if queue is full — fallback to fetch keepalive
+          if (!ok) {
+            fetch(workerUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+              keepalive: true
+            }).catch(function () {});
+          }
+        } else {
+          fetch(workerUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+            keepalive: true
+          }).catch(function () {});
+        }
+      } catch (e) {
+        // fire-and-forget — لا نريد أن نكسر تجربة المستخدم لو فشل الإرسال
+        if (window.console && console.debug) console.debug('[ShvPixels] CAPI send failed:', e && e.message);
+      }
     }
     function init(store) {
       if (inited || !store) return;
