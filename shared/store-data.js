@@ -155,14 +155,40 @@
   //    فقط: event name, value, currency, content_ids, content_name, num_items.
   //    الـ Worker يحصل على CAPI tokens من store_finance (server-side) — لا تصل للمتصفح.
   //    client_ip + client_user_agent يُرسِلهم الـ Worker إلى FB/TT (مشتقّة من الـ request).
+  //
+  // 🔧 EVENTS WHITELIST: كل منصة لها قائمة أحداث مختارة من صاحب المتجر
+  //    (في PixelsTab). نقوم بقراءتها من storeData ونفرضها قبل إطلاق أي حدث.
+  //    لو لم تُضبط القائمة، نستخدم الافتراضية (DEFAULT_EVENTS).
   window.ShvPixels = (function () {
     var inited = false, ids = {};
+
+    // الأحداث الافتراضية لو لم يُحدّد المستخدم قائمة مخصصة
+    var DEFAULT_EVENTS = ['PageView', 'ViewContent', 'AddToCart', 'InitiateCheckout', 'Purchase'];
+
     function _genEventId() { return Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 9); }
     function loadScript(src) { var s = document.createElement('script'); s.async = true; s.src = src; document.head.appendChild(s); }
     function initFacebook(id) { if (!id || window.fbq) return; !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js'); window.fbq('init', id); }
     function initTikTok(id) { if (!id || window.ttq) return; !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e]=+new Date;ttq._o=ttq._o||{};ttq._o[e]=n||{};var o=d.createElement("script");o.type="text/javascript";o.async=!0;o.src=i+"?sdkid="+e+"&lib="+t;var a=d.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};ttq.load(id);ttq.page()}(window,document,'ttq'); }
     function initSnapchat(id) { if (!id || window.snaptr) return; (function(e,t,n){if(e.snaptr)return;var a=e.snaptr=function(){a.handleRequest?a.handleRequest.apply(a,arguments):a.queue.push(arguments)};a.queue=[];var s='script';var r=t.createElement(s);r.async=true;r.src=n;var u=t.getElementsByTagName(s)[0];u.parentNode.insertBefore(r,u)})(window,document,'https://sc-static.net/scevent.min.js'); window.snaptr('init', id); }
     function initGoogle(id) { if (!id || window.gtag) return; window.dataLayer=window.dataLayer||[]; window.gtag=function(){window.dataLayer.push(arguments)}; loadScript('https://www.googletagmanager.com/gtag/js?id='+id); window.gtag('js',new Date()); window.gtag('config',id); }
+
+    /**
+     * تحقق هل الحدث مُفعَّل لمنصة معيّنة (حسب قائمة الأحداث المختارة من المستخدم).
+     * @param {string} platformKey - مفتاح المنصة (facebookPixelId, tiktokPixelId, snapPixelId)
+     * @param {string} event - اسم الحدث (PageView, ViewContent, ...)
+     * @returns {boolean}
+     */
+    function _isEventEnabled(platformKey, event) {
+      // GA4 و GTM لا يدعمان قائمة أحداث مخصصة (supportsEvents = false) — نسمح دائماً
+      if (platformKey === 'googleAnalyticsId' || platformKey === 'gtmId') return true;
+      // اقرأ القائمة من ids.eventsMap (أُنشئت في init)
+      var evList = ids.eventsMap && ids.eventsMap[platformKey];
+      if (!evList || !Array.isArray(evList) || evList.length === 0) {
+        // لو لم تُضبط، استخدم الافتراضية
+        evList = DEFAULT_EVENTS;
+      }
+      return evList.indexOf(event) !== -1;
+    }
 
     /**
      * إرسال الحدث إلى CAPI Worker (server-side Conversions API).
@@ -184,9 +210,9 @@
       // نزّل trailing slash ثم أضف /capi/event
       var workerUrl = baseUrl.replace(/\/+$/, '') + '/capi/event';
 
-      // فقط لو يوجد pixel ID لـ FB أو TikTok — لا داعي لإزعاج الـ Worker بلا فائدة
-      var hasFb = !!ids.fb, hasTt = !!ids.tiktok;
-      if (!hasFb && !hasTt) return;
+      // فقط لو يوجد pixel ID لـ FB أو TikTok أو Snap أو GA4
+      var hasFb = !!ids.fb, hasTt = !!ids.tiktok, hasSnap = !!ids.snap, hasGa4 = !!ids.ga;
+      if (!hasFb && !hasTt && !hasSnap && !hasGa4) return;
 
       var body = {
         store_id: ids.storeId,
@@ -240,26 +266,57 @@
         snap: store.snapPixelId || '',
         ga: store.googleAnalyticsId || '',
         capiWorkerUrl: store.capiWorkerUrl || '',
-        storeId: window._getStoreId() || ''
+        storeId: window._getStoreId() || '',
+        // 🔧 قائمة الأحداث المختارة لكل منصة (من PixelsTab → storeData)
+        eventsMap: {
+          facebookPixelId:  store.facebookPixelId_events  || DEFAULT_EVENTS,
+          tiktokPixelId:    store.tiktokPixelId_events    || DEFAULT_EVENTS,
+          snapPixelId:      store.snapPixelId_events      || DEFAULT_EVENTS,
+          // GA4 و GTM لا تدعمان قائمة مخصصة
+        },
+        // 🔧 enabled flags لكل منصة — لو معطّلة لا نُطلِق أي حدث
+        enabled: {
+          facebookPixelId:  store.facebookPixelId_enabled  !== false,
+          tiktokPixelId:    store.tiktokPixelId_enabled    !== false,
+          snapPixelId:      store.snapPixelId_enabled      !== false,
+          googleAnalyticsId: store.googleAnalyticsId_enabled !== false,
+        }
       };
       if (!ids.fb && !ids.tiktok && !ids.snap && !ids.ga) return;
-      initFacebook(ids.fb); initTikTok(ids.tiktok); initSnapchat(ids.snap); initGoogle(ids.ga); inited = true;
+      // 🔒 احترم enabled flags — لو معطّلة لا تُحمِّل سكريبت المنصة أصلاً
+      if (ids.enabled.facebookPixelId && ids.fb)  initFacebook(ids.fb);
+      if (ids.enabled.tiktokPixelId    && ids.tiktok) initTikTok(ids.tiktok);
+      if (ids.enabled.snapPixelId      && ids.snap)   initSnapchat(ids.snap);
+      if (ids.enabled.googleAnalyticsId && ids.ga)    initGoogle(ids.ga);
+      inited = true;
     }
     function track(event, params) {
-      params = params || {}; var eventId = _genEventId();
-      try { if (window.fbq && ids.fb) window.fbq('track', event, params, { eventID: eventId }); } catch (e) {}
-      try { if (window.ttq && ids.tiktok) {
+      params = params || {};
+      var eventId = _genEventId();
+
+      // 🔒 احترم enabled flag — لو كل المنصات معطّلة، لا تفعل شيئاً
+      var fbOn  = ids.enabled.facebookPixelId  && _isEventEnabled('facebookPixelId', event);
+      var ttOn  = ids.enabled.tiktokPixelId    && _isEventEnabled('tiktokPixelId', event);
+      var snapOn = ids.enabled.snapPixelId     && _isEventEnabled('snapPixelId', event);
+      var gaOn  = ids.enabled.googleAnalyticsId;
+
+      if (!fbOn && !ttOn && !snapOn && !gaOn) return; // كل المنصات معطّلة أو الحدث غير مفعّل
+
+      try { if (fbOn && window.fbq && ids.fb) window.fbq('track', event, params, { eventID: eventId }); } catch (e) {}
+      try { if (ttOn && window.ttq && ids.tiktok) {
         var ttMap = { PageView:'PageView', ViewContent:'ViewContent', AddToCart:'AddToCart', InitiateCheckout:'InitiateCheckout', Purchase:'CompletePayment' };
         window.ttq.track(ttMap[event] || event, { value: params.value, currency: params.currency || 'DZD', content_id: params.content_ids ? params.content_ids[0] : undefined, content_name: params.content_name, event_id: eventId });
       } } catch (e) {}
-      try { if (window.snaptr && ids.snap) {
+      try { if (snapOn && window.snaptr && ids.snap) {
         var scMap = { PageView:'PAGE_VIEW', ViewContent:'VIEW_CONTENT', AddToCart:'ADD_CART', InitiateCheckout:'START_CHECKOUT', Purchase:'PURCHASE' };
         window.snaptr('track', scMap[event] || event, { price: params.value, currency: params.currency || 'DZD', item_ids: params.content_ids });
       } } catch (e) {}
-      try { if (window.gtag && ids.ga) {
+      try { if (gaOn && window.gtag && ids.ga) {
         var gaMap = { PageView:'page_view', ViewContent:'view_item', AddToCart:'add_to_cart', InitiateCheckout:'begin_checkout', Purchase:'purchase' };
         window.gtag('event', gaMap[event] || event, { value: params.value, currency: params.currency || 'DZD', items: params.content_ids });
       } } catch (e) {}
+
+      // CAPI beacon — يُرسَل دائماً لو أي منصة نشطة (الـ Worker يقرر لمن يُرسل)
       _sendServerEvent(event, params, eventId);
     }
     return { init: init, track: track };
@@ -430,6 +487,15 @@
         googleAnalyticsId: storeRow.google_analytics_id,
         gtmId: storeRow.gtm_id, // black/neon فقط سابقاً
         capiWorkerUrl: storeRow.capi_worker_url,
+        // 🔧 Pixel extensions — enabled flags + events whitelist + lastFired
+        // تُقرأ من store-data.js وتُمرَّر إلى ShvPixels.init()
+        facebookPixelId_enabled:  storeRow.facebook_pixel_id_enabled  !== false,
+        tiktokPixelId_enabled:    storeRow.tiktok_pixel_id_enabled    !== false,
+        snapPixelId_enabled:      storeRow.snap_pixel_id_enabled      !== false,
+        googleAnalyticsId_enabled: storeRow.google_analytics_id_enabled !== false,
+        facebookPixelId_events:   storeRow.facebook_pixel_id_events,
+        tiktokPixelId_events:     storeRow.tiktok_pixel_id_events,
+        snapPixelId_events:       storeRow.snap_pixel_id_events,
 
         // Try Two Sizes (TTS)
         ttsEnabled: storeRow.tts_enabled === true,
