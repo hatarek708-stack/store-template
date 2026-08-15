@@ -2137,6 +2137,8 @@
     <script src="/shared/shipping.js"></script>
     <!-- ✨ shared supabase config — URL + KEY + WORKER_URL موحَّدة -->
     <script src="/shared/supabase.js"></script>
+    <!-- ✨ shared store-data — fetchStoreData + subscribeToStoreProducts + reviews/pixels helpers (مُستخرَج من 3 ملفات) -->
+    <script src="/shared/store-data.js"></script>
 </head>
 <body>
     <!-- Loading screen — shown until store data is ready (prevents flash of default content) -->
@@ -2888,322 +2890,15 @@
       return payload;
     };
 
-    window._shvFetchAllReviewsMap = async (storeId) => {
-      if (!storeId) return {};
-      try {
-        const { data: reviewRows, error } = await supabase.from('product_reviews')
-          .select('product_id, customer_name, rating, comment, created_at')
-          .eq('store_id', storeId)
-          .order('created_at', { ascending: false })
-          .limit(500);
-        if (error || !Array.isArray(reviewRows)) return {};
-        const map = {};
-        for (const r of reviewRows) {
-          if (!r.product_id) continue;
-          if (!map[r.product_id]) map[r.product_id] = [];
-          map[r.product_id].push({
-            name: r.customer_name || 'Anonymous',
-            rating: Number(r.rating) || 0,
-            comment: r.comment || '',
-            date: r.created_at ? String(r.created_at).split('T')[0] : ''
-          });
-        }
-        return map;
-      } catch(e) {
-        return {};
-      }
-    };
-
-    window.fetchStoreFromFirestore = async (storeId) => {
-      if (!storeId || typeof storeId !== 'string' || storeId.trim() === '') return { store: null, products: [] };
-      const cleanStoreId = storeId.trim();
-      const cacheKey = `shv_store_${cleanStoreId}`;
-      const { data: storeRow } = await supabase.from('stores').select('*').eq('id', cleanStoreId).maybeSingle();
-      let storeData = null;
-      // Parse hero settings from page_subtitle JSON (e.g. {heroTitle1, heroTitle2, heroKicker, heroBtn})
-      var heroSettings = {};
-      try {
-        if (storeRow && storeRow.page_subtitle && typeof storeRow.page_subtitle === 'string' && storeRow.page_subtitle.trim().startsWith('{')) {
-          heroSettings = JSON.parse(storeRow.page_subtitle);
-        } else if (storeRow && storeRow.page_subtitle && typeof storeRow.page_subtitle === 'object') {
-          heroSettings = storeRow.page_subtitle;
-        }
-      } catch(e) {}
-      if (storeRow) {
-        storeData = {
-          id: storeRow.id, name: storeRow.name, title: storeRow.title || storeRow.page_title,
-          pageTitle: storeRow.page_title, pageSubtitle: storeRow.page_subtitle, heroDesc: storeRow.hero_desc || '',
-          // Hero settings (from page_subtitle JSON) — NEON defaults match existing hero text
-          heroTitle1: heroSettings.heroTitle1 || 'THRIFTED.',
-          heroTitle2: heroSettings.heroTitle2 || 'CURATED.',
-          heroKicker: heroSettings.heroKicker || 'New Arrivals',
-          heroBtn: heroSettings.heroBtn || 'Shop Now',
-          template: storeRow.template, theme: storeRow.theme,
-          shipping: storeRow.shipping || [], shippingProvider: storeRow.shipping_provider,
-          bgColor: storeRow.bg_color, cardColor: storeRow.card_color, accentColor: storeRow.accent_color, textColor: storeRow.text_color,
-          categories: storeRow.categories || [],
-          tiktok: storeRow.tiktok, instagram: storeRow.instagram, facebook: storeRow.facebook,
-          facebookPixelId: storeRow.facebook_pixel_id, tiktokPixelId: storeRow.tiktok_pixel_id,
-          snapPixelId: storeRow.snap_pixel_id, googleAnalyticsId: storeRow.google_analytics_id,
-          gtmId: storeRow.gtm_id, capiWorkerUrl: storeRow.capi_worker_url,
-          ttsEnabled: storeRow.tts_enabled === true, ttsDefaultFee: Number(storeRow.tts_default_fee) || 0,
-          ttsMinPrice: Number(storeRow.tts_min_price) || 0,
-          coverImage: storeRow.cover_image || null,
-          hideTrustIcons: storeRow.hide_trust_icons || {},
-          trustIconsText: storeRow.trust_icons_text || {},
-          updatedAt: storeRow.updated_at ? { seconds: Math.floor(new Date(storeRow.updated_at).getTime() / 1000) } : null,
-        };
-      }
-      window._storeData = storeData;
-      const remoteVer = storeData ? String(storeData.updatedAt?.seconds ?? 0) : '0';
-      try {
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) { const { products, version } = JSON.parse(cached); if (version === remoteVer && Array.isArray(products)) return { store: storeData, products }; }
-      } catch {}
-      const { data: productRows } = await supabase.from('products').select('*').eq('store_id', cleanStoreId).limit(50);
-      // Fetch real customer reviews from product_reviews table (batch per store)
-      const reviewsMap = await window._shvFetchAllReviewsMap(cleanStoreId);
-      const products = (productRows || []).map(p => {
-        const adminReviews = Array.isArray(p.reviews_data) ? p.reviews_data : [];
-        const customerReviews = reviewsMap[p.id] || [];
-        // Merge: customer-submitted reviews take priority (most recent first), then admin reviews_data
-        const mergedReviews = customerReviews.concat(adminReviews);
-        const pWithReviews = Object.assign({}, p, { reviews_data: mergedReviews, reviewsData: mergedReviews });
-        return {
-          id: p.id, name: p.name, price: Number(p.price) || 0,
-          discountPrice: p.discount_price != null ? Number(p.discount_price) : null,
-          originalPrice: p.discount_price != null && Number(p.discount_price) > 0 ? Number(p.price) : null,
-          quantity: Number(p.quantity) || 1, emoji: p.emoji || '🛍️', category: p.category || '',
-          desc: p.description || '', shortDesc: p.description || '',
-          image: p.image || '', images: p.images || [], detailImages: p.detail_images || [],
-          sizes: (p.sizes || []).map(function(s) { return typeof s === 'string' ? s : s.name || String(s); }),
-          colors: (p.colors || []).map(function(c) {
-            if (typeof c === 'string') {
-              // Legacy: hex string → use hex as name temporarily
-              return { name: c, hex: c };
-            }
-            var hex = c.hex || c.color || c.value || c;
-            var name = c.name || hex;
-            return { name: name, hex: hex };
-          }),
-          slug: p.slug || '', rating: window._shvProductRating(pWithReviews), reviews: window._shvProductReviewCount(pWithReviews),
-          badge: p.discount_price != null && Number(p.discount_price) > 0 ? 'Sale' : '', isNew: false,
-          details: Array.isArray(p.details) ? p.details : [],
-          materials: '', sizeFit: '',
-          shippingReturns: p.shipping_returns || '',
-          reviewsText: p.reviews_text || '',
-          reviewsData: mergedReviews,
-          shipping: '',
-          freeShipping: p.free_shipping === true,
-          ttsEnabled: p.tts_enabled === true,
-          ttsFee: Number(p.tts_fee) || 0,
-        };
-      });
-      try { localStorage.setItem(cacheKey, JSON.stringify({ products, version: remoteVer })); } catch {}
-      return { store: storeData, products };
-    };
-
-    window.subscribeToStoreProducts = (storeId, onUpdate) => {
-      if (!storeId || typeof onUpdate !== 'function') return;
-      const channel = supabase.channel(`products_${storeId}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `store_id=eq.${storeId}` },
-          async () => {
-            const { data: rows } = await supabase.from('products').select('*').eq('store_id', storeId).limit(50);
-            // Re-fetch customer reviews on every realtime update so new reviews appear live
-            const reviewsMap = await window._shvFetchAllReviewsMap(storeId);
-            const products = (rows || []).map(p => {
-              const adminReviews = Array.isArray(p.reviews_data) ? p.reviews_data : [];
-              const customerReviews = reviewsMap[p.id] || [];
-              const mergedReviews = customerReviews.concat(adminReviews);
-              const pWithReviews = Object.assign({}, p, { reviews_data: mergedReviews, reviewsData: mergedReviews });
-              return {
-                id: p.id, name: p.name, price: Number(p.price) || 0,
-                discountPrice: p.discount_price != null ? Number(p.discount_price) : null,
-                originalPrice: p.discount_price != null && Number(p.discount_price) > 0 ? Number(p.price) : null,
-                emoji: p.emoji || '🛍️', category: p.category || '', desc: p.description || '',
-                image: p.image || '', images: p.images || [],
-                sizes: (p.sizes || []).map(function(s) { return typeof s === 'string' ? s : s.name || String(s); }),
-                colors: (p.colors || []).map(function(c) {
-                  if (typeof c === 'string') return { name: c, hex: c };
-                  var hex = c.hex || c.color || c.value || c;
-                  var name = c.name || hex;
-                  return { name: name, hex: hex };
-                }),
-                slug: p.slug || '',
-                details: Array.isArray(p.details) ? p.details : [],
-                shippingReturns: p.shipping_returns || '',
-                reviewsText: p.reviews_text || '',
-                reviewsData: mergedReviews,
-                freeShipping: p.free_shipping === true,
-                ttsEnabled: p.tts_enabled === true,
-                ttsFee: Number(p.tts_fee) || 0,
-                rating: window._shvProductRating(pWithReviews),
-                reviews: window._shvProductReviewCount(pWithReviews),
-              };
-            });
-            onUpdate(products);
-          })
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'product_reviews', filter: `store_id=eq.${storeId}` },
-          async () => {
-            // New review inserted — re-fetch products so rating/reviewsData update
-            const { data: rows } = await supabase.from('products').select('*').eq('store_id', storeId).limit(50);
-            const reviewsMap = await window._shvFetchAllReviewsMap(storeId);
-            const products = (rows || []).map(p => {
-              const adminReviews = Array.isArray(p.reviews_data) ? p.reviews_data : [];
-              const customerReviews = reviewsMap[p.id] || [];
-              const mergedReviews = customerReviews.concat(adminReviews);
-              const pWithReviews = Object.assign({}, p, { reviews_data: mergedReviews, reviewsData: mergedReviews });
-              return {
-                id: p.id, name: p.name, price: Number(p.price) || 0,
-                discountPrice: p.discount_price != null ? Number(p.discount_price) : null,
-                originalPrice: p.discount_price != null && Number(p.discount_price) > 0 ? Number(p.price) : null,
-                emoji: p.emoji || '🛍️', category: p.category || '', desc: p.description || '',
-                image: p.image || '', images: p.images || [],
-                sizes: (p.sizes || []).map(function(s) { return typeof s === 'string' ? s : s.name || String(s); }),
-                colors: (p.colors || []).map(function(c) {
-                  if (typeof c === 'string') return { name: c, hex: c };
-                  var hex = c.hex || c.color || c.value || c;
-                  var name = c.name || hex;
-                  return { name: name, hex: hex };
-                }),
-                slug: p.slug || '',
-                details: Array.isArray(p.details) ? p.details : [],
-                shippingReturns: p.shipping_returns || '',
-                reviewsText: p.reviews_text || '',
-                reviewsData: mergedReviews,
-                freeShipping: p.free_shipping === true,
-                ttsEnabled: p.tts_enabled === true,
-                ttsFee: Number(p.tts_fee) || 0,
-                rating: window._shvProductRating(pWithReviews),
-                reviews: window._shvProductReviewCount(pWithReviews),
-              };
-            });
-            onUpdate(products);
-          })
-        .subscribe();
-      return () => supabase.removeChannel(channel);
-    };
-
-    // Security utils
-    window._shvCheckRateLimit = function() { var last = parseInt(localStorage.getItem('shv_last_submit_ts') || '0', 10); var diff = Date.now() - last; if (diff < 45000) return Math.ceil((45000 - diff) / 1000); return 0; };
-    window._shvStampSubmit = function() { localStorage.setItem('shv_last_submit_ts', String(Date.now())); };
-    window._SHV_PAGE_LOAD_TS = Date.now();
-    window._SHV_FIRST_FOCUS_TS = null; // ⚡ Set on first field focus; used to detect bot-style instant submissions
-    window._shvIsRepeatedDigitsPhone = function(phone) {
-      // Reject obviously fake phones like 0555555555, 0666666666, 0777777777 (all-same digits after prefix)
-      if (!phone) return false;
-      var s = String(phone).replace(/\D/g, '');
-      if (s.length < 4) return false;
-      var tail = s.substring(2); // skip 05/06/07 prefix
-      if (!tail.length) return false;
-      var first = tail.charAt(0);
-      for (var i = 1; i < tail.length; i++) { if (tail.charAt(i) !== first) return false; }
-      return true;
-    };
-
-    // ===== Reviews / rating helpers =====
-    // Compute average rating for a product from real reviews only (no fake defaults)
-    window._shvProductRating = function (p) {
-      if (!p) return 0;
-      var rd = Array.isArray(p.reviews_data) ? p.reviews_data : (Array.isArray(p.reviewsData) ? p.reviewsData : []);
-      if (rd.length === 0) return 0;
-      var sum = 0, n = 0;
-      for (var i = 0; i < rd.length; i++) {
-        var v = Number(rd[i].rating);
-        if (v > 0 && v <= 5) { sum += v; n++; }
-      }
-      if (n === 0) return 0;
-      return Math.round((sum / n) * 10) / 10;
-    };
-    // Compute review count for a product from real reviews only
-    window._shvProductReviewCount = function (p) {
-      if (!p) return 0;
-      var rd = Array.isArray(p.reviews_data) ? p.reviews_data : (Array.isArray(p.reviewsData) ? p.reviewsData : []);
-      return rd.length;
-    };
-    // Submit a customer review to the worker (which inserts into product_reviews table)
-    window._shvSubmitProductReview = async function (storeId, productId, customerName, rating, comment) {
-      var workerUrl = window._SHV_WORKER_URL || 'https://ai-proxy-worker.hatarek708.workers.dev';
-      var res = await fetch(workerUrl + '/review', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          store_id: storeId,
-          product_id: String(productId),
-          customer_name: customerName,
-          rating: rating,
-          comment: comment
-        })
-      });
-      var data;
-      try { data = await res.json(); } catch(e) { data = {}; }
-      if (!res.ok) {
-        var errMsg = (data && data.error) || 'Failed to submit review';
-        throw new Error(errMsg);
-      }
-      return data;
-    };
-    // Re-fetch a single product's reviews from Supabase after a review submission
-    window._shvRefreshProductReviews = async function (storeId, productId) {
-      try {
-        const { data: reviewRows } = await supabase.from('product_reviews')
-          .select('customer_name, rating, comment, created_at')
-          .eq('store_id', storeId)
-          .eq('product_id', String(productId))
-          .order('created_at', { ascending: false })
-          .limit(50);
-        var mapped = (Array.isArray(reviewRows) ? reviewRows : []).map(function(r) {
-          return {
-            name: r.customer_name || 'Anonymous',
-            rating: Number(r.rating) || 0,
-            comment: r.comment || '',
-            date: r.created_at ? String(r.created_at).split('T')[0] : ''
-          };
-        });
-        return mapped;
-      } catch(e) {
-        return null;
-      }
-    };
-    // ShvPixels module
-    window.ShvPixels = (function () {
-      var inited = false, ids = {};
-      function _genEventId() { return Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 9); }
-      function loadScript(src) { var s = document.createElement('script'); s.async = true; s.src = src; document.head.appendChild(s); }
-      function initFacebook(id) { if (!id || window.fbq) return; !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js'); window.fbq('init', id); }
-      function initTikTok(id) { if (!id || window.ttq) return; !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e]=+new Date;ttq._o=ttq._o||{};ttq._o[e]=n||{};var o=d.createElement("script");o.type="text/javascript";o.async=!0;o.src=i+"?sdkid="+e+"&lib="+t;var a=d.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};ttq.load(id);ttq.page()}(window,document,'ttq'); }
-      function initSnapchat(id) { if (!id || window.snaptr) return; (function(e,t,n){if(e.snaptr)return;var a=e.snaptr=function(){a.handleRequest?a.handleRequest.apply(a,arguments):a.queue.push(arguments)};a.queue=[];var s='script';var r=t.createElement(s);r.async=!0;r.src=n;var u=t.getElementsByTagName(s)[0];u.parentNode.insertBefore(r,u)})(window,document,'https://sc-static.net/scevent.min.js'); window.snaptr('init', id); }
-      function initGoogle(id) { if (!id || window.gtag) return; window.dataLayer=window.dataLayer||[]; window.gtag=function(){window.dataLayer.push(arguments)}; loadScript('https://www.googletagmanager.com/gtag/js?id='+id); window.gtag('js',new Date()); window.gtag('config',id); }
-      function _sendServerEvent(event, params, eventId) {
-        var workerUrl = ids.capiWorkerUrl; if (!workerUrl) return;
-        var hasFb=!!ids.fb, hasTt=!!ids.tiktok; if (!hasFb && !hasTt) return;
-        var body = { store_id: ids.storeId, event: event, event_id: eventId, page_url: window.location.href, params: params };
-        if (hasFb) body.fb_pixel_id = ids.fb; if (hasTt) body.tt_pixel_id = ids.tiktok;
-        try { var blob = new Blob([JSON.stringify(body)], { type: 'application/json' }); if (navigator.sendBeacon) navigator.sendBeacon(workerUrl, blob); else fetch(workerUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body), keepalive: true }).catch(function(){}); } catch(e) {}
-      }
-      function init(store) {
-        if (inited || !store) return;
-        ids = { fb: store.facebookPixelId||'', tiktok: store.tiktokPixelId||'', snap: store.snapPixelId||'', ga: store.googleAnalyticsId||'', capiWorkerUrl: store.capiWorkerUrl||'', storeId: window._getStoreId()||'' };
-        if (!ids.fb && !ids.tiktok && !ids.snap && !ids.ga) return;
-        initFacebook(ids.fb); initTikTok(ids.tiktok); initSnapchat(ids.snap); initGoogle(ids.ga); inited = true;
-      }
-      function track(event, params) {
-        params = params || {}; var eventId = _genEventId();
-        try { if (window.fbq && ids.fb) window.fbq('track', event, params, { eventID: eventId }); } catch(e) {}
-        try { if (window.ttq && ids.tiktok) { var ttMap={PageView:'PageView',ViewContent:'ViewContent',AddToCart:'AddToCart',InitiateCheckout:'InitiateCheckout',Purchase:'CompletePayment'}; window.ttq.track(ttMap[event]||event, { value: params.value, currency: params.currency||'DZD', content_id: params.content_ids?params.content_ids[0]:undefined, content_name: params.content_name, event_id: eventId }); } } catch(e) {}
-        try { if (window.snaptr && ids.snap) { var scMap={PageView:'PAGE_VIEW',ViewContent:'VIEW_CONTENT',AddToCart:'ADD_CART',InitiateCheckout:'START_CHECKOUT',Purchase:'PURCHASE'}; window.snaptr('track', scMap[event]||event, { price: params.value, currency: params.currency||'DZD', item_ids: params.content_ids }); } } catch(e) {}
-        try { if (window.gtag && ids.ga) { var gaMap={PageView:'page_view',ViewContent:'view_item',AddToCart:'add_to_cart',InitiateCheckout:'begin_checkout',Purchase:'purchase'}; window.gtag('event', gaMap[event]||event, { value: params.value, currency: params.currency||'DZD', items: params.content_ids }); } } catch(e) {}
-        _sendServerEvent(event, params, eventId);
-      }
-      return { init: init, track: track };
-    })();
+    // ✨ fetchStoreData + subscribeToStoreProducts + reviews/pixels helpers — انتقلت إلى shared/store-data.js
+    // (الدوال الموحَّدة تُحمَّل عبر <script src="/shared/store-data.js"> في <head>)
 
     // ✨ Template redirect — استخدم shared/theme-router.js الموحَّد
     (async function templateRedirect() {
       const storeId = window._getStoreId();
       if (!storeId) return;
       try {
-        const { store } = await window.fetchStoreFromFirestore(storeId);
+        const { store } = await window.fetchStoreData(storeId);
         if (!store) return;
         // shvRedirectToTheme يتعامل مع كل الفروع (noir/neon/zephyr) + منع loop
         window.shvRedirectToTheme(store.template || store.theme || '');
@@ -6356,9 +6051,9 @@
 
             // ── جلب بيانات المتجر من Supabase ──
             var storeId = window._getStoreId();
-            if (storeId && typeof window.fetchStoreFromFirestore === 'function') {
+            if (storeId && typeof window.fetchStoreData === 'function') {
                 try {
-                    var result = await window.fetchStoreFromFirestore(storeId);
+                    var result = await window.fetchStoreData(storeId);
                     if (result.store) {
                         var s = result.store;
                         // تطبيق اسم المتجر على الـ logo والعنوان
