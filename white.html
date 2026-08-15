@@ -1457,6 +1457,12 @@
   <script src="/shared/supabase.js"></script>
   <!-- ✨ shared store-data — fetchStoreData + subscribeToStoreProducts + reviews/pixels helpers (مُستخرَج من 3 ملفات) -->
   <script src="/shared/store-data.js"></script>
+  <!-- ✨ shared orders — _getStoreId, _effectivePrice, saveOrderData, _shvVerifyOrderPrices (مُستخرَج من 3 ملفات) -->
+  <script src="/shared/orders.js"></script>
+  <!-- ✨ shared cart — getCart, setCart, addToCart, updateCartCount (مُستخرَج من 3 ملفات) -->
+  <script src="/shared/cart.js"></script>
+  <!-- ✨ shared format — formatPrice, escapeHTML, discountPercent, showToast, ... (مُستخرَج من 3 ملفات) -->
+  <script src="/shared/format.js"></script>
 </head>
 <body>
 
@@ -1786,23 +1792,8 @@
   <!-- ===================================================
        SUPABASE INTEGRATION (shared with neon.html / black.html)
        =================================================== -->
-  <script>
-    window._getStoreId = function () {
-      var h = window.location.hostname.toLowerCase();
-      var parts = h.split('.');
-      if (parts.length >= 3 && parts[parts.length - 2] === 'shopevelo' && parts[parts.length - 1] === 'me') {
-        return parts.slice(0, parts.length - 2).join('-');
-      }
-      var p = new URLSearchParams(window.location.search);
-      return (p.get('store') || p.get('id') || '');
-    };
-    window._effectivePrice = function (p) {
-      if (!p) return 0;
-      var d = Number(p.discountPrice || p.originalPrice);
-      if (d > 0 && d < Number(p.price)) return d;
-      return Number(p.price) || 0;
-    };
-  </script>
+  <!-- ✨ _getStoreId + _effectivePrice + saveOrderData + _shvVerifyOrderPrices
+       انتقلت إلى shared/orders.js (مُحمَّلة في <head>) -->
 
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -1814,91 +1805,12 @@
     });
     const SHV_WORKER_URL = 'https://ai-proxy-worker.hatarek708.workers.dev';
     window._SHV_WORKER_URL = SHV_WORKER_URL;
+    // ✨ اجعل supabase متاحاً لـ shared/orders.js (الذي يستخدم window.supabase)
+    window.supabase = supabase;
 
-    window.saveOrderToFirestore = async (payload) => {
-      const storeId = (window._storeData && window._storeData.id) || window._getStoreId();
-      const res = await fetch(`${SHV_WORKER_URL}/order`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          store_id: storeId,
-          name: payload.name || payload.customer?.name || '',
-          phone: payload.phone || payload.customer?.phone || '',
-          wilaya: payload.wilaya || payload.customer?.wilaya || null,
-          commune: payload.commune || payload.customer?.commune || null,
-          neighborhood: payload.neighborhood || payload.customer?.neighborhood || null,
-          delivery_type: payload.deliveryType || payload.delivery_type || null,
-          note: payload.note || null,
-          product: payload.product || null,
-          items: payload.items || null,
-          products: payload.products || [],
-          customer: payload.customer || {},
-          pricing: payload.pricing || {},
-          subtotal: payload.subtotal ?? payload.pricing?.subtotal ?? null,
-          shipping_cost: payload.shippingCost ?? payload.pricing?.shipping_fee ?? null,
-          total: payload.total ?? payload.pricing?.total ?? null,
-          try_two_sizes: payload.try_two_sizes === true,
-          tts_backup_size: payload.tts_backup_size || null,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.id) throw new Error(data.error || `Order failed (${res.status})`);
-      return data.id;
-    };
-
-    // 🔒 SECURITY: Server-side price verification.
-    // Re-fetch each product from Supabase to get the REAL price/discount/free_shipping,
-    // compare against the client-supplied unit_price, and override with the server value
-    // if there is any mismatch. This prevents price tampering and fake bot orders.
-    // Also re-computes shipping: 0 if ALL items have free_shipping=true, else normal per-wilaya.
-    window._shvVerifyOrderPrices = async (payload, storeId, wilayaName, deliveryType) => {
-      if (!payload || !Array.isArray(payload.items) || payload.items.length === 0) return payload;
-      var verifiedItems = [];
-      for (var item of payload.items) {
-        var productId = item && item.id ? String(item.id) : '';
-        if (!productId) { verifiedItems.push(item); continue; }
-        var { data: prodRow, error: prodErr } = await supabase.from('products')
-          .select('price,discount_price,free_shipping')
-          .eq('store_id', storeId)
-          .eq('id', productId)
-          .maybeSingle();
-        if (prodErr || !prodRow) {
-          // Product not found — block the order
-          throw new Error('Product not found: ' + productId);
-        }
-        var realPrice = (typeof window._effectivePrice === 'function')
-          ? window._effectivePrice({ price: Number(prodRow.price) || 0, discountPrice: prodRow.discount_price != null ? Number(prodRow.discount_price) : null })
-          : (prodRow.discount_price != null && Number(prodRow.discount_price) > 0 ? Number(prodRow.discount_price) : Number(prodRow.price) || 0);
-        var clientPrice = Number(item.unit_price) || 0;
-        if (Math.abs(realPrice - clientPrice) > 1) {
-          // Price mismatch — override with server price
-          console.warn('Price mismatch detected for product ' + productId, { client: clientPrice, server: realPrice });
-          item.unit_price = realPrice;
-          item.line_total = realPrice * (Number(item.qty) || 1);
-        }
-        item.free_shipping = prodRow.free_shipping === true;
-        verifiedItems.push(item);
-      }
-      payload.items = verifiedItems;
-      // Recompute subtotal
-      var verifiedSubtotal = verifiedItems.reduce(function(s, i) { return s + (Number(i.line_total) || (Number(i.unit_price) * Number(i.qty))); }, 0);
-      if (!payload.pricing) payload.pricing = {};
-      payload.pricing.subtotal = verifiedSubtotal;
-      payload.subtotal = verifiedSubtotal;
-      // Recompute shipping: 0 if ALL items have free_shipping=true
-      var allFreeShipping = verifiedItems.every(function(i) { return i.free_shipping === true; });
-      var shipping = 0;
-      if (!allFreeShipping) {
-        shipping = (typeof window.calcShipping === 'function')
-          ? window.calcShipping(wilayaName || '', verifiedSubtotal, window._storeData, deliveryType)
-          : 0;
-      }
-      payload.pricing.shipping_fee = shipping;
-      payload.shippingCost = shipping;
-      payload.pricing.total = verifiedSubtotal + shipping;
-      payload.total = verifiedSubtotal + shipping;
-      return payload;
-    };
+    // ✨ saveOrderData + _shvVerifyOrderPrices انتقلتا إلى shared/orders.js
+    // (مُحمَّلة في <head>). الكود هنا يستدعي window.saveOrderData() و
+    // window._shvVerifyOrderPrices() مباشرة — انظر نقاط الاستدعاء في checkout flow.
 
     // ✨ fetchStoreData + subscribeToStoreProducts + reviews/pixels helpers — انتقلت إلى shared/store-data.js
     // (الدوال الموحَّدة تُحمَّل عبر <script src="/shared/store-data.js"> في <head>)
@@ -2328,34 +2240,20 @@
       ttsEnabled: false, ttsBackupSize: ''
     };
 
-    var CART_KEY = 'zephyr_cart';
-    function getCart() { try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch(e) { return []; } }
-    function setCart(c) { localStorage.setItem(CART_KEY, JSON.stringify(c)); updateCartCount(); }
-    function updateCartCount() { var t = getCart().reduce(function(s,i){return s+i.qty;},0); var el = document.getElementById('cartCount'); if (el) el.textContent = t; }
+    // ✨ Cart + format helpers — انتقلت إلى shared/cart.js و shared/format.js (مُحمَّلة في <head>).
+    // كل قالب يضبط window.SHV_CART_KEY الخاص به (لمنع تداخل السلة بين القوالب عند المعاينة).
+    window.SHV_CART_KEY = 'zephyr_cart';
 
-    function addToCart(p, size, color, qty) {
-      qty = qty || 1;
-      var cart = getCart();
-      var ex = cart.find(function(i) { return i.id === p.id && i.size === size && i.color === color; });
-      if (ex) ex.qty += qty; else cart.push({ id: p.id, name: p.name, price: p.price, image: p.images ? p.images[0] : (p.image||''), size: size, color: color, qty: qty });
-      setCart(cart);
-      showToast(p.name + ' — ' + t('added_to_cart'));
-      if (typeof window.ShvPixels === 'object') window.ShvPixels.track('AddToCart', { content_ids: [String(p.id)], content_name: p.name, value: p.price, currency: 'DZD' });
-    }
-
-    function formatPrice(n) {
-      var numStr = Number(n||0).toLocaleString('en-US');
-      return currentLang === 'ar' ? (numStr + ' دج') : (numStr + ' DA');
-    }
-    function escapeHTML(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-    function discountPercent(price, original) { if (!original || original <= price) return 0; return Math.round(((original - price) / original) * 100); }
-    function effectivePrice(p) { if (!p) return 0; var d = Number(p.discountPrice || p.originalPrice); if (d > 0 && d < Number(p.price)) return d; return Number(p.price) || 0; }
-
-    function showToast(msg) {
-      var t = document.getElementById('toast');
-      t.textContent = msg; t.classList.add('show');
-      setTimeout(function() { t.classList.remove('show'); }, 2500);
-    }
+    // Aliases محلية بدون window. prefix (للتوافق مع الكود الموجود الذي يستدعي getCart() مباشرة)
+    var getCart = window.getCart;
+    var setCart = window.setCart;
+    var updateCartCount = window.updateCartCount;
+    var addToCart = window.addToCart;
+    var formatPrice = window.formatPrice;
+    var escapeHTML = window.escapeHTML;
+    var discountPercent = window.discountPercent;
+    var effectivePrice = window._effectivePrice; // في shared/orders.js باسم _effectivePrice
+    var showToast = window.showToast;
 
     /* ===== ROUTER ===== */
     function parseURL() {
@@ -3255,7 +3153,7 @@
           };
           submitBtn.disabled = true; submitBtn.innerHTML = '<span>' + escapeHTML(t('direct_order_placing')) + '</span>';
           var orderId = 'ORDER-' + Date.now().toString(36).toUpperCase();
-          if (typeof window.saveOrderToFirestore === 'function') {
+          if (typeof window.saveOrderData === 'function') {
             // 🔒 Server-side price verification before sending the order
             if (typeof window._shvVerifyOrderPrices === 'function') {
               try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), d.wilaya, deliveryType); }
@@ -3270,7 +3168,7 @@
               shipping = payload.pricing.shipping_fee;
               total = payload.pricing.total;
             }
-            orderId = await window.saveOrderToFirestore(payload);
+            orderId = await window.saveOrderData(payload);
           }
           if (typeof window._shvStampSubmit === 'function') window._shvStampSubmit();
           if (typeof window.ShvPixels === 'object') window.ShvPixels.track('Purchase', { content_ids: [String(p.id)], value: total, currency: 'DZD', num_items: qty });
@@ -3537,7 +3435,7 @@
             note: notesVal || null,
           };
           var orderId = 'ORDER-' + Date.now().toString(36).toUpperCase();
-          if (typeof window.saveOrderToFirestore === 'function') {
+          if (typeof window.saveOrderData === 'function') {
             // 🔒 Server-side price verification before sending the order
             if (typeof window._shvVerifyOrderPrices === 'function') {
               try { payload = await window._shvVerifyOrderPrices(payload, (window._storeData && window._storeData.id) || window._getStoreId(), wilaya, freshDeliveryType); }
@@ -3546,7 +3444,7 @@
               freshShipping = payload.pricing.shipping_fee;
               freshTotal = payload.pricing.total;
             }
-            orderId = await window.saveOrderToFirestore(payload);
+            orderId = await window.saveOrderData(payload);
           }
           window._shvStampSubmit();
           if (typeof window.ShvPixels === 'object') window.ShvPixels.track('Purchase', { content_ids: cart.map(function(i){return String(i.id);}), value: freshTotal, currency: 'DZD' });
