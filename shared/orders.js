@@ -67,6 +67,15 @@
     var workerUrl = (window.SHV_CONFIG && window.SHV_CONFIG.SHV_WORKER_URL) || window._SHV_WORKER_URL;
     if (!workerUrl) throw new Error('SHV_WORKER_URL not configured');
 
+    // ✅ FIX C-09: Forward Turnstile token to the Worker for server-side verification.
+    // The Worker validates this token against Cloudflare's siteverify endpoint
+    // using the SECRET key (which never leaves the Worker). If the token is missing
+    // or invalid, the Worker rejects the order with HTTP 403.
+    var turnstileToken = payload.turnstile_token || payload.turnstileToken || window._checkoutTurnstileToken || '';
+    if (!turnstileToken) {
+      throw new Error('يرجى إكمال التحقق من الحماية (Turnstile)');
+    }
+
     var res = await fetch(workerUrl + '/order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -89,6 +98,7 @@
         total: payload.total ?? payload.pricing?.total ?? null,
         try_two_sizes: payload.try_two_sizes === true,
         tts_backup_size: payload.tts_backup_size || null,
+        turnstile_token: turnstileToken,  // ✅ required by Worker
       }),
     });
     var data = await res.json();

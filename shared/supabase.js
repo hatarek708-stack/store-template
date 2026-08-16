@@ -23,6 +23,13 @@
     SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_MnDIdSEFp9UrLmvC0Y2k4g_Tp74iXHb',
     SHV_WORKER_URL: 'https://ai-proxy-worker.hatarek708.workers.dev',
 
+    // ✅ Cloudflare Turnstile Site Key (public, safe for browser).
+    // Used in the checkout page to prevent bot orders.
+    // The matching Secret Key is stored only in the Worker (TURNSTILE_SECRET_KEY).
+    // Replace this placeholder with your real site key from:
+    //   https://dash.cloudflare.com → Turnstile → Create site
+    TURNSTILE_SITE_KEY: '0x4AAAAAAA00000000000AAAA',
+
     // اسم الجدول الرئيسي للمتاجر
     STORES_TABLE: 'stores',
 

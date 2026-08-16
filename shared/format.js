@@ -69,6 +69,46 @@
   };
 
   /**
+   * ✅ FIX C-08: Safe image src — validates URL scheme + escapes HTML.
+   * Prevents XSS via <img src="x" onerror="..."> attacks.
+   *
+   * Accepts: http://, https://, data:image/* (for user-uploaded base64).
+   * Rejects: javascript:, vbscript:, file:, and anything else.
+   * Returns: escaped URL string, or '' if invalid.
+   */
+  window.safeImageSrc = function (url) {
+    if (typeof url !== 'string') return '';
+    var trimmed = url.trim();
+    if (!trimmed) return '';
+    // Only allow http(s) and data:image/* (for base64 thumbnails)
+    if (/^https?:\/\//i.test(trimmed) || /^data:image\//i.test(trimmed)) {
+      if (trimmed.length <= 10000) {
+        return window.escapeHTML(trimmed);
+      }
+    }
+    return '';
+  };
+
+  /**
+   * ✅ FIX C-08b: Safe URL for href — prevents javascript: URI injection.
+   * Use this on any <a href="..."> where the URL comes from store/user data.
+   *
+   * Accepts: http://, https://, protocol-relative //, mailto:, tel:.
+   * Rejects: javascript:, vbscript:, and anything else.
+   * Returns: the URL if safe, otherwise '#'.
+   */
+  window.safeUrl = function (url) {
+    if (typeof url !== 'string') return '#';
+    var trimmed = url.trim();
+    if (!trimmed) return '#';
+    if (/^https?:\/\//i.test(trimmed)) return trimmed.slice(0, 2048);
+    if (trimmed.charAt(0) === '/' && trimmed.charAt(1) === '/') return trimmed.slice(0, 2048);
+    if (/^mailto:/i.test(trimmed)) return trimmed.slice(0, 256);
+    if (/^tel:/i.test(trimmed)) return trimmed.slice(0, 30);
+    return '#';
+  };
+
+  /**
    * حساب نسبة الخصم بين السعر الأصلي والسعر بعد الخصم.
    * @param {number} price - السعر الحالي
    * @param {number} original - السعر الأصلي
@@ -155,6 +195,38 @@
       html += '<svg class="empty" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
     }
     return html;
+  };
+
+  /**
+   * ✅ FIX C-09: Cloudflare Turnstile integration for checkout.
+   *
+   * The Turnstile token is stored in `window._checkoutTurnstileToken` and
+   * automatically included by `shared/orders.js → saveOrderData()` in the
+   * POST /order payload. The Worker validates it server-side.
+   *
+   * Templates register `data-callback="onCheckoutTurnstileSuccess"` on the
+   * widget div — this global is called by Turnstile when the user solves
+   * the challenge. The place-order button is disabled until a token exists.
+   */
+  window._checkoutTurnstileToken = '';
+  window.onCheckoutTurnstileSuccess = function (token) {
+    window._checkoutTurnstileToken = token || '';
+    // Enable the place-order button once the user has solved the challenge
+    var btn = document.getElementById('placeOrderBtn');
+    if (btn) btn.disabled = false;
+  };
+
+  /**
+   * Reset the Turnstile widget — call this after a failed order so the user
+   * can re-solve the challenge (tokens are single-use).
+   */
+  window.resetCheckoutTurnstile = function () {
+    window._checkoutTurnstileToken = '';
+    var btn = document.getElementById('placeOrderBtn');
+    if (btn) btn.disabled = true;
+    if (window.turnstile && typeof window.turnstile.reset === 'function') {
+      try { window.turnstile.reset('#checkout-turnstile-widget'); } catch (e) { /* noop */ }
+    }
   };
 
 })();

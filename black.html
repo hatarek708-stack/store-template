@@ -485,6 +485,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
 <script src="/shared/cart.js"></script>
 <!-- ✨ shared format — formatPrice, escapeHTML, discountPercent, showToast, ... (مُستخرَج من 3 ملفات) -->
 <script src="/shared/format.js"></script>
+<!-- ✅ Cloudflare Turnstile — captcha widget for checkout page -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 <!-- Loading screen — shown until store data is ready (prevents flash of default content) -->
@@ -1414,7 +1416,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             return '' +
                 '<div class="product-card">' +
                     '<a class="product-image-wrapper" data-nav="product" data-params=\'' + cardParams + '\' href="' + cardHref + '">' +
-                        '<div class="product-image-box"><img src="' + p.images[0] + '" alt="' + escapeHTML(p.name) + '" class="product-image"></div>' +
+                        '<div class="product-image-box"><img src="' + safeImageSrc(p.images[0]) + '" alt="' + escapeHTML(p.name) + '" class="product-image"></div>' +
                         tag +
                         freeShipBadge +
                         '<span class="product-quick" data-stop-nav="1"><i data-lucide="heart"></i></span>' +
@@ -1448,7 +1450,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 return '' +
                     '<a class="category-card" data-nav="categories" data-params=\'{"cat":"' + cat.id + '"}\' href="' + buildHref('categories', { cat: cat.id }) + '">' +
                         '<div class="category-image-wrapper">' +
-                            '<img src="' + cat.image + '" alt="' + escapeHTML(cat.name) + ' Collection" class="category-image">' +
+                            '<img src="' + safeImageSrc(cat.image) + '" alt="' + escapeHTML(cat.name) + ' Collection" class="category-image">' +
                             '<div class="category-gradient"></div>' +
                             '<div class="category-content"><h3 class="category-name">' + escapeHTML(cat.name) + '</h3><span class="btn-category">' + escapeHTML(t('hero_cta')) + '</span></div>' +
                         '</div>' +
@@ -1465,7 +1467,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 return '' +
                     '<div class="product-card">' +
                         '<a class="product-image-wrapper" data-nav="product" data-params=\'' + pParams + '\' href="' + pHref + '">' +
-                            '<div class="product-image-box"><img src="' + p.images[0] + '" alt="' + escapeHTML(p.name) + '" class="product-image"></div>' +
+                            '<div class="product-image-box"><img src="' + safeImageSrc(p.images[0]) + '" alt="' + escapeHTML(p.name) + '" class="product-image"></div>' +
                         '</a>' +
                         '<a data-nav="product" data-params=\'' + pParams + '\' href="' + pHref + '"><h3 class="product-name">' + escapeHTML(p.name) + '</h3></a>' +
                         '<div class="product-price-row">' +
@@ -1837,11 +1839,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 '<div class="gallery">' +
                     '<div class="thumbnails" id="thumbnails">' +
                         p.images.map(function (img, i) {
-                            return '<button class="thumb' + (i === 0 ? ' active' : '') + '" data-index="' + i + '"><img src="' + img + '" alt="' + escapeHTML(p.name) + ' view ' + (i + 1) + '"></button>';
+                            return '<button class="thumb' + (i === 0 ? ' active' : '') + '" data-index="' + i + '"><img src="' + safeImageSrc(img) + '" alt="' + escapeHTML(p.name) + ' view ' + (i + 1) + '"></button>';
                         }).join('') +
                     '</div>' +
                     '<div class="main-image-wrapper">' +
-                        '<img src="' + p.images[0] + '" alt="' + escapeHTML(p.name) + '" class="main-image" id="mainImage">' +
+                        '<img src="' + safeImageSrc(p.images[0]) + '" alt="' + escapeHTML(p.name) + '" class="main-image" id="mainImage">' +
                         '<button class="zoom-btn" aria-label="Zoom image" id="zoomBtn"><i data-lucide="maximize-2" style="width:18px;height:18px;"></i></button>' +
                     '</div>' +
                 '</div>';
@@ -1952,7 +1954,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 return '' +
                     '<a class="related-card" data-nav="product" data-params=\'' + rpParams + '\' href="' + rpHref + '">' +
                         '<div class="related-image-box">' +
-                            '<img src="' + rp.images[0] + '" alt="' + escapeHTML(rp.name) + '">' +
+                            '<img src="' + safeImageSrc(rp.images[0]) + '" alt="' + escapeHTML(rp.name) + '">' +
                             '<span class="related-wishlist" data-stop-nav="1"><i data-lucide="heart"></i></span>' +
                         '</div>' +
                         '<div class="related-name">' + escapeHTML(rp.name) + '</div>' +
@@ -1996,7 +1998,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
 
                 /* Order item summary */
                 '<div class="order-item">' +
-                    '<div class="order-item-img"><img src="' + p.images[0] + '" alt="' + escapeHTML(p.name) + '"></div>' +
+                    '<div class="order-item-img"><img src="' + safeImageSrc(p.images[0]) + '" alt="' + escapeHTML(p.name) + '"></div>' +
                     '<div class="order-item-info">' +
                         '<div class="order-item-name">' + escapeHTML(p.name) + '</div>' +
                         '<div class="order-item-variant">' + escapeHTML(t('os_color')) + ': ' + escapeHTML(p.colors[state.selectedColor || 0].name) + '</div>' +
@@ -2529,7 +2531,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 var count = NEON_DATA.getProductsByCategory(cat.id).length;
                 return '' +
                     '<a class="showcase-card" data-nav="categories" data-params=\'{"cat":"' + cat.id + '"}\' href="' + buildHref('categories', { cat: cat.id }) + '">' +
-                        '<div class="showcase-image"><img src="' + cat.image + '" alt="' + escapeHTML(cat.name) + '"><div class="showcase-overlay"><h3>' + escapeHTML(cat.name) + '</h3></div></div>' +
+                        '<div class="showcase-image"><img src="' + safeImageSrc(cat.image) + '" alt="' + escapeHTML(cat.name) + '"><div class="showcase-overlay"><h3>' + escapeHTML(cat.name) + '</h3></div></div>' +
                         '<div class="showcase-meta"><span>' + escapeHTML(cat.blurb) + '</span><span class="count">' + count + ' ' + escapeHTML(t('cat_items')) + '</span></div>' +
                     '</a>';
             }).join('');
@@ -2675,7 +2677,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 var tHref = p.slug ? buildHref('product', { slug: p.slug }) : buildHref('product', { id: p.id });
                 return '' +
                     '<a class="recent-card" data-nav="product" data-params=\'' + tParams + '\' href="' + tHref + '">' +
-                        '<div class="recent-card-img"><img src="' + p.images[0] + '" alt="' + escapeHTML(p.name) + '"></div>' +
+                        '<div class="recent-card-img"><img src="' + safeImageSrc(p.images[0]) + '" alt="' + escapeHTML(p.name) + '"></div>' +
                         '<div class="recent-card-info"><div class="recent-card-name">' + escapeHTML(p.name) + '</div><div class="recent-card-price">' + formatPrice(tEff) + ' • ' + (typeof p.rating === 'number' && p.rating > 0 ? p.rating : (typeof window._shvProductRating === 'function' ? window._shvProductRating(p) : 4.5)).toFixed(1) + ' ★</div></div>' +
                     '</a>';
             }).join('');
@@ -2764,7 +2766,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 itemsContainer.innerHTML = cart.map(function (item, idx) {
                     return '' +
                         '<div class="ck-item" data-ck-idx="' + idx + '">' +
-                            '<div class="ck-item-img"><img src="' + item.image + '" alt="' + escapeHTML(item.name) + '"></div>' +
+                            '<div class="ck-item-img"><img src="' + safeImageSrc(item.image) + '" alt="' + escapeHTML(item.name) + '"></div>' +
                             '<div class="ck-item-info">' +
                                 '<div class="ck-item-name">' + escapeHTML(item.name) + '</div>' +
                                 '<div class="ck-item-variant">' + escapeHTML(t('os_color')) + ': ' + escapeHTML(item.color) + ' • ' + escapeHTML(t('os_size')) + ': ' + escapeHTML(item.size) + '</div>' +
@@ -3008,19 +3010,19 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             html += '<p class="policy-text" style="margin-bottom:1.25rem;">Have a question or need help with your order? We\'re here to assist you. Reach out through any of the channels below.</p>';
             html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.875rem;">';
             if (instagram) {
-                html += '<a href="' + esc(instagram) + '" target="_blank" rel="noopener" class="support-contact-link">';
+                html += '<a href="' + safeUrl(instagram) + '" target="_blank" rel="noopener" class="support-contact-link">';
                 html += '<div class="support-contact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></div>';
                 html += '<div><div class="support-contact-label">Instagram</div><div class="support-contact-value">' + esc(instagram.replace(/^https?:\/\//, '').replace(/^www\./, '')) + '</div></div>';
                 html += '</a>';
             }
             if (tiktok) {
-                html += '<a href="' + esc(tiktok) + '" target="_blank" rel="noopener" class="support-contact-link">';
+                html += '<a href="' + safeUrl(tiktok) + '" target="_blank" rel="noopener" class="support-contact-link">';
                 html += '<div class="support-contact-icon"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg></div>';
                 html += '<div><div class="support-contact-label">TikTok</div><div class="support-contact-value">' + esc(tiktok.replace(/^https?:\/\//, '').replace(/^www\./, '')) + '</div></div>';
                 html += '</a>';
             }
             if (facebook) {
-                html += '<a href="' + esc(facebook) + '" target="_blank" rel="noopener" class="support-contact-link">';
+                html += '<a href="' + safeUrl(facebook) + '" target="_blank" rel="noopener" class="support-contact-link">';
                 html += '<div class="support-contact-icon"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></div>';
                 html += '<div><div class="support-contact-label">Facebook</div><div class="support-contact-value">' + esc(facebook.replace(/^https?:\/\//, '').replace(/^www\./, '')) + '</div></div>';
                 html += '</a>';
@@ -3270,7 +3272,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             body.innerHTML = cart.map(function (item, idx) {
                 return '' +
                     '<div class="cart-item" data-cart-idx="' + idx + '">' +
-                        '<div class="cart-item-img"><img src="' + item.image + '" alt="' + escapeHTML(item.name) + '"></div>' +
+                        '<div class="cart-item-img"><img src="' + safeImageSrc(item.image) + '" alt="' + escapeHTML(item.name) + '"></div>' +
                         '<div class="cart-item-info">' +
                             '<div class="cart-item-name">' + escapeHTML(item.name) + '</div>' +
                             '<div class="cart-item-variant">' + escapeHTML(t('os_color')) + ': ' + escapeHTML(item.color) + ' • ' + escapeHTML(t('os_size')) + ': ' + escapeHTML(item.size) + '</div>' +
@@ -3419,9 +3421,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                                 if (_cFooterLogo) _cFooterLogo.textContent = _cs.name;
                                 document.title = (_cs.title || _cs.name) + ' | NOIR';
                             }
-                            if (_cs.instagram) { var _ig = document.getElementById('socialInstagram'); if (_ig) { _ig.href = _cs.instagram; _ig.style.display = ''; } }
-                            if (_cs.tiktok)    { var _tk = document.getElementById('socialTiktok');    if (_tk) { _tk.href = _cs.tiktok;    _tk.style.display = ''; } }
-                            if (_cs.facebook)  { var _fb = document.getElementById('socialFacebook');  if (_fb) { _fb.href = _cs.facebook;  _fb.style.display = ''; } }
+                            if (_cs.instagram) { var _ig = document.getElementById('socialInstagram'); if (_ig) { _ig.href = safeUrl(_cs.instagram); _ig.style.display = ''; } }
+                            if (_cs.tiktok)    { var _tk = document.getElementById('socialTiktok');    if (_tk) { _tk.href = safeUrl(_cs.tiktok);    _tk.style.display = ''; } }
+                            if (_cs.facebook)  { var _fb = document.getElementById('socialFacebook');  if (_fb) { _fb.href = safeUrl(_cs.facebook);  _fb.style.display = ''; } }
                             applyHeroSettings(_cs);
                         }
                     }
@@ -3442,9 +3444,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                         if (footerLogo && s.name) footerLogo.textContent = s.name;
                         if (s.name || s.title) document.title = (s.title || s.name) + ' | NOIR';
                         // تطبيق الروابط الاجتماعية
-                        if (s.instagram) { var ig = document.getElementById('socialInstagram'); if (ig) { ig.href = s.instagram; ig.style.display = ''; } }
-                        if (s.tiktok) { var tk = document.getElementById('socialTiktok'); if (tk) { tk.href = s.tiktok; tk.style.display = ''; } }
-                        if (s.facebook) { var fb = document.getElementById('socialFacebook'); if (fb) { fb.href = s.facebook; fb.style.display = ''; } }
+                        if (s.instagram) { var ig = document.getElementById('socialInstagram'); if (ig) { ig.href = safeUrl(s.instagram); ig.style.display = ''; } }
+                        if (s.tiktok) { var tk = document.getElementById('socialTiktok'); if (tk) { tk.href = safeUrl(s.tiktok); tk.style.display = ''; } }
+                        if (s.facebook) { var fb = document.getElementById('socialFacebook'); if (fb) { fb.href = safeUrl(s.facebook); fb.style.display = ''; } }
                         // Apply hero customization (cover image / title / desc / kicker)
                         applyHeroSettings(s);
                         // Persist store snapshot to localStorage for instant application on next load
@@ -4269,7 +4271,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                     '<textarea class="summary-textarea" id="cpAddress" placeholder="'+escapeHTML(t('of_address_ph') || 'Detailed Address *')+'" maxlength="300">'+escapeHTML(d.address||'')+'</textarea>'+
                     '<textarea class="summary-textarea" id="cpNotes" placeholder="'+escapeHTML(t('of_notes_ph') || 'Additional Notes')+'" maxlength="500" style="min-height:40px">'+escapeHTML(d.notes||'')+'</textarea>'+
                     cartTtsHTML+
-                    '<button type="submit" class="summary-place-order" id="cpSubmit">'+I.cart+' '+escapeHTML(t('checkout_place_order') || 'Place Order')+'</button>'+
+                    '<div id="turnstileWidgetWrap" style="margin:0.75rem 0;display:flex;justify-content:center;"><div id="checkout-turnstile-widget" class="cf-turnstile" data-sitekey="'+escapeHTML((window.SHV_CONFIG && window.SHV_CONFIG.TURNSTILE_SITE_KEY) || '')+'" data-callback="onCheckoutTurnstileSuccess" data-theme="light" data-language="ar"></div></div>'+
+                    '<button type="submit" class="summary-place-order" id="cpSubmit" disabled>'+I.cart+' '+escapeHTML(t('checkout_place_order') || 'Place Order')+'</button>'+
                   '</form>'+
 
                   // Trust
@@ -5224,6 +5227,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           } catch(err) {
             showToast(t('of_required') + ': ' + (err.message||''));
             console.error('Cart page submit error:', err);
+            // ✅ Reset Turnstile so user can re-solve the challenge after failure
+            if (typeof window.resetCheckoutTurnstile === 'function') window.resetCheckoutTurnstile();
           } finally {
             if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = t('checkout_place_order') || 'Place Order'; }
           }

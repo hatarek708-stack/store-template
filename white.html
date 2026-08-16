@@ -1463,6 +1463,8 @@
   <script src="/shared/cart.js"></script>
   <!-- ✨ shared format — formatPrice, escapeHTML, discountPercent, showToast, ... (مُستخرَج من 3 ملفات) -->
   <script src="/shared/format.js"></script>
+  <!-- ✅ Cloudflare Turnstile — captcha widget for checkout page -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 
@@ -3374,7 +3376,8 @@
           '<div class="summary-line"><span class="label">' + esc(t('cart_subtotal')) + '</span><span class="val">' + formatPrice(subtotal) + '</span></div>' +
           '<div class="summary-line"><span class="label">' + esc(t('cart_shipping')) + '</span><span class="val">' + shippingVal + '</span></div>' +
           '<div class="summary-line grand"><span class="label">' + esc(t('cart_total')) + '</span><span class="val">' + formatPrice(total) + '</span></div>' +
-          '<button class="btn-place-order" id="placeOrderBtn">' + esc(t('checkout_place_order')) + '</button>';
+          '<div id="turnstileWidgetWrap" style="margin:1rem 0;display:flex;justify-content:center;"><div id="checkout-turnstile-widget" class="cf-turnstile" data-sitekey="' + esc((window.SHV_CONFIG && window.SHV_CONFIG.TURNSTILE_SITE_KEY) || '') + '" data-callback="onCheckoutTurnstileSuccess" data-theme="light" data-language="ar"></div></div>' +
+          '<button class="btn-place-order" id="placeOrderBtn" disabled>' + esc(t('checkout_place_order')) + '</button>';
       }
       // Summary
       var subtotal = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
@@ -3451,7 +3454,11 @@
           setCart([]);
           state.orderSuccess = { orderId: orderId, total: freshTotal, shipping: freshShipping, subtotal: freshSubtotal, items: payload.items, customer: payload.customer };
           navigate('success', {});
-        } catch (e) { showToast(t('order_failed') + ': ' + (e.message || '')); }
+        } catch (e) {
+          showToast(t('order_failed') + ': ' + (e.message || ''));
+          // ✅ Reset Turnstile so user can re-solve the challenge after failure
+          if (typeof window.resetCheckoutTurnstile === 'function') window.resetCheckoutTurnstile();
+        }
       });
       // Re-render summary when wilaya changes (live shipping cost)
       if (selWilayaEl) {
@@ -3727,21 +3734,21 @@
       html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">';
       // Instagram
       if (instagram) {
-        html += '<a href="' + esc(instagram) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.75rem;padding:1rem;border:1px solid var(--border-light);border-radius:4px;transition:var(--transition);">';
+        html += '<a href="' + safeUrl(instagram) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.75rem;padding:1rem;border:1px solid var(--border-light);border-radius:4px;transition:var(--transition);">';
         html += '<div style="width:36px;height:36px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--hero-blue);flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></div>';
         html += '<div><div style="font-size:0.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text3);">Instagram</div><div style="font-size:0.8125rem;font-weight:600;color:var(--text);">' + esc(instagram.replace(/^https?:\/\//,'').replace(/^www\./,'')) + '</div></div>';
         html += '</a>';
       }
       // TikTok
       if (tiktok) {
-        html += '<a href="' + esc(tiktok) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.75rem;padding:1rem;border:1px solid var(--border-light);border-radius:4px;transition:var(--transition);">';
+        html += '<a href="' + safeUrl(tiktok) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.75rem;padding:1rem;border:1px solid var(--border-light);border-radius:4px;transition:var(--transition);">';
         html += '<div style="width:36px;height:36px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--hero-blue);flex-shrink:0;"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg></div>';
         html += '<div><div style="font-size:0.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text3);">TikTok</div><div style="font-size:0.8125rem;font-weight:600;color:var(--text);">' + esc(tiktok.replace(/^https?:\/\//,'').replace(/^www\./,'')) + '</div></div>';
         html += '</a>';
       }
       // Facebook
       if (facebook) {
-        html += '<a href="' + esc(facebook) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.75rem;padding:1rem;border:1px solid var(--border-light);border-radius:4px;transition:var(--transition);">';
+        html += '<a href="' + safeUrl(facebook) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.75rem;padding:1rem;border:1px solid var(--border-light);border-radius:4px;transition:var(--transition);">';
         html += '<div style="width:36px;height:36px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--hero-blue);flex-shrink:0;"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></div>';
         html += '<div><div style="font-size:0.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text3);">Facebook</div><div style="font-size:0.8125rem;font-weight:600;color:var(--text);">' + esc(facebook.replace(/^https?:\/\//,'').replace(/^www\./,'')) + '</div></div>';
         html += '</a>';
@@ -3978,9 +3985,9 @@
                 _cLogo.forEach(function(l) { l.textContent = _cs.name; });
                 document.title = (_cs.title || _cs.name) + ' | ZEPHYR';
               }
-              if (_cs.instagram) { var _ig = document.getElementById('socialInstagram'); if (_ig) { _ig.href = _cs.instagram; _ig.style.display = ''; } }
-              if (_cs.tiktok)    { var _tk = document.getElementById('socialTiktok');   if (_tk) { _tk.href = _cs.tiktok;    _tk.style.display = ''; } }
-              if (_cs.facebook)  { var _fb = document.getElementById('socialFacebook'); if (_fb) { _fb.href = _cs.facebook;  _fb.style.display = ''; } }
+              if (_cs.instagram) { var _ig = document.getElementById('socialInstagram'); if (_ig) { _ig.href = safeUrl(_cs.instagram); _ig.style.display = ''; } }
+              if (_cs.tiktok)    { var _tk = document.getElementById('socialTiktok');   if (_tk) { _tk.href = safeUrl(_cs.tiktok);    _tk.style.display = ''; } }
+              if (_cs.facebook)  { var _fb = document.getElementById('socialFacebook'); if (_fb) { _fb.href = safeUrl(_cs.facebook);  _fb.style.display = ''; } }
               applyHeroSettings(_cs);
             }
           }
@@ -3997,9 +4004,9 @@
             var logoEl = document.querySelectorAll('.logo');
             logoEl.forEach(function(l) { if (s.name) l.textContent = s.name; });
             if (s.name || s.title) document.title = (s.title || s.name) + ' | ZEPHYR';
-            if (s.instagram) { var ig = document.getElementById('socialInstagram'); if (ig) { ig.href = s.instagram; ig.style.display = ''; } }
-            if (s.tiktok) { var tk = document.getElementById('socialTiktok'); if (tk) { tk.href = s.tiktok; tk.style.display = ''; } }
-            if (s.facebook) { var fb = document.getElementById('socialFacebook'); if (fb) { fb.href = s.facebook; fb.style.display = ''; } }
+            if (s.instagram) { var ig = document.getElementById('socialInstagram'); if (ig) { ig.href = safeUrl(s.instagram); ig.style.display = ''; } }
+            if (s.tiktok) { var tk = document.getElementById('socialTiktok'); if (tk) { tk.href = safeUrl(s.tiktok); tk.style.display = ''; } }
+            if (s.facebook) { var fb = document.getElementById('socialFacebook'); if (fb) { fb.href = safeUrl(s.facebook); fb.style.display = ''; } }
             // Hero customization from store settings
             applyHeroSettings(s);
             // Persist store snapshot to localStorage for instant application on next load
