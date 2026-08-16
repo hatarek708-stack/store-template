@@ -26,9 +26,11 @@
     // ✅ Cloudflare Turnstile Site Key (public, safe for browser).
     // Used in the checkout page to prevent bot orders.
     // The matching Secret Key is stored only in the Worker (TURNSTILE_SECRET_KEY).
-    // Replace this placeholder with your real site key from:
-    //   https://dash.cloudflare.com → Turnstile → Create site
-    TURNSTILE_SITE_KEY: '0x4AAAAAAA00000000000AAAA',
+    // This value is set as an encrypted Pages env var on both:
+    //   - shopevelo (production + preview)
+    //   - store-template-1wy (production + preview)
+    // To replace with your real key, see: https://dash.cloudflare.com → Turnstile
+    TURNSTILE_SITE_KEY: '0x4AAAAAAA9E837DCC941C8CF6',
 
     // اسم الجدول الرئيسي للمتاجر
     STORES_TABLE: 'stores',
