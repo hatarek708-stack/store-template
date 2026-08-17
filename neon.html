@@ -4488,8 +4488,11 @@
                 '<div style="position:absolute;left:-9999px;opacity:0;height:0;width:0;overflow:hidden;"><input type="text" id="shv_hp_co" name="url" tabindex="-1" autocomplete="off"></div>' +
                 '<div style="position:absolute;left:-9999px;opacity:0;height:0;width:0;overflow:hidden;"><input type="text" id="shv_hp_co_phone" name="phone_optional" tabindex="-1" autocomplete="off" placeholder="Phone (optional)"></div>' +
 
+                /* ✅ Cloudflare Turnstile widget — required before direct order */
+                '<div id="directTurnstileWrap" style="margin:0.75rem 0;display:flex;justify-content:center;"><div id="direct-turnstile-widget" class="cf-turnstile" data-sitekey="'+escapeHTML((window.SHV_CONFIG && window.SHV_CONFIG.TURNSTILE_SITE_KEY) || '')+'" data-callback="onDirectTurnstileSuccess" data-theme="dark" data-language="ar"></div></div>' +
+
                 /* Submit button */
-                '<button class="btn-submit-order" id="osSubmitBtn" type="button">' +
+                '<button class="btn-submit-order" id="osSubmitBtn" type="button" disabled>' +
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
                     escapeHTML(t('of_submit')) +
                 '</button>' +
@@ -4592,6 +4595,10 @@
 
             // Submit button
             var submitBtn = document.getElementById('osSubmitBtn');
+            // ✅ Render direct-order Turnstile widget now that product page is in DOM
+            if (typeof window.renderDirectTurnstile === 'function') {
+                setTimeout(window.renderDirectTurnstile, 50);
+            }
             if (submitBtn) submitBtn.addEventListener('click', async function () {
                 // 🔒 Honeypot — check BOTH hidden fields
                 var hpCo = document.getElementById('shv_hp_co');
@@ -4682,8 +4689,12 @@
                     navigate('order-success', {});
                 } catch (e) {
                     showToast('❌ ' + (e.message || 'error'));
+                    // ✅ Reset direct-order Turnstile so user can re-solve the challenge after failure
+                    if (typeof window.resetDirectTurnstile === 'function') window.resetDirectTurnstile();
                 } finally {
-                    submitBtn.disabled = false; submitBtn.textContent = t('of_submit');
+                    // ✅ Don't re-enable button until Turnstile is solved again (after failure)
+                    if (!window._directTurnstileToken) submitBtn.disabled = true;
+                    submitBtn.textContent = t('of_submit');
                 }
             });
         }

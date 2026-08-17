@@ -304,4 +304,91 @@
     window.renderCheckoutTurnstile();
   }
 
+  /**
+   * ✅ Direct Order Turnstile (separate from checkout cart Turnstile).
+   * Used on product detail pages where users can order directly without
+   * adding to cart. Has its own token state and widget container.
+   */
+  window._directTurnstileToken = '';
+  window.onDirectTurnstileSuccess = function (token) {
+    window._directTurnstileToken = token || '';
+    // Enable the direct order submit button
+    var btn = document.getElementById('doSubmitBtn') || document.getElementById('docSubmit') || document.getElementById('osSubmitBtn');
+    if (btn) btn.disabled = false;
+  };
+
+  /**
+   * Render the direct-order Turnstile widget.
+   * Call this after the product detail page is rendered in the DOM.
+   */
+  window.renderDirectTurnstile = function () {
+    var container = document.getElementById('direct-turnstile-widget');
+    if (!container) return; // direct order form not rendered yet
+    if (!window.SHV_CONFIG || !window.SHV_CONFIG.TURNSTILE_SITE_KEY) {
+      console.warn('[turnstile] TURNSTILE_SITE_KEY not configured');
+      return;
+    }
+    if (!window.turnstile) {
+      // Script hasn't loaded yet — retry in 500ms (up to 10 seconds)
+      var attempts = 0;
+      var timer = setInterval(function () {
+        attempts++;
+        if (window.turnstile) {
+          clearInterval(timer);
+          doRender();
+        } else if (attempts >= 20) {
+          clearInterval(timer);
+          console.error('[turnstile] Script failed to load after 10 seconds');
+          // Enable button on error so user isn't stuck
+          var btn = document.getElementById('doSubmitBtn') || document.getElementById('docSubmit') || document.getElementById('osSubmitBtn');
+          if (btn) btn.disabled = false;
+        }
+      }, 500);
+      return;
+    }
+    doRender();
+
+    function doRender() {
+      if (container.children.length > 0) return; // already rendered
+      try {
+        window.turnstile.render(container, {
+          sitekey: window.SHV_CONFIG.TURNSTILE_SITE_KEY,
+          callback: function (token) {
+            window._directTurnstileToken = token || '';
+            var btn = document.getElementById('doSubmitBtn') || document.getElementById('docSubmit') || document.getElementById('osSubmitBtn');
+            if (btn) btn.disabled = false;
+          },
+          'error-callback': function () {
+            console.error('[turnstile] Direct widget error');
+            // Enable button on error (better UX — don't block legitimate users)
+            var btn = document.getElementById('doSubmitBtn') || document.getElementById('docSubmit') || document.getElementById('osSubmitBtn');
+            if (btn) btn.disabled = false;
+          },
+          'expired-callback': function () {
+            window._directTurnstileToken = '';
+            var btn = document.getElementById('doSubmitBtn') || document.getElementById('docSubmit') || document.getElementById('osSubmitBtn');
+            if (btn) btn.disabled = true;
+          },
+          theme: container.getAttribute('data-theme') || 'light',
+          language: 'ar'
+        });
+      } catch (e) {
+        console.error('[turnstile] direct render failed:', e);
+      }
+    }
+  };
+
+  /**
+   * Reset the direct-order Turnstile widget.
+   * Call this after a failed direct order so user can re-solve the challenge.
+   */
+  window.resetDirectTurnstile = function () {
+    window._directTurnstileToken = '';
+    var btn = document.getElementById('doSubmitBtn') || document.getElementById('docSubmit') || document.getElementById('osSubmitBtn');
+    if (btn) btn.disabled = true;
+    if (window.turnstile && typeof window.turnstile.reset === 'function') {
+      try { window.turnstile.reset('#direct-turnstile-widget'); } catch (e) { /* noop */ }
+    }
+  };
+
 })();

@@ -1916,6 +1916,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
 
             grid.innerHTML = galleryHTML + infoHTML;
 
+            // ✅ Render direct-order Turnstile widget now that product page is in DOM
+            if (typeof window.renderDirectTurnstile === 'function') {
+              setTimeout(window.renderDirectTurnstile, 50);
+            }
+
             // Tabs content — Description (Details) + specs list from product.details
             var descText = p.shortDesc || p.desc || t('tab_details_text');
             document.getElementById('textDetails').textContent = descText;
@@ -4098,8 +4103,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
               '<textarea class="doc-textarea" id="docNotes" placeholder="'+escapeHTML(t('of_notes_ph') || 'Additional Notes (Optional)')+'" maxlength="500" style="margin-top:8px;min-height:40px">'+escapeHTML(d.notes||'')+'</textarea>'+
             '</div>'+
 
+            // ✅ Cloudflare Turnstile widget — required before direct order
+            '<div id="directTurnstileWrap" style="margin:0.75rem 0;display:flex;justify-content:center;"><div id="direct-turnstile-widget" class="cf-turnstile" data-sitekey="'+escapeHTML((window.SHV_CONFIG && window.SHV_CONFIG.TURNSTILE_SITE_KEY) || '')+'" data-callback="onDirectTurnstileSuccess" data-theme="light" data-language="ar"></div></div>'+
+
             // Submit
-            '<button type="button" class="doc-submit" id="docSubmit">'+I.cart+' '+escapeHTML(t('of_submit') || 'Confirm Order')+'</button>'+
+            '<button type="button" class="doc-submit" id="docSubmit" disabled>'+I.cart+' '+escapeHTML(t('of_submit') || 'Confirm Order')+'</button>'+
             '<p class="doc-terms">'+escapeHTML(t('os_terms') || 'By clicking checkout, you agree to our Terms & Conditions.')+'</p>'+
 
             // Trust
@@ -5311,8 +5319,14 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
           } catch(err) {
             showToast(t('of_required') + ': ' + (err.message||''));
             console.error('Direct order error:', err);
+            // ✅ Reset direct-order Turnstile so user can re-solve the challenge after failure
+            if (typeof window.resetDirectTurnstile === 'function') window.resetDirectTurnstile();
           } finally {
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = t('of_submit') || 'Confirm Order'; }
+            // ✅ Don't re-enable button until Turnstile is solved again (after failure)
+            if (submitBtn) {
+              if (!window._directTurnstileToken) submitBtn.disabled = true;
+              submitBtn.textContent = t('of_submit') || 'Confirm Order';
+            }
           }
         }
 

@@ -71,9 +71,24 @@
     // The Worker validates this token against Cloudflare's siteverify endpoint
     // using the SECRET key (which never leaves the Worker). If the token is missing
     // or invalid, the Worker rejects the order with HTTP 403.
-    var turnstileToken = payload.turnstile_token || payload.turnstileToken || window._checkoutTurnstileToken || '';
+    //
+    // Supports both checkout-cart flow and direct-order flow:
+    //   - Checkout cart: token stored in window._checkoutTurnstileToken
+    //   - Direct order:  token stored in window._directTurnstileToken
+    var turnstileToken = payload.turnstile_token || payload.turnstileToken
+      || window._directTurnstileToken
+      || window._checkoutTurnstileToken
+      || '';
     if (!turnstileToken) {
       throw new Error('يرجى إكمال التحقق من الحماية (Turnstile)');
+    }
+    // Clear the used token (tokens are single-use)
+    if (payload.turnstile_token || payload.turnstileToken) {
+      // caller passed it explicitly — don't clear global state
+    } else if (window._directTurnstileToken) {
+      window._directTurnstileToken = '';
+    } else if (window._checkoutTurnstileToken) {
+      window._checkoutTurnstileToken = '';
     }
 
     var res = await fetch(workerUrl + '/order', {
