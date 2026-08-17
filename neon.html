@@ -5181,6 +5181,10 @@
                 summaryCard.innerHTML = _renderSummaryCard(subtotal, shipping, isAllFreeShip, ckWilayaVal);
 
                 var placeBtn = document.getElementById('ckPlaceOrderBtn');
+                // ✅ Explicitly render Turnstile widget now that checkout page is in DOM
+                if (typeof window.renderCheckoutTurnstile === 'function') {
+                    setTimeout(window.renderCheckoutTurnstile, 50);
+                }
                 if (placeBtn) placeBtn.addEventListener('click', async function () {
                     // 🔒 Honeypot — check BOTH hidden fields
                     var hpCk = document.getElementById('shv_hp_ck');

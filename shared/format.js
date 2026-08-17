@@ -229,4 +229,79 @@
     }
   };
 
+  /**
+   * ✅ Explicitly render the Turnstile widget.
+   * Call this after the checkout page is rendered in the DOM.
+   *
+   * In SPA-style templates (white/black/neon), the checkout page is rendered
+   * dynamically when the user navigates. The Turnstile api.js script loads once
+   * on initial page load and scans for `.cf-turnstile` elements at that time.
+   * When the checkout page is rendered later, the script has already finished
+   * scanning, so the widget never renders.
+   *
+   * This function explicitly calls turnstile.render() on the widget container,
+   * which works regardless of when the element was added to the DOM.
+   */
+  window.renderCheckoutTurnstile = function () {
+    var container = document.getElementById('checkout-turnstile-widget');
+    if (!container) return; // checkout page not rendered yet
+    if (!window.SHV_CONFIG || !window.SHV_CONFIG.TURNSTILE_SITE_KEY) {
+      console.warn('[turnstile] TURNSTILE_SITE_KEY not configured');
+      return;
+    }
+    if (!window.turnstile) {
+      // Script hasn't loaded yet — retry in 500ms (up to 10 seconds)
+      var attempts = 0;
+      var timer = setInterval(function () {
+        attempts++;
+        if (window.turnstile) {
+          clearInterval(timer);
+          doRender();
+        } else if (attempts >= 20) {
+          clearInterval(timer);
+          console.error('[turnstile] Script failed to load after 10 seconds');
+        }
+      }, 500);
+      return;
+    }
+    doRender();
+
+    function doRender() {
+      // Check if already rendered (has child elements)
+      if (container.children.length > 0) return;
+      try {
+        window.turnstile.render(container, {
+          sitekey: window.SHV_CONFIG.TURNSTILE_SITE_KEY,
+          callback: function (token) {
+            window._checkoutTurnstileToken = token || '';
+            var btn = document.getElementById('placeOrderBtn');
+            if (btn) btn.disabled = false;
+          },
+          'error-callback': function () {
+            console.error('[turnstile] Widget error');
+            var btn = document.getElementById('placeOrderBtn');
+            if (btn) btn.disabled = false; // allow submit on error (better UX)
+          },
+          'expired-callback': function () {
+            window._checkoutTurnstileToken = '';
+            var btn = document.getElementById('placeOrderBtn');
+            if (btn) btn.disabled = true;
+          },
+          theme: container.getAttribute('data-theme') || 'light',
+          language: 'ar'
+        });
+      } catch (e) {
+        console.error('[turnstile] render failed:', e);
+      }
+    }
+  };
+
+  // Auto-render on DOMContentLoaded (catches initial page load)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.renderCheckoutTurnstile);
+  } else {
+    // DOM already loaded — try rendering now
+    window.renderCheckoutTurnstile();
+  }
+
 })();

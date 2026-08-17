@@ -4651,6 +4651,10 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             '</div>';
           checkoutModal.style.display = 'flex';
           document.body.style.overflow = 'hidden';
+          // ✅ Explicitly render Turnstile widget now that checkout modal is in DOM
+          if (typeof window.renderCheckoutTurnstile === 'function') {
+            setTimeout(window.renderCheckoutTurnstile, 50);
+          }
           checkoutModal.querySelector('#checkoutClose').addEventListener('click', closeCheckoutModal);
           checkoutModal.addEventListener('click', function(e) { if (e.target === checkoutModal) closeCheckoutModal(); });
           var dtBtns = checkoutModal.querySelectorAll('.delivery-type-btn');
