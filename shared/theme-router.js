@@ -108,6 +108,7 @@
    * الحصول على اسم الملف للقالب المُحدَّد
    * @param {string} template
    * @returns {string} اسم الملف (مثل 'black.html')
+   * ✅ NOTE: Kept for diagnostic purposes (not called by templates directly).
    */
   window.shvGetThemeFile = function (template) {
     var tpl = String(template || '').toLowerCase().trim();
@@ -115,5 +116,6 @@
   };
 
   // ✨ تصدير THEME_MAP للقراءة فقط (للاختبار/التشخيص)
+  // ✅ NOTE: Kept for diagnostic purposes.
   window.shvThemeMap = THEME_MAP;
 })();

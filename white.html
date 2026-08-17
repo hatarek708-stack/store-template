@@ -9,7 +9,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -1789,8 +1788,6 @@
 
   <noscript><div style="position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:2rem;font-family:sans-serif;"><div><h1 style="font-size:1.5rem;margin-bottom:1rem;">JavaScript Required</h1><p style="color:#888;">Please enable JavaScript to browse the store.</p></div></div></noscript>
 
-  <noscript><div style="position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:2rem;font-family:sans-serif;"><div><h1 style="font-size:1.5rem;margin-bottom:1rem;">JavaScript Required</h1><p style="color:#888;">Please enable JavaScript to browse the store.</p></div></div></noscript>
-
   <!-- ===================================================
        SUPABASE INTEGRATION (shared with neon.html / black.html)
        =================================================== -->
@@ -2184,15 +2181,9 @@
 
     /* ===== SHIPPING CALCULATION (per-wilaya) ===== */
 
-    // ✨ Shipping logic unified in shared/shipping.js — local aliases for convenience
-
-    var WILAYA_NAME_TO_ID = window.WILAYA_NAME_TO_ID;
-
-    var DEFAULT_WILAYA_PRICES = window.DEFAULT_WILAYA_PRICES;
-
+    // ✨ Shipping logic unified in shared/shipping.js
     var calcShipping = window.calcShipping;
 
-    var _hasShippingConfig = window._hasShippingConfig;
     /* ===== SHIPPING INFO LINE (Bug 4: visible per-wilaya shipping cost) =====
        Returns a small inline HTML message that explains the current shipping cost.
        Called from the direct order card and checkout summary to give the user
@@ -2219,13 +2210,6 @@
 
     /* ===== DATA ===== */
     var STORE_DATA = {
-      categories: [
-        { id: 'women', name: 'Women', image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&h=500&fit=crop' },
-        { id: 'men', name: 'Men', image: 'https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?w=400&h=500&fit=crop' },
-        { id: 'shoes', name: 'Shoes', image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=500&fit=crop' },
-        { id: 'bags', name: 'Bags', image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&h=500&fit=crop' },
-        { id: 'accessories', name: 'Accessories', image: 'https://images.unsplash.com/photo-1611923134239-b9be5816e23c?w=400&h=500&fit=crop' },
-      ],
       products: []
     };
 
@@ -2235,7 +2219,7 @@
       selectedColor: 0, selectedSize: null, quantity: 1,
       currentImage: 0, zoomIndex: 0,
       catActive: 'all', catSort: 'featured',
-      searchQuery: '', searchActive: 'all', searchSort: 'featured',
+      searchActive: 'all', searchSort: 'featured',
       checkoutData: { fullName:'', phone:'', wilaya:'', baladiya:'', address:'', notes:'', deliveryType: 'home' },
       // Try Two Sizes (TTS) state — enabled per order; backup size chosen by user
       ttsEnabled: false, ttsBackupSize: ''
@@ -2252,7 +2236,6 @@
     var addToCart = window.addToCart;
     var formatPrice = window.formatPrice;
     var escapeHTML = window.escapeHTML;
-    var discountPercent = window.discountPercent;
     var effectivePrice = window._effectivePrice; // في shared/orders.js باسم _effectivePrice
     var showToast = window.showToast;
 

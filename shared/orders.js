@@ -64,7 +64,7 @@
    */
   window.saveOrderData = async function (payload) {
     var storeId = (window._storeData && window._storeData.id) || window._getStoreId();
-    var workerUrl = (window.SHV_CONFIG && window.SHV_CONFIG.SHV_WORKER_URL) || window._SHV_WORKER_URL;
+    var workerUrl = (window.SHV_CONFIG && window.SHV_CONFIG.SHV_WORKER_URL);
     if (!workerUrl) throw new Error('SHV_WORKER_URL not configured');
 
     // ✅ FIX C-09: Forward Turnstile token to the Worker for server-side verification.

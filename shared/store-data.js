@@ -82,7 +82,7 @@
 
   // إرسال مراجعة عميل إلى الـ worker (يُدرجها في product_reviews)
   window._shvSubmitProductReview = async function (storeId, productId, customerName, rating, comment) {
-    var workerUrl = (window.SHV_CONFIG && window.SHV_CONFIG.SHV_WORKER_URL) || window._SHV_WORKER_URL;
+    var workerUrl = (window.SHV_CONFIG && window.SHV_CONFIG.SHV_WORKER_URL);
     var res = await fetch(workerUrl + '/review', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -548,7 +548,17 @@
     } catch (e) {}
 
     // 3) جلب المنتجات + المراجعات
-    var productsResult = await supabase.from('products').select('*').eq('store_id', cleanStoreId).limit(50);
+    // ✅ FIX: Use explicit column list instead of '*' for consistency with stores table.
+    // This protects against future column-level GRANTs on products table.
+    var productColumns = [
+      'id', 'store_id', 'name', 'price', 'discount_price', 'quantity', 'emoji',
+      'category', 'description', 'image', 'detail_images', 'images', 'sizes', 'colors',
+      'slug', 'tts_enabled', 'tts_fee', 'details', 'shipping_returns',
+      'reviews_text', 'reviews_data', 'free_shipping',
+      'name_en', 'description_en', 'details_en', 'shipping_returns_en', 'weight',
+      'created_at', 'updated_at'
+    ].join(', ');
+    var productsResult = await supabase.from('products').select(productColumns).eq('store_id', cleanStoreId).limit(50);
     var productRows = productsResult && productsResult.data ? productsResult.data : [];
 
     var reviewsMap = await window._shvFetchAllReviewsMap(cleanStoreId);
@@ -575,7 +585,7 @@
 
     function _refreshAndEmit() {
       return (async function () {
-        var result = await supabase.from('products').select('*').eq('store_id', storeId).limit(50);
+        var result = await supabase.from('products').select(productColumns).eq('store_id', storeId).limit(50);
         var rows = result && result.data ? result.data : [];
         var reviewsMap = await window._shvFetchAllReviewsMap(storeId);
         var products = rows.map(function (p) { return _mapProduct(p, reviewsMap); });

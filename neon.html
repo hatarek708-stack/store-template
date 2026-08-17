@@ -2831,15 +2831,9 @@
 
         /* ===================== SHIPPING CALCULATION (per-wilaya) ===================== */
 
-        // ✨ Shipping logic unified in shared/shipping.js — local aliases for convenience
-
-        var WILAYA_NAME_TO_ID = window.WILAYA_NAME_TO_ID;
-
-        var DEFAULT_WILAYA_PRICES = window.DEFAULT_WILAYA_PRICES;
-
+        // ✨ Shipping logic unified in shared/shipping.js
         var calcShipping = window.calcShipping;
 
-        var _hasShippingConfig = window._hasShippingConfig;
         /* ===================== SHIPPING INFO LINE (Bug 4: visible per-wilaya shipping cost) =====================
            Returns a small inline HTML message that explains the current shipping cost.
            Called from the direct order card and checkout summary to give the user
@@ -3012,21 +3006,6 @@
                 var sameCat = this.products.filter(function (p) { return p.category === current.category && p.id !== current.id; });
                 var others = this.products.filter(function (p) { return p.category !== current.category && p.id !== current.id; });
                 return sameCat.concat(others).slice(0, limit);
-            },
-            formatPrice: function (n) { return formatDA(n); },
-            discountPercent: function (price, original) {
-                if (!original || original <= price) return 0;
-                return Math.round(((original - price) / original) * 100);
-            },
-            searchProducts: function (query) {
-                if (!query) return this.products;
-                var q = query.trim().toLowerCase();
-                if (!q) return this.products;
-                return this.products.filter(function (p) {
-                    var cat = this.getCategoryById(p.category);
-                    var haystack = [p.name, p.shortDesc, p.categoryLabel, cat ? cat.name : '', p.badge, p.details.join(' '), p.colors.map(function (c) { return c.name; }).join(' ')].join(' ').toLowerCase();
-                    return haystack.indexOf(q) !== -1;
-                }.bind(this));
             }
         };
 
@@ -3499,8 +3478,7 @@
             return val === undefined ? key : val;
         }
 
-        // ✨ formatDA + translateBadge انتقلتا إلى shared/format.js (مُحمَّلة في <head>)
-        var formatDA = window.formatDA;
+        // ✨ formatDA + translateBadge from shared/format.js (loaded in <head>)
         var translateBadge = window.translateBadge;
 
         function setLanguage(lang) {
@@ -4517,7 +4495,10 @@
             'Guelma','Constantine','Médéa','Mostaganem','M\'Sila','Mascara','Ouargla',
             'Oran','El Bayadh','Illizi','Bordj Bou Arréridj','Boumerdès','El Tarf',
             'Tindouf','Tissemsilt','El Oued','Khenchela','Souk Ahras','Tipaza','Mila',
-            'Aïn Defla','Naâma','Aïn Témouchent','Ghardaïa','Relizane'
+            'Aïn Defla','Naâma','Aïn Témouchent','Ghardaïa','Relizane',
+            // ✅FIX: Added 10 southern wilayas (post-2019 administrative reform)
+            'Timimoun','Bordj Badji Mokhtar','Ouled Djellal','Béni Abbès',
+            'In Salah','In Guezzam','Touggourt','Djanet','El M\'Ghair','El Meniaa'
         ];
 
         function bindOrderFormInteractions(p) {

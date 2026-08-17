@@ -51,6 +51,8 @@
   };
 
   // ✨ helper للتحقق من تكوين Supabase
+  // ✅ NOTE: This function is kept for diagnostic purposes. It's not called
+  // by any template currently, but may be useful for debugging.
   window.shvCheckConfig = function () {
     var cfg = window.SHV_CONFIG;
     if (!cfg.SUPABASE_URL || !cfg.SUPABASE_PUBLISHABLE_KEY) {
