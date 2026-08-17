@@ -332,6 +332,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
 
 /* ============ DIRECT ORDER CARD (Product Page) ============ */
 .direct-order-card{background:#fff;border:1px solid #ececec;border-radius:12px;padding:28px;margin-top:32px;max-width:480px}
+/* ✅ FIX: Turnstile widget stability — prevent disappearing on scroll */
+#turnstileWidgetWrap,#directTurnstileWrap{position:relative;z-index:10;transform:translateZ(0);}
 .direct-order-card .doc-header{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #f0f0f0}
 .direct-order-card .doc-header svg{width:18px;height:18px;color:#111;flex-shrink:0}
 .direct-order-card .doc-header h3{font-size:15px;font-weight:700;color:#111;letter-spacing:-.01em}
