@@ -82,7 +82,7 @@
 
   // إرسال مراجعة عميل إلى الـ worker (يُدرجها في product_reviews)
   window._shvSubmitProductReview = async function (storeId, productId, customerName, rating, comment) {
-    var workerUrl = window._SHV_WORKER_URL || (window.SHV_CONFIG && window.SHV_CONFIG.SHV_WORKER_URL) || 'https://ai-proxy-worker.hatarek708.workers.dev';
+    var workerUrl = (window.SHV_CONFIG && window.SHV_CONFIG.SHV_WORKER_URL) || window._SHV_WORKER_URL;
     var res = await fetch(workerUrl + '/review', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

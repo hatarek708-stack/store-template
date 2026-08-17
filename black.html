@@ -527,14 +527,13 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
 <script type="module">
 
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-    const SUPABASE_URL = "https://tgqkathfzrnkiyxwzkbc.supabase.co";
-    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_MnDIdSEFp9UrLmvC0Y2k4g_Tp74iXHb";
+    // ✅ FIX: Use unified SHV_CONFIG from shared/supabase.js (single source of truth)
+    const SUPABASE_URL = window.SHV_CONFIG.SUPABASE_URL;
+    const SUPABASE_PUBLISHABLE_KEY = window.SHV_CONFIG.SUPABASE_PUBLISHABLE_KEY;
     const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: { persistSession: false },
       realtime: { params: { eventsPerSecond: 5 } },
     });
-    const SHV_WORKER_URL = 'https://ai-proxy-worker.hatarek708.workers.dev';
-    window._SHV_WORKER_URL = SHV_WORKER_URL;
     // ✨ اجعل supabase متاحاً لـ shared/orders.js (الذي يستخدم window.supabase)
     window.supabase = supabase;
 
