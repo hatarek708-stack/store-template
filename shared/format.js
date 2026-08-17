@@ -219,12 +219,16 @@
   /**
    * Reset the Turnstile widget — call this after a failed order so the user
    * can re-solve the challenge (tokens are single-use).
+   * ✅ FIX: Use widget ID for more reliable reset + support all button IDs.
    */
   window.resetCheckoutTurnstile = function () {
     window._checkoutTurnstileToken = '';
-    var btn = document.getElementById('placeOrderBtn');
+    var btn = document.getElementById('placeOrderBtn') || document.getElementById('cpSubmit') || document.getElementById('ckPlaceOrderBtn');
     if (btn) btn.disabled = true;
     if (window.turnstile && typeof window.turnstile.reset === 'function') {
+      if (window._checkoutTurnstileWidgetId) {
+        try { window.turnstile.reset(window._checkoutTurnstileWidgetId); return; } catch (e) { /* fall through */ }
+      }
       try { window.turnstile.reset('#checkout-turnstile-widget'); } catch (e) { /* noop */ }
     }
   };
@@ -242,6 +246,7 @@
    * This function explicitly calls turnstile.render() on the widget container,
    * which works regardless of when the element was added to the DOM.
    */
+  window._checkoutTurnstileWidgetId = null;
   window.renderCheckoutTurnstile = function () {
     var container = document.getElementById('checkout-turnstile-widget');
     if (!container) return; // checkout page not rendered yet
@@ -260,6 +265,8 @@
         } else if (attempts >= 20) {
           clearInterval(timer);
           console.error('[turnstile] Script failed to load after 10 seconds');
+          var btn = document.getElementById('placeOrderBtn') || document.getElementById('cpSubmit') || document.getElementById('ckPlaceOrderBtn');
+          if (btn) btn.disabled = false;
         }
       }, 500);
       return;
@@ -267,24 +274,30 @@
     doRender();
 
     function doRender() {
-      // Check if already rendered (has child elements)
-      if (container.children.length > 0) return;
+      // ✅ FIX: Remove old widget before re-rendering to prevent duplicates
+      if (window._checkoutTurnstileWidgetId && window.turnstile.remove) {
+        try { window.turnstile.remove(window._checkoutTurnstileWidgetId); } catch (e) { /* noop */ }
+        window._checkoutTurnstileWidgetId = null;
+      }
+      if (container.children.length > 0) {
+        container.innerHTML = '';
+      }
       try {
-        window.turnstile.render(container, {
+        window._checkoutTurnstileWidgetId = window.turnstile.render(container, {
           sitekey: window.SHV_CONFIG.TURNSTILE_SITE_KEY,
           callback: function (token) {
             window._checkoutTurnstileToken = token || '';
-            var btn = document.getElementById('placeOrderBtn');
+            var btn = document.getElementById('placeOrderBtn') || document.getElementById('cpSubmit') || document.getElementById('ckPlaceOrderBtn');
             if (btn) btn.disabled = false;
           },
           'error-callback': function () {
             console.error('[turnstile] Widget error');
-            var btn = document.getElementById('placeOrderBtn');
-            if (btn) btn.disabled = false; // allow submit on error (better UX)
+            var btn = document.getElementById('placeOrderBtn') || document.getElementById('cpSubmit') || document.getElementById('ckPlaceOrderBtn');
+            if (btn) btn.disabled = false;
           },
           'expired-callback': function () {
             window._checkoutTurnstileToken = '';
-            var btn = document.getElementById('placeOrderBtn');
+            var btn = document.getElementById('placeOrderBtn') || document.getElementById('cpSubmit') || document.getElementById('ckPlaceOrderBtn');
             if (btn) btn.disabled = true;
           },
           theme: container.getAttribute('data-theme') || 'light',
@@ -292,6 +305,8 @@
         });
       } catch (e) {
         console.error('[turnstile] render failed:', e);
+        var btn = document.getElementById('placeOrderBtn') || document.getElementById('cpSubmit') || document.getElementById('ckPlaceOrderBtn');
+        if (btn) btn.disabled = false;
       }
     }
   };
@@ -321,6 +336,7 @@
    * Render the direct-order Turnstile widget.
    * Call this after the product detail page is rendered in the DOM.
    */
+  window._directTurnstileWidgetId = null;
   window.renderDirectTurnstile = function () {
     var container = document.getElementById('direct-turnstile-widget');
     if (!container) return; // direct order form not rendered yet
@@ -349,9 +365,17 @@
     doRender();
 
     function doRender() {
-      if (container.children.length > 0) return; // already rendered
+      // ✅ FIX: Remove old widget before re-rendering to prevent duplicates
+      if (window._directTurnstileWidgetId && window.turnstile.remove) {
+        try { window.turnstile.remove(window._directTurnstileWidgetId); } catch (e) { /* noop */ }
+        window._directTurnstileWidgetId = null;
+      }
+      // Also clear container content as backup
+      if (container.children.length > 0) {
+        container.innerHTML = '';
+      }
       try {
-        window.turnstile.render(container, {
+        window._directTurnstileWidgetId = window.turnstile.render(container, {
           sitekey: window.SHV_CONFIG.TURNSTILE_SITE_KEY,
           callback: function (token) {
             window._directTurnstileToken = token || '';
@@ -374,6 +398,9 @@
         });
       } catch (e) {
         console.error('[turnstile] direct render failed:', e);
+        // Enable button on render error so user isn't completely stuck
+        var btn = document.getElementById('doSubmitBtn') || document.getElementById('docSubmit') || document.getElementById('osSubmitBtn');
+        if (btn) btn.disabled = false;
       }
     }
   };
@@ -381,12 +408,17 @@
   /**
    * Reset the direct-order Turnstile widget.
    * Call this after a failed direct order so user can re-solve the challenge.
+   * ✅ FIX: Use widget ID instead of CSS selector for more reliable reset.
    */
   window.resetDirectTurnstile = function () {
     window._directTurnstileToken = '';
     var btn = document.getElementById('doSubmitBtn') || document.getElementById('docSubmit') || document.getElementById('osSubmitBtn');
     if (btn) btn.disabled = true;
     if (window.turnstile && typeof window.turnstile.reset === 'function') {
+      // ✅ Try widget ID first, fall back to CSS selector
+      if (window._directTurnstileWidgetId) {
+        try { window.turnstile.reset(window._directTurnstileWidgetId); return; } catch (e) { /* fall through */ }
+      }
       try { window.turnstile.reset('#direct-turnstile-widget'); } catch (e) { /* noop */ }
     }
   };
