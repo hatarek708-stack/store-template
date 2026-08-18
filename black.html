@@ -4359,17 +4359,24 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
                 (P.reviews > 0 ? '<div class="rate-row">'+stars(P.rating,15,'#f59e0b')+'<span class="rate-count">('+P.reviews+' reviews)</span></div>' : '')+
                 '<div class="price-row"><span class="price">'+formatProductPrice(P.price)+'</span>'+(hasDiscount ? '<span class="price-old">'+formatProductPrice(P.oldPrice)+'</span>' : '')+'</div>'+
                 (P.desc ? '<p class="p-desc">'+escapeHTML(P.desc)+'</p>' : '')+
-                (P.colors && P.colors.length > 0 ? '<div class="opt">Color: &nbsp;<span id="colorName">'+escapeHTML(state.color)+'</span></div>' : '')+
+                // ✅ FIX: IDs and classes here are scoped with `doc-` prefix to avoid collisions
+                //    with the product page's #colorName / #sizeValue / .swatch / .size-btn.
+                //    The direct order card is rendered INSIDE renderProductPage, so both sets
+                //    of elements exist in the DOM at the same time. Without this scoping,
+                //    getElementById('colorName') returns the FIRST match (the product page's
+                //    span), and querySelectorAll('.size-btn') resets styles on ALL size
+                //    buttons (including the product page's).
+                (P.colors && P.colors.length > 0 ? '<div class="opt">Color: &nbsp;<span id="docColorName">'+escapeHTML(state.color)+'</span></div>' : '')+
                 (P.colors && P.colors.length > 0 ?
-                  '<div class="swatches">'+P.colors.map(function(c,i){return '<button class="swatch'+(c.name===state.color?' sel':'')+'" data-swatch="'+escapeHTML(c.name)+'" data-index="'+i+'" style="background:'+c.hex+'" aria-label="'+escapeHTML(c.name)+'"></button>';}).join('')+'</div>'
+                  '<div class="swatches doc-swatches">'+P.colors.map(function(c,i){return '<button class="swatch doc-swatch'+(c.name===state.color?' sel':'')+'" data-swatch="'+escapeHTML(c.name)+'" data-index="'+i+'" style="background:'+c.hex+'" aria-label="'+escapeHTML(c.name)+'"></button>';}).join('')+'</div>'
                 : '')+
                 // Size selector (NEW — black-update didn't have this, but it's REQUIRED for order)
                 (P.sizes && P.sizes.length > 0 ?
-                  '<div class="opt">Size: &nbsp;<span id="sizeValue">'+escapeHTML(state.selectedSize || 'Select size')+'</span></div>'+
-                  '<div class="swatches" style="gap:8px;">'+P.sizes.map(function(s){return '<button class="qty-btn size-btn'+(state.selectedSize===s?' sel':'')+'" data-size="'+escapeHTML(s)+'" style="width:auto;padding:8px 14px;font-size:12px;'+(state.selectedSize===s?'background:#111;color:#fff;border-color:#111;':'')+'">'+escapeHTML(s)+'</button>';}).join('')+'</div>'
+                  '<div class="opt">Size: &nbsp;<span id="docSizeValue">'+escapeHTML(state.selectedSize || 'Select size')+'</span></div>'+
+                  '<div class="swatches doc-size-row" style="gap:8px;">'+P.sizes.map(function(s){return '<button class="qty-btn size-btn doc-size-btn'+(state.selectedSize===s?' sel':'')+'" data-size="'+escapeHTML(s)+'" style="width:auto;padding:8px 14px;font-size:12px;'+(state.selectedSize===s?'background:#111;color:#fff;border-color:#111;':'')+'">'+escapeHTML(s)+'</button>';}).join('')+'</div>'
                 : '')+
                 '<div class="opt">Quantity:</div>'+
-                '<div class="qty-row"><button class="qty-btn" data-qty="-1">\u2212</button><span class="qty-val" id="qtyVal">'+state.qty+'</span><button class="qty-btn" data-qty="1">+</button></div>'+
+                '<div class="qty-row"><button class="qty-btn" data-qty="-1">\u2212</button><span class="qty-val" id="docQtyVal">'+state.qty+'</span><button class="qty-btn" data-qty="1">+</button></div>'+
                 '<button class="add-cart" data-addcart>Add to Cart '+I.cart+'</button>'+
                 '<button class="buy-now" data-buynow>Buy Now</button>'+
                 '<div class="perks">'+
@@ -4828,9 +4835,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             e.preventDefault();
             state.color = sw.dataset.swatch;
             state.selectedColor = parseInt(sw.dataset.index || '0', 10);
-            var swatches = document.querySelectorAll('.swatch');
+            // ✅ FIX: scope to .doc-swatch to avoid resetting product page's .color-swatch state
+            var swatches = document.querySelectorAll('.doc-swatch');
             swatches.forEach(function(s) { s.classList.toggle('sel', s === sw); });
-            var cn = document.getElementById('colorName');
+            // ✅ FIX: use #docColorName (was #colorName which collided with product page's span)
+            var cn = document.getElementById('docColorName');
             if (cn) cn.textContent = state.color;
             return;
           }
@@ -4841,7 +4850,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             e.preventDefault();
             e.stopPropagation();
             state.selectedSize = sb.dataset.size;
-            var sizeBtns = document.querySelectorAll('.size-btn');
+            // ✅ FIX: scope to .doc-size-btn to avoid resetting product page's #sizeOptions .size-btn
+            // (both have class="size-btn" so querySelectorAll('.size-btn') matches both sets)
+            var sizeBtns = document.querySelectorAll('.doc-size-btn');
             sizeBtns.forEach(function(s) {
               s.classList.remove('sel');
               s.style.background = '#fff';
@@ -4852,7 +4863,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             sb.style.background = '#111';
             sb.style.color = '#fff';
             sb.style.borderColor = '#111';
-            var sv = document.getElementById('sizeValue');
+            // ✅ FIX: use #docSizeValue (was #sizeValue which collided with product page's span)
+            var sv = document.getElementById('docSizeValue');
             if (sv) sv.textContent = state.selectedSize;
             return;
           }
@@ -4906,7 +4918,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial
             e.preventDefault();
             state.qty = Math.max(1, state.qty + parseInt(qb.dataset.qty, 10));
             state.quantity = state.qty;
-            var qv = document.getElementById('qtyVal');
+            // ✅ FIX: use #docQtyVal (was #qtyVal; renamed for consistency with the rest
+            //    of the direct-order-card scoped IDs)
+            var qv = document.getElementById('docQtyVal');
             if (qv) qv.textContent = state.qty;
             return;
           }
