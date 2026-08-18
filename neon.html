@@ -87,17 +87,6 @@
         .page { display: none; }
         .page.active { display: block; }
 
-        /* ===== TOP BANNER ===== */
-        .top-banner {
-            background-color: var(--color-black);
-            color: var(--color-white);
-            text-align: center;
-            padding: 0.625rem 1rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            letter-spacing: 0.05em;
-        }
-
         /* ===== HEADER ===== */
         .header {
             background-color: var(--color-white);
@@ -450,7 +439,6 @@
             transition: opacity 0.3s ease, transform 0.3s ease;
             cursor: zoom-in;
         }
-        .main-image.zoomed { cursor: zoom-out; transform: scale(2); transform-origin: center; }
 
         /* Zoom overlay (modal-style image viewer) */
         .zoom-overlay {
@@ -537,10 +525,6 @@
             font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
         }
 
-        .short-desc {
-            font-size: 0.9375rem; color: var(--color-gray-700); line-height: 1.7;
-            margin-bottom: 2rem; max-width: 36rem;
-        }
 
         .divider { height: 1px; background-color: var(--color-gray-100); margin: 1.75rem 0; }
 
@@ -1099,12 +1083,10 @@
         [dir="rtl"] .selector-row { text-align: right; }
         [dir="rtl"] .product-badge { direction: rtl; }
         [dir="rtl"] .breadcrumb .container > * { direction: rtl; }
-        [dir="rtl"] .top-banner { direction: rtl; }
         [dir="rtl"] .pagination-dots { direction: rtl; }
         [dir="rtl"] .logo { direction: ltr; }
 
         /* ===== Extra RTL rules: flip ALL directional icons & arrows ===== */
-        [dir="rtl"] .hero-carousel-btn svg,
         [dir="rtl"] .instagram-nav-btn svg,
         [dir="rtl"] .view-all svg,
         [dir="rtl"] .zoom-nav svg,
@@ -1139,7 +1121,6 @@
         /* Tag positions */
         [dir="rtl"] .product-tag { left: auto; right: 0.625rem; }
         [dir="rtl"] .product-quick { right: auto; left: 0.625rem; }
-        [dir="rtl"] .product-wishlist { right: auto; left: 0.625rem; }
         [dir="rtl"] .related-wishlist { right: auto; left: 0.625rem; bottom: 0.625rem; }
         /* Cart count */
         [dir="rtl"] .cart-count { right: auto; left: -4px; }
@@ -1179,7 +1160,6 @@
         /* Order summary item: more spacious horizontal layout on desktop */
         @media (min-width: 768px) { .direct-order-wrap .order-item { gap: 1.25rem; padding: 1rem 1.25rem; align-items: center; } }
         @media (min-width: 768px) { .direct-order-wrap .order-item-img { width: 84px; height: 100px; } }
-        .direct-order-wrap .checkout-section { padding: 0; background: transparent; }
         .direct-order-wrap .container { padding: 0; max-width: none; }
 
         .order-summary-header.direct-order-header {
@@ -1421,10 +1401,6 @@
         [dir="rtl"] .os-hero-id { flex-direction: row; }
 
         /* ===== DIRECT ORDER CARD (full checkout form) ===== */
-        .checkout-section {
-            padding: 3rem 0 4rem;
-            background-color: var(--color-gray-50);
-        }
         .order-summary-card {
             background-color: var(--color-white);
             border: 1px solid var(--color-gray-100);
@@ -3069,7 +3045,6 @@
                 new_arrival: 'New Arrival',
                 thrift_pick: 'Thrift Pick',
                 // Product detail
-                pd_badge_new: 'New Arrival',
                 pd_select_size: 'Select size',
                 pd_color: 'Color:',
                 pd_size: 'Size:',
@@ -3116,8 +3091,6 @@
                 crumb_shop: 'Shop',
                 crumb_search: 'Search',
                 // Product not found
-                product_not_found: 'Product not found.',
-                browse_all: 'Browse all products',
                 // Sort
                 sort_featured: 'Featured',
                 sort_price_asc: 'Price: Low to High',
@@ -3129,11 +3102,6 @@
                 toast_added_wishlist: 'Added to wishlist',
                 toast_removed_wishlist: 'Removed from wishlist',
                 toast_select_size: 'Please select a size',
-                toast_coming_soon: 'Coming soon',
-                toast_cart_empty: 'Your cart is empty',
-                toast_cart_count: 'in cart',
-                toast_checkout_soon: 'Checkout coming soon',
-                toast_zoom: 'Use pinch / scroll to zoom',
                 // Footer
                 footer_desc: 'Thrifted culture. Curated style. Pieces with a past, made for the present.',
                 footer_shop: 'Shop',
@@ -3154,9 +3122,6 @@
                 cart_aria: 'Cart',
                 menu_aria: 'Menu',
                 close_menu: 'Close menu',
-                zoom_aria: 'Zoom image',
-                decrease_aria: 'Decrease',
-                increase_aria: 'Increase',
                 // Promo
                 promo_new_drops: 'New Drops',
                 promo_every_week: 'Every Week',
@@ -3175,23 +3140,19 @@
                 os_title_sub: 'Quick Checkout',
                 os_color: 'Color',
                 os_size: 'Size',
-                os_qty: 'Qty',
                 os_subtotal: 'Subtotal',
                 os_shipping: 'Shipping',
                 os_free: 'FREE',
                 os_discount: 'Discount',
                 os_total: 'Total',
-                os_checkout: 'Checkout Now',
                 os_trust_title: '100% Secure Guarantee',
                 os_trust_sub: 'Safe delivery guaranteed • Protected value',
                 os_terms: 'By clicking checkout, you agree to our Terms & Conditions and Privacy Policy.',
-                os_avail: 'In Stock',
                 // Order success page
                 os_hero_title: 'Order Confirmed!',
                 os_hero_desc: 'Thank you for your order. We will call you within 24 hours to confirm delivery.',
                 os_card_items: 'Order Items',
                 os_card_customer: 'Customer Information',
-                os_card_summary: 'Order Summary',
                 os_card_timeline: 'What Happens Next?',
                 os_tl1_title: 'Order Received',
                 os_tl1_desc: 'We have received your order and are preparing it.',
@@ -3212,8 +3173,6 @@
                 of_full_name_ph: 'Enter your full name',
                 of_phone: 'Phone Number',
                 of_phone_ph: '05 12 34 56 78',
-                of_email: 'Email (Optional)',
-                of_email_ph: 'example@email.com',
                 of_delivery: 'Delivery Address',
                 of_wilaya: 'Wilaya (Province)',
                 of_wilaya_ph: 'Select wilaya',
@@ -3228,12 +3187,9 @@
                 // Try Two Sizes (TTS) — neon minimal black/white uppercase toggle
                 tts_title: 'TRY TWO SIZES', tts_desc: 'Not sure about your size? Add a backup size for a small fee — keep the one that fits, return the other.',
                 tts_add: 'Add Backup Size', tts_backup_label: 'Backup Size', tts_fee: 'TTS Fee',
-                of_card: 'Electronic Payment',
-                of_card_sub: 'Visa, MasterCard',
                 of_notes: 'Additional Notes (Optional)',
                 of_notes_ph: 'Write your notes in detail here...',
                 of_submit: 'Confirm Order',
-                of_order_success: 'Order placed successfully! We will contact you soon.',
                 // Cart
                 cart_title: 'Your Cart',
                 cart_empty: 'Your cart is empty',
@@ -3252,7 +3208,6 @@
                 checkout_continue: 'Continue Shopping',
                 checkout_summary: 'Order Summary',
                 checkout_place_order: 'Place Order',
-                checkout_order_placed: 'Order placed successfully! We will call you to confirm.',
                 of_required: 'Please fill in all required fields',
                 // Product-specific (kept in English since brand names)
                 // Categories names kept as-is (Hoodies, T-Shirts, etc.)
@@ -3296,7 +3251,6 @@
                 best_seller: 'الأكثر مبيعاً',
                 new_arrival: 'وصل حديثاً',
                 thrift_pick: 'قطعة نادرة',
-                pd_badge_new: 'وصل حديثاً',
                 pd_select_size: 'اختر المقاس',
                 pd_color: 'اللون:',
                 pd_size: 'المقاس:',
@@ -3338,8 +3292,6 @@
                 crumb_home: 'الرئيسية',
                 crumb_shop: 'المتجر',
                 crumb_search: 'بحث',
-                product_not_found: 'المنتج غير موجود.',
-                browse_all: 'تصفح جميع المنتجات',
                 sort_featured: 'مميز',
                 sort_price_asc: 'السعر: من الأقل للأعلى',
                 sort_price_desc: 'السعر: من الأعلى للأقل',
@@ -3349,11 +3301,6 @@
                 toast_added_wishlist: 'تمت الإضافة للمفضلة',
                 toast_removed_wishlist: 'تمت الإزالة من المفضلة',
                 toast_select_size: 'يرجى اختيار المقاس',
-                toast_coming_soon: 'قريباً',
-                toast_cart_empty: 'سلتك فارغة',
-                toast_cart_count: 'في السلة',
-                toast_checkout_soon: 'الدفع قريباً',
-                toast_zoom: 'استخدم القرص أو التمرير للتكبير',
                 footer_desc: 'ثقافة الملابس المستعملة. أسلوب منتقى. قطع لها ماضٍ، مصنوعة للحاضر.',
                 footer_shop: 'المتجر',
                 footer_all_products: 'جميع المنتجات',
@@ -3372,9 +3319,6 @@
                 cart_aria: 'السلة',
                 menu_aria: 'القائمة',
                 close_menu: 'إغلاق القائمة',
-                zoom_aria: 'تكبير الصورة',
-                decrease_aria: 'إنقاص',
-                increase_aria: 'زيادة',
                 promo_new_drops: 'وصل حديثاً',
                 promo_every_week: 'كل أسبوع',
                 promo_explore: 'استكشف',
@@ -3390,23 +3334,19 @@
                 os_title_sub: 'إتمام سريع',
                 os_color: 'اللون',
                 os_size: 'المقاس',
-                os_qty: 'الكمية',
                 os_subtotal: 'المجموع الفرعي',
                 os_shipping: 'الشحن',
                 os_free: 'مجاني',
                 os_discount: 'الخصم',
                 os_total: 'الإجمالي',
-                os_checkout: 'إتمام الطلب الآن',
                 os_trust_title: 'ضمان آمن 100%',
                 os_trust_sub: 'يصلك بالسلامة • قيمة مضمونة',
                 os_terms: 'بالنقر على إتمام الطلب أنت توافق على الشروط والأحكام وسياسة الخصوصية.',
-                os_avail: 'متوفر',
                 // Order success page
                 os_hero_title: 'تم تأكيد طلبك!',
                 os_hero_desc: 'شكراً لطلبك. سنتصل بك خلال 24 ساعة لتأكيد التوصيل.',
                 os_card_items: 'منتجات الطلب',
                 os_card_customer: 'معلومات الزبون',
-                os_card_summary: 'ملخص الطلب',
                 os_card_timeline: 'ماذا بعد؟',
                 os_tl1_title: 'تم استلام الطلب',
                 os_tl1_desc: 'لقد استلمنا طلبك ونقوم بتحضيره.',
@@ -3427,8 +3367,6 @@
                 of_full_name_ph: 'أدخل اسمك الكامل',
                 of_phone: 'رقم الهاتف',
                 of_phone_ph: '05 12 34 56 78',
-                of_email: 'البريد الإلكتروني (اختياري)',
-                of_email_ph: 'example@email.com',
                 of_delivery: 'عنوان التوصيل',
                 of_wilaya: 'الولاية',
                 of_wilaya_ph: 'اختر الولاية',
@@ -3443,12 +3381,9 @@
                 // Try Two Sizes (TTS) — neon minimal
                 tts_title: 'جرّب المقاسين', tts_desc: 'لست متأكداً من مقاسك؟ أضف مقاساً احتياطياً برسم بسيط — احتفظ بما يناسبك وأرجِع الآخر.',
                 tts_add: 'إضافة مقاس احتياطي', tts_backup_label: 'المقاس الاحتياطي', tts_fee: 'رسم المقاسين',
-                of_card: 'الدفع الإلكتروني',
-                of_card_sub: 'فيزا، ماستركارد',
                 of_notes: 'ملاحظات إضافية (اختياري)',
                 of_notes_ph: 'اكتب ملاحظاتك بالتفصيل هنا...',
                 of_submit: 'تأكيد الطلب',
-                of_order_success: 'تم تأكيد طلبك بنجاح! سنتواصل معك قريباً.',
                 // Cart
                 cart_title: 'سلة المشتريات',
                 cart_empty: 'سلتك فارغة',
@@ -3467,7 +3402,6 @@
                 checkout_continue: 'متابعة التسوق',
                 checkout_summary: 'ملخص الطلب',
                 checkout_place_order: 'تأكيد الطلب',
-                checkout_order_placed: 'تم تأكيد طلبك بنجاح! سنتصل بك للتأكيد.',
                 of_required: 'يرجى ملء جميع الحقول المطلوبة',
             }
         };
