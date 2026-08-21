@@ -435,20 +435,36 @@
     // and will only fail if a requested column is protected (PII) — not if it's missing.
     // So this list is safe to use even if some migrations haven't been applied yet.
     //
-    // Note: 'shipping' column is intentionally NOT in this list because the
-    // migration marks it as protected (it shouldn't be — but we work around it
-    // by fetching it separately for the owner).
+    // ✅ FIX (2026-08-21): 'shipping' + 'shipping_provider' now INCLUDED.
+    // Previously excluded due to an outdated comment (migration_security_fixes_p0
+    // had a hardcoded column list missing shipping). Now 02_pii_security.sql grants
+    // ALL columns except phone/owner_id dynamically, so shipping is accessible to anon.
     var storeColumns = [
-      'id', 'name', 'template', 'theme', 'page_title', 'page_subtitle',
+      'id', 'name', 'title', 'template', 'theme', 'page_title', 'page_subtitle', 'hero_desc',
       'bg_color', 'card_color', 'text_color', 'accent_color',
+      'cover_image', 'hide_trust_icons', 'trust_icons_text',
+      'shipping', 'shipping_provider',  // ✅ FIX Bug 3 (2026-08-21): was missing → calcShipping always fell back to default
+      'categories',
+      'tiktok', 'instagram', 'facebook',
       'facebook_pixel_id', 'instagram_pixel_id',
       'tiktok_pixel_id', 'snap_pixel_id', 'google_analytics_id', 'gtm_id', 'capi_worker_url',
-      'created_at', 'updated_at',
+      'facebook_pixel_id_enabled', 'instagram_pixel_id_enabled',
+      'tiktok_pixel_id_enabled', 'snap_pixel_id_enabled',
+      'google_analytics_id_enabled', 'gtm_id_enabled',
       'facebook_pixel_id_2', 'facebook_pixel_id_3',
       'tiktok_pixel_id_2', 'tiktok_pixel_id_3',
       'snap_pixel_id_2', 'snap_pixel_id_3',
-      'store_slug',
-      'tts_enabled', 'tts_default_fee'
+      'store_slug', 'store_wilaya',
+      'default_language', 'supported_languages',
+      'announcement_enabled', 'announcement_text', 'announcement_bg', 'announcement_color', 'announcement_dismissible',
+      'free_shipping_enabled', 'free_shipping_threshold',
+      'whatsapp_number', 'whatsapp_enabled',
+      'social_instagram', 'social_facebook', 'social_tiktok', 'social_whatsapp',
+      'tts_enabled', 'tts_default_fee', 'tts_max_fee',
+      'is_active', 'is_blocked',
+      'plan_id', 'subscription_status', 'subscription_start', 'subscription_end',
+      'created_at', 'updated_at'
+      // NOTE: 'phone' + 'owner_id' are PII — granted only to authenticated/service_role (02_pii_security.sql)
     ].join(', ');
     var storeRowResult = await supabase.from('stores').select(storeColumns).eq('id', cleanStoreId).maybeSingle();
     var storeRow = storeRowResult && storeRowResult.data ? storeRowResult.data : null;
