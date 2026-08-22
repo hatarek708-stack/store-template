@@ -461,10 +461,14 @@
       'whatsapp_number', 'whatsapp_enabled',
       'social_instagram', 'social_facebook', 'social_tiktok', 'social_whatsapp',
       'tts_enabled', 'tts_default_fee', 'tts_max_fee',
-      'is_active', 'is_blocked',
+      'is_blocked',
       'plan_id', 'subscription_status', 'subscription_start', 'subscription_end',
       'created_at', 'updated_at'
       // NOTE: 'phone' + 'owner_id' are PII — granted only to authenticated/service_role (02_pii_security.sql)
+      // ✅ FIX (2026-08-22): removed 'is_active' — this column does NOT exist on
+      //    stores (it exists on plans/coupons/admin_users/affiliates only).
+      //    Requesting it caused PostgREST HTTP 400 "column stores.is_active does
+      //    not exist" → store fetch failed → products didn't render in storefront.
     ].join(', ');
     var storeRowResult = await supabase.from('stores').select(storeColumns).eq('id', cleanStoreId).maybeSingle();
     var storeRow = storeRowResult && storeRowResult.data ? storeRowResult.data : null;
